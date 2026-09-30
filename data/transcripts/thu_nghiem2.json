@@ -1,0 +1,74 @@
+[
+  {
+    "speaker": "SPEAKER_00",
+    "start": 0.0,
+    "end": 3.0,
+    "text": "Ok, chào mọi người, mình bắt đầu buổi họp giao ban tuần này nha."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 3.12,
+    "end": 12.32,
+    "text": "Đầu tiên là báo cáo doanh số, tháng 9 vừa rồi, doanh thu của công ty đạt 1 tỷ 200 triệu, tăng 15% so với tháng 8, nhưng vẫn chưa đạt target là 1 tỷ rưỡi."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 12.42,
+    "end": 18.14,
+    "text": "Nguyên nhân chính là kênh bán hàng online giảm mạnh, đặc biệt là trên shopping, vì vậy, tháng này mình sẽ tập trung vào marketing."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 18.5,
+    "end": 24.22,
+    "text": "Chị Hạnh bên phòng marketing sẽ phụ trách chạy campaign quảng cáo trên Facebook và TikTok, budget là 50 triệu."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 24.62,
+    "end": 27.4,
+    "text": "Chị Hạnh gửi kế hoạch chi tiết cho anh trước thứ 4 tuần này nha."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 27.4,
+    "end": 34.38,
+    "text": "Thứ 2 là khách hàng, tuần trước bên mình có meeting với công ty Minh Phát, họ đang quan tâm đặt hàng số lượng lớn, khoảng 2000 sản phẩm."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 34.52,
+    "end": 38.98,
+    "text": "Anh Dũng bên sales sẽ theo điều này, gửi báo giá cho họ chậm nhất là ngày 10 tháng 10."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 39.12,
+    "end": 49.46,
+    "text": "Về giá bán thì lúc đầu mình định giảm giá 20% cho đơn hàng lớn, nhưng tính lại thì lợi nhuận quá thấp, nên ban giám đốc đã chốt là chỉ giảm 10%, kèm miễn phí vận chuyển, cuối cùng là KPI."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 49.72,
+    "end": 53.24,
+    "text": "Từ tháng này, mỗi nhân viên sales phải đạt tối thiểu 30 đơn hàng mỗi tháng."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 53.24,
+    "end": 58.96,
+    "text": "Bạn thảo bên nhân sự sẽ cập nhật lại bảng KPI và gửi email cho toàn bộ nhân viên trước thứ 6, còn ai có ý kiến gì không?"
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 59.28,
+    "end": 63.12,
+    "text": "Nếu không thì buổi họp tiếp theo là 9 giờ sáng thứ 2 tuần sau, tại phòng họp tầng 3."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 63.4,
+    "end": 64.04,
+    "text": "Cảm ơn mọi người."
+  }
+]

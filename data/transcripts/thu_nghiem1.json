@@ -1,0 +1,122 @@
+[
+  {
+    "speaker": "SPEAKER_00",
+    "start": 0.0,
+    "end": 3.04,
+    "text": "Ok, mọi người vào đủ rồi thì mình bắt đầu nha."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 3.14,
+    "end": 6.64,
+    "text": "Hôm nay mình họp để chia việc cho Spring tiếp theo của project quản lý thư viện."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 6.76,
+    "end": 8.14,
+    "text": "Đầu tiên là phần database."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 8.44,
+    "end": 13.72,
+    "text": "Tuần trước bạn Khoa đã thiết kế xong sơ đồ, nhưng thầy review thì nói bảng mượn sách, còn thiếu cột ngày trả."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 13.86,
+    "end": 15.44,
+    "text": "Nên bạn Khoa update lại database."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 15.76,
+    "end": 17.14,
+    "text": "Deadline là thứ 3 tuần sau."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 17.34,
+    "end": 18.44,
+    "text": "Tiếp theo là phần API."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 18.6,
+    "end": 22.64,
+    "text": "Phần này giao cho bạn Vi phụ trách, làm các API thêm sách, sửa sách với xóa sách."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 22.84,
+    "end": 26.7,
+    "text": "Vi nhớ viết document cho từng API luôn nha, để bên frontend biết đường gọi."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 26.84,
+    "end": 28.66,
+    "text": "Hạn chót là ngày 25 tháng 10."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 28.66,
+    "end": 31.66,
+    "text": "Còn phần giao diện, bạn Phúc sẽ làm trang tìm kiếm sách."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 31.86,
+    "end": 35.48,
+    "text": "Mình đã chốt là dùng react chứ không dùng view nữa vì cả nhóm quen react hơn."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 35.8,
+    "end": 38.72,
+    "text": "Phúc cố gắng xong trước chủ nhật, để thứ 2 mình test chung."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 38.98,
+    "end": 40.96,
+    "text": "À còn một việc nữa là viết báo cáo chương 1."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 41.3,
+    "end": 44.92,
+    "text": "Việc này để mình làm, mình sẽ gửi bản draft lên Google Drive trước thứ 6."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 45.14,
+    "end": 46.34,
+    "text": "Có ai có câu hỏi gì không?"
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 46.88,
+    "end": 50.22,
+    "text": "Khoa làm database, Vi làm API, Phúc làm giao diện."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 50.42,
+    "end": 53.28,
+    "text": "Mình viết báo cáo buổi họp sau là tối thứ 4 lúc 8 giờ."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 53.52,
+    "end": 54.76,
+    "text": "Họp online trên Google Meet."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 55.16,
+    "end": 56.4,
+    "text": "Ok, cảm ơn mọi người."
+  }
+]
