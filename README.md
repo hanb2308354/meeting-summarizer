@@ -34,7 +34,7 @@ File ghi âm (.mp3)
 
 ## Cài đặt
 
-Yêu cầu: **Python 3.11** (bản 3.12, 3.13 dễ lỗi thư viện).
+Yêu cầu: Cài mới **Python 3.11** (bản 3.12, 3.13 lỗi thư viện).
 
 ```powershell
 git clone https://github.com/hanb2308354/meeting-summarizer.git
