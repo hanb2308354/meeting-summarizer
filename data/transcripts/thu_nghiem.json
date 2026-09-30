@@ -1,0 +1,32 @@
+[
+  {
+    "speaker": "SPEAKER_00",
+    "start": 0.0,
+    "end": 2.14,
+    "text": "Ok, mình bắt đầu meeting nha."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 2.3,
+    "end": 10.2,
+    "text": "Tuần trước thầy có feedback là phần giao diện còn dối, nên tuần này nhóm mình phải update lại, phần front-end thì giao cho bạn Tuấn phụ trách, làm lại trang chủ với trang đăng nhập."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 10.46,
+    "end": 18.96,
+    "text": "Deadline là thứ 4 tuần sau, phần back-end, khi bạn Ngọc sẽ fix lỗi đăng ký tài khoản, hạn chót là ngày 20 tháng 10, còn file báo cáo thì mọi người upload lên Google Drive."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 19.22,
+    "end": 23.2,
+    "text": "Mình sẽ gửi link trong group Messenger, họp tiếp theo là tối chủ nhật lúc 9h ok."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 23.5,
+    "end": 24.76,
+    "text": "Vậy thôi, cảm ơn mọi người."
+  }
+]
