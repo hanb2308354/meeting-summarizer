@@ -77,6 +77,17 @@ Kết quả được lưu vào `data/transcripts/ten_file.json`.
 
 **Xử lý văn bản:** *(đang làm)*
 
+**Kiểm tra kết quả trích xuất trên transcript mẫu:**
+```powershell
+python src/nlp/kiem_thu.py
+```
+
+Lần chạy mặc định cũng kiểm tra transcript phát triển [phat_trien.json](./data/transcripts/phat_trien.json).
+Chế độ mặc định chỉ in tên file và mã kết quả ổn định. Để xem lý do cùng nội dung việc trên máy cục bộ:
+```powershell
+python src/nlp/kiem_thu.py --chi-tiet thu_nghiem1.json
+```
+
 ## Các file trong src/asr
 
 | File | Vai trò |
