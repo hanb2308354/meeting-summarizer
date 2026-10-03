@@ -1,2 +1,7 @@
 ﻿# Phần nhận dạng giọng nói 
 faster-whisper==1.2.1
+
+# Phần xử lý văn bản (NLP)
+pyvi==0.1.1
+networkx==3.6.1
+scikit-learn==1.9.1

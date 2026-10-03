@@ -1,0 +1,47 @@
+{
+  "source": "thu_nghiem1.json",
+  "summary": "Hôm nay mình họp để chia việc cho Sprint tiếp theo của project quản lý thư viện. Còn phần giao diện, bạn Phúc sẽ làm trang tìm kiếm sách. Mình đã chốt là dùng React chứ không dùng Vue nữa vì cả nhóm quen React hơn. Việc này để mình làm, mình sẽ gửi bản draft lên Google Drive trước thứ 6. Mình viết báo cáo buổi họp sau là tối thứ 4 lúc 8 giờ.",
+  "decisions": [
+    {
+      "text": "Mình đã chốt là dùng React chứ không dùng Vue nữa vì cả nhóm quen React hơn.",
+      "start": 31.86
+    }
+  ],
+  "tasks": [
+    {
+      "task": "update lại database.",
+      "owner": "Khoa",
+      "deadline": "thứ 3 tuần sau",
+      "start": 13.86
+    },
+    {
+      "task": "viết document cho từng API luôn",
+      "owner": "Vi",
+      "deadline": "ngày 25 tháng 10",
+      "start": 22.84
+    },
+    {
+      "task": "làm trang tìm kiếm sách.",
+      "owner": "Phúc",
+      "deadline": null,
+      "start": 28.66
+    },
+    {
+      "task": "xong trước chủ nhật",
+      "owner": "Phúc",
+      "deadline": "chủ nhật",
+      "start": 35.8
+    },
+    {
+      "task": "test chung.",
+      "owner": "Phúc",
+      "deadline": "test chung",
+      "start": 35.8
+    }
+  ],
+  "next_meeting": {
+    "time": "tối thứ 4 lúc 8 giờ",
+    "place": "online trên Google Meet",
+    "start": 50.42
+  }
+}

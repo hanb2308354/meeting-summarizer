@@ -1,0 +1,510 @@
+# Trích xuất quyết định, việc cần làm, lịch họp tiếp theo từ transcript đã làm sạch
+import re
+import sys
+from pathlib import Path
+
+from doc_transcript import doc_transcript
+from tien_xu_ly import tien_xu_ly
+
+sys.stdout.reconfigure(encoding="utf-8")
+
+THU_MUC_CAU = [
+    "đầu tiên là",
+    "tiếp theo là",
+    "thứ",
+    "cuối cùng là",
+    "tiếp theo đó là",
+]
+
+DANH_SACH_DONG_TU = (
+    "làm",
+    "update",
+    "sửa",
+    "fix",
+    "viết",
+    "gửi",
+    "upload",
+    "cập nhật",
+    "phụ trách",
+    "chạy",
+    "test",
+    "thiết kế",
+    "hoàn thành",
+    "nộp",
+    "điều",
+    "xong",
+    "hỗ trợ",
+    "nhớ",
+    "thực hiện",
+)
+
+DANH_SACH_HAN_CHOT = [
+    r"(?:deadline|hạn chót|chậm nhất)\s*(?:là|:)\s*(.+?)(?:\.|$)",
+    r"\btrước\s+(.+?)(?:\.|$)",
+    r"\bngày\s+\d+\s+tháng\s+\d+\b",
+    r"\bthứ\s+\d+\s+(?:tuần\s+(?:này|sau)|\w+)",
+    r"\bchủ nhật\b",
+    r"\bcuối\s+tuần\b",
+]
+
+DANH_SACH_TU_CHUC_NANG = {
+    "nào",
+    "nữa",
+    "bên",
+    "trước",
+    "sau",
+    "là",
+    "sẽ",
+    "phải",
+    "làm",
+    "gửi",
+    "có",
+    "cần",
+    "ơi",
+    "ấy",
+    "kia",
+    "đó",
+    "tuần",
+    "tháng",
+    "mình",
+    "mọi",
+    "ai",
+    "này",
+    "nơi",
+    "tiếp",
+    "còn",
+    "về",
+    "đầu",
+    "nếu",
+    "vậy",
+    "hôm",
+    "ok",
+}
+
+
+
+def chuan_hoa_ten(ten):
+    """Viết hoa chữ cái đầu của tên người, giữ nguyên cách viết nhiều từ."""
+    if not ten:
+        return ten
+    ten = ten.strip()
+    if not ten:
+        return ten
+    chuoi = []
+    for phan in ten.split():
+        if phan.lower() in {"bạn", "anh", "chị", "em", "cô", "thầy"}:
+            continue
+        chuoi.append(phan[0].upper() + phan[1:] if phan else phan)
+    return " ".join(chuoi)
+
+
+def loai_bo_ten_cong_ty(van_ban):
+    """Bỏ cụm tên công ty/tổ chức khỏi danh sách tên người để tránh nhầm người."""
+    return re.sub(r"\bcông ty\s+[A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+)?", "", van_ban, flags=re.IGNORECASE)
+
+
+def _ten_hop_le(ten_name):
+    """Tên hợp lệ phải là danh từ người, không phải từ chức năng hoặc mảnh câu."""
+    if not ten_name:
+        return False
+    ten_name = ten_name.strip()
+    if not ten_name:
+        return False
+    if ten_name.lower() in {"mình", "tôi", "em", "anh", "chị", "bạn", "mọi người", "người chủ trì", "để", "ok", "nếu", "còn", "về", "đầu", "tiếp", "xong", "phụ trách", "làm", "đã", "trước", "thứ", "hôm", "này"}:
+        return False
+    if re.fullmatch(r"(?:[A-ZÀ-Ỹa-zà-ỹ]+|[A-ZÀ-Ỹa-zà-ỹ]+\s+[A-ZÀ-Ỹa-zà-ỹ]+)", ten_name) is None:
+        return False
+    return len(ten_name.split()) <= 2
+
+
+def tim_ten_biet(cac_cau):
+    """Dựng danh sách tên người đã biết qua cả cuộc họp."""
+    ten = set()
+    for cau in cac_cau:
+        text = loai_bo_ten_cong_ty(cau["sach"])
+        for match in re.finditer(
+            r"\b(?:bạn|anh|chị|em)\s+([A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)(?:\s+[A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)?\b",
+            text,
+            flags=re.IGNORECASE,
+        ):
+            ten_name = chuan_hoa_ten(match.group(1))
+            if _ten_hop_le(ten_name):
+                ten.add(ten_name)
+
+        for match in re.finditer(
+            r"\b([A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)(?=\s+(?:bên|làm|sẽ|phải|nên|cần|nhớ|gửi|viết|cập nhật|update|fix|sửa|upload|phụ trách|xong|chạy|theo|test|thiết kế))",
+            text,
+        ):
+            ten_name = chuan_hoa_ten(match.group(1))
+            if _ten_hop_le(ten_name):
+                ten.add(ten_name)
+
+    return sorted(ten, key=len, reverse=True)
+
+
+def la_de_muc(phan):
+    """Nhận diện các câu đề mục không mang việc như 'Đầu tiên là phần API'"""
+    phan = phan.strip()
+    if not phan:
+        return True
+    if re.match(r"^(đầu tiên|tiếp theo|cuối cùng|tiếp theo đó)\s+là\b", phan, flags=re.IGNORECASE):
+        return True
+    if re.match(r"^thứ\s+\d+\s+là\b", phan, flags=re.IGNORECASE):
+        return True
+    if re.match(r"^(?:phần|mục)\s+.*$", phan, flags=re.IGNORECASE):
+        return True
+    return False
+
+
+def tach_menh_de(cau):
+    """Tách câu thành mệnh đề theo dấu phẩy nhưng không tách giữa hai chữ số."""
+    ket_qua = []
+    tam = []
+    i = 0
+    while i < len(cau):
+        ky_tu = cau[i]
+        if ky_tu == ",":
+            if i + 1 < len(cau) and cau[i - 1].isdigit() and cau[i + 1].isdigit():
+                tam.append(ky_tu)
+            else:
+                phan = "".join(tam).strip()
+                if phan:
+                    ket_qua.append(phan)
+                tam = []
+        else:
+            tam.append(ky_tu)
+        i += 1
+    phan = "".join(tam).strip()
+    if phan:
+        ket_qua.append(phan)
+
+    ket_qua = [p.strip() for p in ket_qua if p.strip()]
+    ket_qua_ban_sau = []
+    for p in ket_qua:
+        if len(p.split()) <= 2 and ket_qua_ban_sau:
+            ket_qua_ban_sau[-1] = f"{ket_qua_ban_sau[-1]}, {p}"
+        else:
+            ket_qua_ban_sau.append(p)
+    return ket_qua_ban_sau
+
+
+def lay_ten_nguoi_phan_anh(van_ban, ten_biet):
+    """Tìm người phụ trách theo các mẫu tên người, ưu tiên tên đã biết."""
+    van_ban = loai_bo_ten_cong_ty(van_ban)
+    if re.search(r"\bmọi người\b.*\b(làm|nộp|upload|gửi|viết|cập nhật|chạy|ghi|xong)\b", van_ban, flags=re.IGNORECASE):
+        return "Mọi người"
+
+    for ten in ten_biet:
+        if re.search(rf"\b(?:bạn|anh|chị|em)?\s*{re.escape(ten)}\b", van_ban, flags=re.IGNORECASE):
+            if re.search(rf"\b{re.escape(ten)}\b.*(?:sẽ|phải|nên|làm|gửi|viết|update|fix|sửa|upload|cập nhật|phụ trách|nhớ|chạy|xong|test)\b", van_ban, flags=re.IGNORECASE):
+                return ten
+            if re.search(rf"\b(?:giao cho|phụ trách)\s+(?:bạn\s+)?{re.escape(ten)}\b", van_ban, flags=re.IGNORECASE):
+                return ten
+
+    for mau in [
+        r"\b(?:giao cho|phụ trách)\s+(?:bạn\s+)?([A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+)*)\b",
+        r"\b([A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+)*)\s+(?:sẽ|phải|nên)\s+",
+        r"\b([A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+)*)\s+(?:làm|viết|gửi|upload|update|fix|sửa|cập nhật|phụ trách|chạy|test)\b",
+        r"\b(?:bạn|anh|chị|em)\s+([A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+)*)\b.*(?:sẽ|phải|nên|làm|viết|gửi|update|fix|sửa|upload|cập nhật|chạy|test)\b",
+    ]:
+        match = re.search(mau, van_ban, flags=re.IGNORECASE)
+        if match:
+            ten_name = chuan_hoa_ten(match.group(1) if match.lastindex else match.group(0))
+            if any(word.lower() in {"mình", "tôi", "em", "anh", "chị", "bạn"} for word in ten_name.split()):
+                continue
+            if len(ten_name.split()) <= 2 and ten_name and ten_name.lower() not in DANH_SACH_TU_CHUC_NANG and ten_name.lower() not in {"mọi người", "người chủ trì"}:
+                return ten_name
+
+    if re.search(r"\b(mình|tôi|em)\b.*\b(làm|sẽ|gửi|viết|update|fix|upload|cập nhật|xong)\b", van_ban, flags=re.IGNORECASE):
+        return "Người chủ trì"
+    return None
+
+
+def co_dong_tu_hanh_dong(van_ban):
+    """Mệnh đề có động từ hành động thì coi là việc cần làm."""
+    van_ban = van_ban.lower().strip()
+    if not van_ban:
+        return False
+    if re.fullmatch(r"(?:để|phụ trách|làm|xong)\s*[,.;]?\s*", van_ban):
+        return False
+    if re.fullmatch(r"(?:mình|tôi|em|việc này|còn|thứ|phần|bên)\b.*", van_ban):
+        return False
+    return bool(re.search(r"\b(?:làm|update|sửa|fix|viết|gửi|upload|cập nhật|phụ trách|chạy|test|thiết kế|hoàn thành|nộp|xong|hỗ trợ|thực hiện|điều|cố gắng)\b", van_ban))
+
+
+def cat_viec(van_ban, owner):
+    """Lấy phần mô tả việc từ động từ hành động trở đi."""
+    text = van_ban.strip()
+    if not text:
+        return text
+
+    text = re.sub(r"^\s*(?:còn\s+)?(?:một\s+việc\s+nữa\s+là|việc\s+nữa\s+là|một\s+việc\s+là)\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"^\s*(?:tiếp\s+theo\s+là|đầu\s+tiên\s+là|cuối\s+cùng\s+là|thứ\s+\d+\s+là)\s*", "", text, flags=re.IGNORECASE)
+
+    for mau in [
+        r"\b(?:bạn|anh|chị|em)\s+[A-ZÀ-Ỹa-zà-ỹ]+\s+",
+        r"\b[A-ZÀ-Ỹa-zà-ỹ]+\s+(?:sẽ|phải|nên|cần|nhớ)\s+",
+        r"\b(?:để|việc này\s+để|nên)\s+",
+        r"\b(?:mình|tôi|em)\s+(?:sẽ\s+)?",
+        r"\b(?:giao\s+cho|phụ\s+trách)\s+(?:bạn\s+)?[A-ZÀ-Ỹa-zà-ỹ]+\s*",
+        r"^(?:bên|trong|ở|tại)\s+[^,;.!?]+?\s+(?:sẽ|phải|nên|cần|nhớ)\s+",
+    ]:
+        text = re.sub(mau, "", text, flags=re.IGNORECASE)
+
+    if owner == "Người chủ trì":
+        text = re.sub(r"^\s*(?:việc này\s+)?(?:để\s+)?(?:mình|tôi|em)\s*(?:sẽ\s+)?", "", text, flags=re.IGNORECASE)
+
+    text = re.sub(r"^(?:phụ\s+trách|để|làm|nên|cố\s+gắng)\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"^(?:bên|trong|ở|tại|trên)\s+[A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+){0,3}\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"^(?:trên|tại|ở)\s+", "", text, flags=re.IGNORECASE)
+
+    for dong_tu in DANH_SACH_DONG_TU:
+        match = re.search(rf"\b{re.escape(dong_tu)}\b", text, flags=re.IGNORECASE)
+        if match:
+            text = text[match.start():].strip()
+            break
+
+    text = re.sub(r"^(?:là|đó\s+là)\s+", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"(?:,\s*)?(?:còn\s+)?(?:ai\s+có\s+ý\s+kiến\s+gì\s+không\?|có\s+ai\s+.*\bý\s+kiến\b.*\?|cảm\s+ơn.*|để\s+thứ\s+\d+\s+mình\s+test\s+chung.*)$", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s+[,;]$", "", text)
+    text = re.sub(r"\s*[,;]\s*(?:để|và|cùng|cũng)\s+.*$", "", text, flags=re.IGNORECASE)
+    if not re.search(r"[A-Za-zÀ-Ỹà-ỹ0-9]", text):
+        return ""
+    return text.strip()
+
+
+def tim_han_chot(van_ban):
+    """Trích xuất hạn chót từ mệnh đề hoặc câu, có thể trả về nhiều giá trị trong cùng câu."""
+    van_ban = van_ban.strip()
+    if not van_ban:
+        return []
+    van_ban = re.sub(r"(?:,\s*)?(?:còn\s+)?(?:ai\s+có\s+ý\s+kiến\s+gì\s+không\?|có\s+ai\s+.*\bý\s+kiến\b.*\?|cảm\s+ơn.*)$", "", van_ban, flags=re.IGNORECASE)
+    if re.match(r"^thứ\s+\d+\s+là\b", van_ban, flags=re.IGNORECASE):
+        return []
+
+    ket_qua = []
+    for mau in [
+        r"(?:deadline|hạn chót|chậm nhất|hạn)\s*(?:là|:)\s*([^,.]+?)(?:,|\.|$)",
+        r"\b(?:trước|sớm hơn)\s+([^,.]+?)(?:,|\.|$)",
+        r"\b(?:ngày\s+\d+\s+tháng\s+\d+|thứ\s+\d+\s+(?:tuần\s+(?:này|sau)|\w+)|thứ\s+\d+\s+tuần\s+(?:này|sau)|chủ nhật|cuối\s+tuần)\b([^,.]*?)(?:,|\.|$)",
+    ]:
+        for match in re.finditer(mau, van_ban, flags=re.IGNORECASE):
+            if match.lastindex:
+                gia_tri = match.group(1).strip()
+            else:
+                gia_tri = match.group(0).strip()
+            gia_tri = re.sub(r"^(?:là|đó\s+là|đây\s+là)\s*", "", gia_tri, flags=re.IGNORECASE)
+            gia_tri = gia_tri.replace(".", "").strip()
+            if not gia_tri or gia_tri.lower() in {"là", "đây", "đó"}:
+                continue
+            if re.search(r"\b(?:điều này|ý kiến|có ai|đến|gặp|lúc)\b", gia_tri, flags=re.IGNORECASE):
+                continue
+            ket_qua.append(gia_tri)
+
+    ket_qua = list(dict.fromkeys(ket_qua))
+    return ket_qua
+
+
+def la_lich_hop(van_ban):
+    """Nhận diện câu/chữ về lịch họp tiếp theo."""
+    if re.search(r"\b(?:bắt đầu|mở đầu|chào mọi người).*\b(?:buổi\s+họp|họp\s+giao\s+ban)\b", van_ban, flags=re.IGNORECASE):
+        return False
+    if re.search(r"họp\s+(?:tiếp theo|sau|tiếp)|buổi\s+họp\s+(?:tiếp theo|sau)", van_ban, flags=re.IGNORECASE):
+        return True
+    if re.search(r"\b(?:tối|sáng|chiều|buổi|ngày)\s+.*(?:họp|meeting)\b", van_ban, flags=re.IGNORECASE) and re.search(r"\b(?:lúc|tại|online|Google Meet|thứ)\b", van_ban, flags=re.IGNORECASE):
+        return True
+    return False
+
+
+def lay_lich_hop(cac_cau):
+    """Trích xuất thời gian và địa điểm của buổi họp tiếp theo."""
+    for i, cau in enumerate(cac_cau):
+        text = cau["sach"]
+        if not la_lich_hop(text):
+            continue
+        thoi_gian = None
+        dia_diem = None
+
+        match = re.search(r"(?:họp\s+(?:tiếp theo|sau)|buổi\s+họp\s+(?:tiếp theo|sau))\s*(?:là|:)?\s*(.*?)(?:\.|$)", text, flags=re.IGNORECASE)
+        if match:
+            gia_tri = match.group(1).strip()
+            if "," in gia_tri:
+                phan_thoi_gian, phan_dia_diem = [p.strip() for p in gia_tri.split(",", 1)]
+                if re.search(r"\b(?:tại|ở|online|Google Meet|phòng|trên|room)\b", phan_dia_diem, flags=re.IGNORECASE):
+                    dia_diem = phan_dia_diem.strip().rstrip(".")
+                    phan_thoi_gian = phan_thoi_gian.strip().rstrip(",.")
+                thoi_gian = phan_thoi_gian.strip().rstrip(",.")
+            else:
+                thoi_gian = gia_tri.strip().rstrip(",.")
+
+        if not thoi_gian:
+            match = re.search(r"\b(?:tối|sáng|chiều|buổi)\s+.*?(?:,|\.|$)", text, flags=re.IGNORECASE)
+            if match:
+                thoi_gian = match.group(0).strip().rstrip(",.")
+
+        if i + 1 < len(cac_cau):
+            text_tiep = cac_cau[i + 1]["sach"]
+            if re.search(r"(?:online|Google Meet|tại|ở|phòng|trên|hội trường|room|meeting)\b", text_tiep, flags=re.IGNORECASE):
+                dia_diem = text_tiep.strip().rstrip(".")
+                dia_diem = re.sub(r"^(?:họp\s+)?", "", dia_diem, flags=re.IGNORECASE)
+                dia_diem = dia_diem.strip()
+
+        if thoi_gian or dia_diem:
+            return {
+                "time": thoi_gian,
+                "place": dia_diem,
+                "start": cau["start"],
+            }
+    return None
+
+
+def la_quyet_dinh(van_ban):
+    """Nhận diện mệnh đề quyết định của cuộc họp."""
+    if re.search(r"\b(chốt|thống nhất|quyết định|đồng ý|kpi|không dùng|tối thiểu|miễn phí vận chuyển|kèm)\b", van_ban, flags=re.IGNORECASE):
+        return True
+    if re.search(r"\b(từ tháng này|mỗi.*phải đạt|chỉ giảm|kèm miễn phí vận chuyển|giảm\s+10%|giảm\s+20%)\b", van_ban, flags=re.IGNORECASE):
+        return True
+    return False
+
+
+def lay_quyet_dinh(cac_cau):
+    """Trích xuất các quyết định nhớ và nối mệnh đề tiếp theo nếu cần."""
+    ket_qua = []
+    i = 0
+    while i < len(cac_cau):
+        text = cac_cau[i]["sach"]
+        if la_quyet_dinh(text):
+            if lay_ten_nguoi_phan_anh(text, tim_ten_biet(cac_cau)) is not None and co_dong_tu_hanh_dong(text):
+                i += 1
+                continue
+            phan = text
+            if i + 1 < len(cac_cau):
+                text_tiep = cac_cau[i + 1]["sach"]
+                if re.match(r"^(kèm|và|cùng|cuối cùng là|từ tháng này|mỗi)\b", text_tiep, flags=re.IGNORECASE):
+                    phan = f"{phan}, {text_tiep}"
+                    i += 1
+            ket_qua.append({"text": phan.strip(), "start": cac_cau[i]["start"]})
+        i += 1
+    return ket_qua
+
+
+def trich_xuat(cac_cau):
+    """Trả về dict chứa quyết định, việc cần làm và lịch họp tiếp theo."""
+    ten_biet = tim_ten_biet(cac_cau)
+    tasks = []
+    last_task = None
+
+    for cau in cac_cau:
+        text = cau["sach"].strip()
+        if not text or cau["xa_giao"]:
+            continue
+        if la_lich_hop(text):
+            continue
+        if la_de_muc(text):
+            continue
+        if re.search(r"\b[A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*\s+làm\b.*?,\s*[A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*\s+làm\b", text, flags=re.IGNORECASE):
+            continue
+        if re.match(r"^(?:ok|cảm ơn|vậy thôi|chào)\b", text, flags=re.IGNORECASE):
+            continue
+        if re.fullmatch(r"(?:để|phụ trách|làm)\b.*", text, flags=re.IGNORECASE):
+            continue
+
+        clauses = [part.strip() for part in re.split(r"\s*,\s*", text) if part.strip()]
+        sentence_owner = None
+
+        for clause in clauses:
+            if not clause:
+                continue
+            if re.match(r"^(?:nếu không|vậy thôi|cảm ơn|ok|chào)\b", clause, flags=re.IGNORECASE):
+                continue
+            if re.search(r"\bđã\s+.*\bxong\b", clause, flags=re.IGNORECASE):
+                continue
+            if re.fullmatch(r"(?:để|phụ trách|làm|xong|test chung|có ai.*|ai.*\?)", clause, flags=re.IGNORECASE):
+                continue
+
+            if re.match(r"^(?:deadline|hạn chót|hạn)\b", clause, flags=re.IGNORECASE):
+                han = tim_han_chot(clause)
+                if han and last_task and last_task["deadline"] is None:
+                    last_task["deadline"] = han[0]
+                continue
+
+            owner = lay_ten_nguoi_phan_anh(clause, ten_biet)
+            if owner is not None:
+                sentence_owner = owner
+                if not co_dong_tu_hanh_dong(clause):
+                    continue
+                task_text = cat_viec(clause, owner)
+                if not task_text or task_text.lower() in {"họp", "đầu tiên là", "tiếp theo là", "điều này", "theo điều này"}:
+                    continue
+                task_item = {"task": task_text, "owner": owner, "deadline": None, "start": cau["start"]}
+                tasks.append(task_item)
+                last_task = task_item
+                han = tim_han_chot(clause)
+                if han and task_item["deadline"] is None:
+                    task_item["deadline"] = han[0]
+                continue
+
+            if sentence_owner and co_dong_tu_hanh_dong(clause):
+                task_text = cat_viec(clause, sentence_owner)
+                if task_text and task_text.lower() not in {"họp", "đầu tiên là", "tiếp theo là", "điều này", "theo điều này"}:
+                    if last_task and last_task["owner"] == sentence_owner and last_task["start"] == cau["start"] and re.search(r"\b(?:và|cùng|cũng|đồng thời)\b", clause, flags=re.IGNORECASE):
+                        last_task["task"] = f"{last_task['task']}, {task_text}"
+                    else:
+                        task_item = {"task": task_text, "owner": sentence_owner, "deadline": None, "start": cau["start"]}
+                        tasks.append(task_item)
+                        last_task = task_item
+                    han = tim_han_chot(clause)
+                    if han and last_task["deadline"] is None:
+                        last_task["deadline"] = han[0]
+                continue
+
+    ket_qua = {
+        "decisions": [],
+        "tasks": [
+            {
+                "task": task["task"],
+                "owner": task["owner"],
+                "deadline": task["deadline"],
+                "start": task["start"],
+            }
+            for task in tasks
+        ],
+        "next_meeting": lay_lich_hop(cac_cau),
+    }
+
+    for cau in cac_cau:
+        text = cau["sach"]
+        if la_lich_hop(text) or la_de_muc(text) or cau["xa_giao"]:
+            continue
+        if not la_quyet_dinh(text):
+            continue
+        if lay_ten_nguoi_phan_anh(text, ten_biet) is not None and co_dong_tu_hanh_dong(text):
+            continue
+        phan = text
+        if len(ket_qua["decisions"]) and re.match(r"^(kèm|và|cùng|cuối cùng là|từ tháng này|mỗi)\b", text, flags=re.IGNORECASE):
+            phan = f"{ket_qua['decisions'][-1]['text']}, {text}"
+            ket_qua["decisions"][-1]["text"] = phan.strip()
+            continue
+        ket_qua["decisions"].append({"text": phan.strip(), "start": cau["start"]})
+
+    return ket_qua
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        sys.exit("Cách dùng: python src/nlp/trich_xuat.py <đường dẫn file transcript JSON>")
+
+    duong_dan = Path(sys.argv[1])
+    if not duong_dan.exists():
+        sys.exit(f"Không tìm thấy file: {duong_dan}")
+
+    du_lieu = tien_xu_ly(doc_transcript(duong_dan))
+    ket_qua = trich_xuat(du_lieu)
+    print("Quyết định:")
+    for item in ket_qua["decisions"]:
+        print(f" - {item['text']} (start={item['start']})")
+    print("\nViệc cần làm:")
+    for item in ket_qua["tasks"]:
+        print(f" - {item['owner']}: {item['task']} | {item['deadline'] or 'không rõ'} | {item['start']}")
+    print("\nHọp tiếp theo:")
+    print(ket_qua["next_meeting"])
