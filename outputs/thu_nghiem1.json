@@ -51,6 +51,12 @@
       "start": 35.8
     },
     {
+      "task": "viết báo cáo chương 1",
+      "owner": "Người chủ trì",
+      "deadline": null,
+      "start": 38.98
+    },
+    {
       "task": "gửi bản draft lên Google Drive trước thứ 6.",
       "owner": "Người chủ trì",
       "deadline": "thứ 6",

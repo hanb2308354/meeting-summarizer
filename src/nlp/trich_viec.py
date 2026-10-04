@@ -4,7 +4,12 @@ import re
 from nhan_dien_han import tim_han_chot
 from nhan_dien_ten import lay_ten_nguoi_phan_anh
 from trich_lich_hop import la_lich_hop
-from tu_dien import DANH_SACH_DONG_TU, TIN_HIEU_GIAO_VIEC
+from tu_dien import (
+    DANH_SACH_DONG_TU,
+    MAU_CAU_GAN_CHU_CHO_VIEC,
+    MAU_VIEC_CHO_CHU,
+    TIN_HIEU_GIAO_VIEC,
+)
 from vet import ghi_vet
 
 # Từ mở đầu mệnh đề: không phải lý do để loại, chỉ bỏ ra rồi kiểm động từ trên phần còn lại
@@ -153,10 +158,49 @@ def lay_viec(cac_cau, ten_biet):
     """Dựng danh sách việc cần làm từ các câu đã làm sạch."""
     tasks = []
     last_task = None
+    viec_cho_chu = None
 
     for cau in cac_cau:
         text = cau["sach"].strip()
         stt_cau = cau.get("stt", None)
+
+        # Việc chờ chủ: chỉ xét câu liền sau; không gán được chủ thì hủy,
+        # tuyệt đối không tạo task không có chủ
+        if viec_cho_chu is not None:
+            if re.match(MAU_CAU_GAN_CHU_CHO_VIEC, text, flags=re.IGNORECASE):
+                chu_moi = lay_ten_nguoi_phan_anh(text, ten_biet)
+                if chu_moi:
+                    task_item = {
+                        "task": viec_cho_chu["mo_ta"],
+                        "owner": chu_moi,
+                        "deadline": None,
+                        "start": viec_cho_chu["start"],
+                    }
+                    tasks.append(task_item)
+                    last_task = task_item
+                    ghi_vet(
+                        "GAN_CHU_CHO_VIEC",
+                        viec_cho_chu["stt"],
+                        viec_cho_chu["mo_ta"],
+                        f"gắn {chu_moi}",
+                    )
+                else:
+                    ghi_vet(
+                        "HUY_VIEC_CHO_CHU",
+                        viec_cho_chu["stt"],
+                        viec_cho_chu["mo_ta"],
+                        "hủy: câu gán chủ nhưng không nhận ra người",
+                    )
+                viec_cho_chu = None
+            else:
+                ghi_vet(
+                    "HUY_VIEC_CHO_CHU",
+                    viec_cho_chu["stt"],
+                    viec_cho_chu["mo_ta"],
+                    "hủy: câu liền sau không gán chủ",
+                )
+                viec_cho_chu = None
+
         if not text or cau["xa_giao"]:
             ghi_vet("LOAI_XA_GIAO_RONG", stt_cau, text, "loại")
             continue
@@ -176,6 +220,18 @@ def lay_viec(cac_cau, ten_biet):
             ghi_vet("LOAI_MANH_CAU", stt_cau, text, "loại")
             continue
         ghi_vet("GIU_CAU", stt_cau, text, "giữ")
+
+        # Một việc nữa chưa có chủ: ghi nhớ việc chờ, chưa tạo task;
+        # câu liền sau gán chủ thì tạo, không thì hủy
+        khop_viec_moi = re.search(MAU_VIEC_CHO_CHU, text, flags=re.IGNORECASE)
+        if khop_viec_moi and lay_ten_nguoi_phan_anh(text, ten_biet) is None:
+            mo_ta_cho = khop_viec_moi.group("mo_ta").strip()
+            viec_cho_chu = {
+                "mo_ta": mo_ta_cho,
+                "stt": stt_cau,
+                "start": cau["start"],
+            }
+            ghi_vet("VIEC_CHO_CHU", stt_cau, text, f"ghi nhớ: {mo_ta_cho}")
 
         clauses = [part.strip() for part in re.split(r"\s*,\s*", text) if part.strip()]
         sentence_owner = None

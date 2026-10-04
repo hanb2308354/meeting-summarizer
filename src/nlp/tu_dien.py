@@ -67,6 +67,25 @@ TIN_HIEU_GIAO_VIEC = (
     "cần",
 )
 
+# Câu giới thiệu việc chưa có chủ: "(còn) một việc nữa/tiếp theo là <mô tả>".
+# Không neo đầu câu (có thể có từ đệm như "À"); neo cuối để mô tả lấy hết
+# phần sau "là", dấu câu cuối không thuộc mô tả.
+MAU_VIEC_CHO_CHU = (
+    r"(?:còn\s+)?"
+    r"(?:một\s+việc\s+nữa\s+là|việc\s+nữa\s+là|một\s+việc\s+là|tiếp\s+theo\s+là)"
+    r"\s+(?P<mo_ta>\S.*?)(?:\s*[,.;:!?]\s*)?$"
+)
+
+# Câu gán chủ cho việc chờ: bắt đầu bằng "việc này/việc đó" kèm cụm gán chủ
+# "để (mình|tôi|em) (sẽ) làm/phụ trách" hoặc "<bạn...> Tên (sẽ) làm/phụ trách"
+MAU_CAU_GAN_CHU_CHO_VIEC = (
+    r"^việc\s+(?:này|đó)\s+"
+    r"(?:"
+    r"để\s+(?:mình|tôi|em)\s+(?:sẽ\s+)?(?:làm|phụ\s+trách)"
+    r"|(?:bạn\s+)?[A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+)?\s+(?:sẽ\s+)?(?:làm|phụ\s+trách)"
+    r")"
+)
+
 # --- Hằng số của phần tiền xử lý (nguồn: tien_xu_ly.py) ---
 # Lỗi Whisper hay nhận sai (mẫu -> sửa lại). Thêm dần khi gặp lỗi mới
 SUA_LOI = [
