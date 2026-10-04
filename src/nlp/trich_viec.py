@@ -21,38 +21,6 @@ def la_de_muc(phan):
     return False
 
 
-def tach_menh_de(cau):
-    """Tách câu thành mệnh đề theo dấu phẩy nhưng không tách giữa hai chữ số."""
-    ket_qua = []
-    tam = []
-    i = 0
-    while i < len(cau):
-        ky_tu = cau[i]
-        if ky_tu == ",":
-            if i + 1 < len(cau) and cau[i - 1].isdigit() and cau[i + 1].isdigit():
-                tam.append(ky_tu)
-            else:
-                phan = "".join(tam).strip()
-                if phan:
-                    ket_qua.append(phan)
-                tam = []
-        else:
-            tam.append(ky_tu)
-        i += 1
-    phan = "".join(tam).strip()
-    if phan:
-        ket_qua.append(phan)
-
-    ket_qua = [p.strip() for p in ket_qua if p.strip()]
-    ket_qua_ban_sau = []
-    for p in ket_qua:
-        if len(p.split()) <= 2 and ket_qua_ban_sau:
-            ket_qua_ban_sau[-1] = f"{ket_qua_ban_sau[-1]}, {p}"
-        else:
-            ket_qua_ban_sau.append(p)
-    return ket_qua_ban_sau
-
-
 def co_dong_tu_hanh_dong(van_ban):
     """Mệnh đề có động từ hành động thì coi là việc cần làm."""
     van_ban = van_ban.lower().strip()

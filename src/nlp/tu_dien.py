@@ -1,14 +1,6 @@
 # Bảng cấu hình dùng chung cho phần NLP (chỉ hằng số mức module, không import gì)
 
 # --- Hằng số của phần trích xuất (nguồn: trich_xuat.py) ---
-THU_MUC_CAU = [
-    "đầu tiên là",
-    "tiếp theo là",
-    "thứ",
-    "cuối cùng là",
-    "tiếp theo đó là",
-]
-
 DANH_SACH_DONG_TU = (
     "làm",
     "update",
@@ -30,15 +22,6 @@ DANH_SACH_DONG_TU = (
     "nhớ",
     "thực hiện",
 )
-
-DANH_SACH_HAN_CHOT = [
-    r"(?:deadline|hạn chót|chậm nhất)\s*(?:là|:)\s*(.+?)(?:\.|$)",
-    r"\btrước\s+(.+?)(?:\.|$)",
-    r"\bngày\s+\d+\s+tháng\s+\d+\b",
-    r"\bthứ\s+\d+\s+(?:tuần\s+(?:này|sau)|\w+)",
-    r"\bchủ nhật\b",
-    r"\bcuối\s+tuần\b",
-]
 
 DANH_SACH_TU_CHUC_NANG = {
     "nào",
