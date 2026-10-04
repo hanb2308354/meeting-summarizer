@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from chay_nlp import chay_nlp
+from bat_bien import kiem_bat_bien_task
 from dap_an import DAP_AN
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -16,7 +17,7 @@ DONG_TU_HANH_DONG = (
     "phụ trách", "chạy", "test", "thiết kế", "hoàn thành", "nộp", "điều",
     "xong", "hỗ trợ", "nhớ", "thực hiện", "cố gắng", "gửi"
 )
-TU_MANG_Y_NGIA = ("làm", "update", "sửa", "fix", "viết", "gửi", "upload", "cập nhật", "chạy", "xong", "test", "giao")
+TU_MANG_Y_NGIA = ("làm", "update", "sửa", "fix", "viết", "gửi", "upload", "cập nhật", "chạy", "test", "giao")
 TU_REJECT = {"làm", "để", "phụ trách", "xong", "test chung", "ai", "hôm", "nếu"}
 TU_CHUC_NANG = {
     "mình", "tôi", "em", "anh", "chị", "bạn", "làm", "để", "sẽ", "phải",
@@ -352,6 +353,15 @@ def kiem_tra_file(ten_file):
                 "task",
                 "TASK_INVALID_OUTPUT",
                 f"task không hợp lệ {mo_ta_task(task)!r}: {'; '.join(ly_do_task)}",
+            )
+
+    for task in tasks:
+        vi_pham = kiem_bat_bien_task(task)
+        if vi_pham:
+            ghi_loi(
+                "task",
+                "TASK_INVARIANT_VIOLATION",
+                f"việc {mo_ta_task(task)!r} vi phạm: {'; '.join(vi_pham)}",
             )
 
     so_quyet_dinh = len(ket_qua.get("decisions", []))
