@@ -1,0 +1,56 @@
+[
+  {
+    "speaker": "SPEAKER_00",
+    "start": 0.0,
+    "end": 2.5,
+    "text": "ờm chào mọi người nha, mình bắt đầu buổi họp spring mới."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 3.0,
+    "end": 6.2,
+    "text": "đầu tiên là phần giao diện. hôm trước chốt là team mình dùng view rồi nhé."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 6.5,
+    "end": 9.0,
+    "text": "thì phần này bạn long sẽ phụ trách update lại cái trang chủ nha."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 9.5,
+    "end": 11.0,
+    "text": "deadline là thứ 5 tuần này."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 11.5,
+    "end": 15.0,
+    "text": "thứ 2 là về tính năng đăng nhập. phần back-end khi bạn nam sẽ làm api đăng nhập."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 15.5,
+    "end": 19.5,
+    "text": "hạn chót là 20 tháng 11, kèm theo việc viết luôn document nha nam."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 20.0,
+    "end": 23.0,
+    "text": "ok phần database để mình làm, mình sẽ rà soát lại trước ngày mai."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 23.5,
+    "end": 26.0,
+    "text": "thống nhất là thêm cột sđt vào bảng user nhé."
+  },
+  {
+    "speaker": "SPEAKER_00",
+    "start": 26.5,
+    "end": 30.0,
+    "text": "có ai có câu hỏi gì không. buổi họp tiếp theo là 9h sáng thứ 2 tuần sau tại phòng họp lớn."
+  }
+]
