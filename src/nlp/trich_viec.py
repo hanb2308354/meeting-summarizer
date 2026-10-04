@@ -5,19 +5,25 @@ from nhan_dien_han import tim_han_chot
 from nhan_dien_ten import lay_ten_nguoi_phan_anh
 from trich_lich_hop import la_lich_hop
 from tu_dien import DANH_SACH_DONG_TU
+from vet import ghi_vet
 
 
 def la_de_muc(phan):
     """Nhận diện các câu đề mục không mang việc như 'Đầu tiên là phần API'"""
     phan = phan.strip()
     if not phan:
+        ghi_vet("LOAI_DE_MUC", None, phan, "loại")
         return True
     if re.match(r"^(đầu tiên|tiếp theo|cuối cùng|tiếp theo đó)\s+là\b", phan, flags=re.IGNORECASE):
+        ghi_vet("LOAI_DE_MUC", None, phan, "loại")
         return True
     if re.match(r"^thứ\s+\d+\s+là\b", phan, flags=re.IGNORECASE):
+        ghi_vet("LOAI_DE_MUC", None, phan, "loại")
         return True
     if re.match(r"^(?:phần|mục)\s+.*$", phan, flags=re.IGNORECASE):
+        ghi_vet("LOAI_DE_MUC", None, phan, "loại")
         return True
+    ghi_vet("LOAI_DE_MUC", None, phan, "giữ")
     return False
 
 
@@ -31,12 +37,19 @@ def co_dong_tu_hanh_dong(van_ban):
         flags=re.IGNORECASE,
     )
     if not van_ban:
+        ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "loại")
         return False
     if re.fullmatch(r"(?:để|phụ trách|làm|xong)\s*[,.;]?\s*", van_ban):
+        ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "loại")
         return False
     if re.fullmatch(r"(?:mình|tôi|em|việc này|còn|thứ|phần|bên)\b.*", van_ban):
+        ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "loại")
         return False
-    return bool(re.search(r"\b(?:làm|update|sửa|fix|viết|gửi|upload|cập nhật|phụ trách|chạy|test|thiết kế|hoàn thành|nộp|xong|hỗ trợ|thực hiện|điều|cố gắng)\b", van_ban))
+    if re.search(r"\b(?:làm|update|sửa|fix|viết|gửi|upload|cập nhật|phụ trách|chạy|test|thiết kế|hoàn thành|nộp|xong|hỗ trợ|thực hiện|điều|cố gắng)\b", van_ban):
+        ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "giữ")
+        return True
+    ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "loại")
+    return False
 
 
 def cat_viec(van_ban, owner):
@@ -87,51 +100,71 @@ def lay_viec(cac_cau, ten_biet):
 
     for cau in cac_cau:
         text = cau["sach"].strip()
+        stt_cau = cau.get("stt", None)
         if not text or cau["xa_giao"]:
+            ghi_vet("LOAI_XA_GIAO_RONG", stt_cau, text, "loại")
             continue
         if la_lich_hop(text):
+            ghi_vet("LOAI_LICH_HOP", stt_cau, text, "loại")
             continue
         if la_de_muc(text):
+            ghi_vet("LOAI_DE_MUC", stt_cau, text, "loại")
             continue
         if re.search(r"\b[A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*\s+làm\b.*?,\s*[A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*\s+làm\b", text, flags=re.IGNORECASE):
+            ghi_vet("LOAI_LIET_KE_NGUOI", stt_cau, text, "loại")
             continue
         if re.match(r"^(?:ok|cảm ơn|vậy thôi|chào)\b", text, flags=re.IGNORECASE):
+            ghi_vet("LOAI_CAU_XA_GIAO", stt_cau, text, "loại")
             continue
         if re.fullmatch(r"(?:để|phụ trách|làm)\b.*", text, flags=re.IGNORECASE):
+            ghi_vet("LOAI_MANH_CAU", stt_cau, text, "loại")
             continue
+        ghi_vet("GIU_CAU", stt_cau, text, "giữ")
 
         clauses = [part.strip() for part in re.split(r"\s*,\s*", text) if part.strip()]
         sentence_owner = None
 
         for clause in clauses:
             if not clause:
+                ghi_vet("LOAI_MENH_DE_RONG", stt_cau, clause, "loại")
                 continue
             if re.match(r"^(?:nếu không|vậy thôi|cảm ơn|ok|chào)\b", clause, flags=re.IGNORECASE):
+                ghi_vet("LOAI_MENH_DE_XA_GIAO", stt_cau, clause, "loại")
                 continue
             if re.search(r"\bđã\s+.*\bxong\b", clause, flags=re.IGNORECASE):
+                ghi_vet("LOAI_DA_XONG", stt_cau, clause, "loại")
                 continue
             if re.fullmatch(r"(?:để|phụ trách|làm|xong|test chung|có ai.*|ai.*\?)", clause, flags=re.IGNORECASE):
+                ghi_vet("LOAI_MANH_CAU_NGAN", stt_cau, clause, "loại")
                 continue
 
             if re.match(r"^(?:deadline|hạn chót|hạn)\b", clause, flags=re.IGNORECASE):
                 han = tim_han_chot(clause)
                 if han and last_task and last_task["deadline"] is None:
+                    ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, f"gắn {han[0]}")
                     last_task["deadline"] = han[0]
+                else:
+                    ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, "loại")
                 continue
 
             owner = lay_ten_nguoi_phan_anh(clause, ten_biet)
             if owner is not None:
+                ghi_vet("GAN_CHU_VIEC", stt_cau, clause, f"gắn {owner}")
                 sentence_owner = owner
                 if not co_dong_tu_hanh_dong(clause):
+                    ghi_vet("LOAI_KHONG_DONG_TU", stt_cau, clause, "loại")
                     continue
                 task_text = cat_viec(clause, owner)
                 if not task_text or task_text.lower() in {"họp", "đầu tiên là", "tiếp theo là", "điều này", "theo điều này"}:
+                    ghi_vet("LOAI_MO_TA_RONG", stt_cau, clause, "loại")
                     continue
                 task_item = {"task": task_text, "owner": owner, "deadline": None, "start": cau["start"]}
                 tasks.append(task_item)
                 last_task = task_item
+                ghi_vet("TAO_VIEC", stt_cau, clause, f"giữ {owner}: {task_text}")
                 han = tim_han_chot(clause)
                 if han and task_item["deadline"] is None:
+                    ghi_vet("GAN_HAN_TRUC_TIEP", stt_cau, clause, f"gắn {han[0]}")
                     task_item["deadline"] = han[0]
                 continue
 
@@ -139,14 +172,20 @@ def lay_viec(cac_cau, ten_biet):
                 task_text = cat_viec(clause, sentence_owner)
                 if task_text and task_text.lower() not in {"họp", "đầu tiên là", "tiếp theo là", "điều này", "theo điều này"}:
                     if last_task and last_task["owner"] == sentence_owner and last_task["start"] == cau["start"] and re.search(r"\b(?:và|cùng|cũng|đồng thời)\b", clause, flags=re.IGNORECASE):
+                        ghi_vet("GOP_VIEC", stt_cau, clause, f"gộp {sentence_owner}: {task_text}")
                         last_task["task"] = f"{last_task['task']}, {task_text}"
                     else:
                         task_item = {"task": task_text, "owner": sentence_owner, "deadline": None, "start": cau["start"]}
                         tasks.append(task_item)
                         last_task = task_item
+                        ghi_vet("TAO_VIEC", stt_cau, clause, f"giữ {sentence_owner}: {task_text}")
                     han = tim_han_chot(clause)
                     if han and last_task["deadline"] is None:
+                        ghi_vet("GAN_HAN_TRUC_TIEP", stt_cau, clause, f"gắn {han[0]}")
                         last_task["deadline"] = han[0]
+                else:
+                    ghi_vet("LOAI_MO_TA_RONG", stt_cau, clause, "loại")
                 continue
+            ghi_vet("LOAI_KHONG_CHU_VIEC", stt_cau, clause, "loại")
 
     return tasks
