@@ -11,6 +11,8 @@ Hôm nay mình họp để chia việc cho Sprint tiếp theo của project qu�
 | Việc | Người phụ trách | Hạn chót |
 |---|---|---|
 | update lại database. | Khoa | thứ 3 tuần sau |
+| các API thêm sách | Vi | Chưa rõ |
+| sửa sách với xóa sách. | Vi | Chưa rõ |
 | viết document cho từng API luôn | Vi | ngày 25 tháng 10 |
 | làm trang tìm kiếm sách. | Phúc | Chưa rõ |
 | xong trước chủ nhật | Phúc | chủ nhật |

@@ -4,7 +4,7 @@ import re
 from nhan_dien_han import tim_han_chot
 from nhan_dien_ten import lay_ten_nguoi_phan_anh
 from trich_lich_hop import la_lich_hop
-from tu_dien import DANH_SACH_DONG_TU
+from tu_dien import DANH_SACH_DONG_TU, TIN_HIEU_GIAO_VIEC
 from vet import ghi_vet
 
 
@@ -21,8 +21,13 @@ def la_de_muc(phan):
         ghi_vet("LOAI_DE_MUC", None, phan, "loại")
         return True
     if re.match(r"^(?:phần|mục)\s+.*$", phan, flags=re.IGNORECASE):
-        ghi_vet("LOAI_DE_MUC", None, phan, "loại")
-        return True
+        # Câu mở đầu bằng "Phần/Mục" nhưng chứa tín hiệu giao việc thì không phải đề mục
+        if not any(
+            re.search(rf"\b{re.escape(tin_hieu)}\b", phan, flags=re.IGNORECASE)
+            for tin_hieu in TIN_HIEU_GIAO_VIEC
+        ):
+            ghi_vet("LOAI_DE_MUC", None, phan, "loại")
+            return True
     ghi_vet("LOAI_DE_MUC", None, phan, "giữ")
     return False
 

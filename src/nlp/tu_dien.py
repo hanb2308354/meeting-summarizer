@@ -57,6 +57,16 @@ DANH_SACH_TU_CHUC_NANG = {
     "ok",
 }
 
+# Tín hiệu cho thấy câu đang giao việc (không phải đề mục dù mở đầu bằng
+# "Phần/Mục"). Dùng trong la_de_muc (trich_viec.py).
+TIN_HIEU_GIAO_VIEC = (
+    "giao cho",
+    "phụ trách",
+    "sẽ",
+    "phải",
+    "cần",
+)
+
 # --- Hằng số của phần tiền xử lý (nguồn: tien_xu_ly.py) ---
 # Lỗi Whisper hay nhận sai (mẫu -> sửa lại). Thêm dần khi gặp lỗi mới
 SUA_LOI = [
