@@ -1,7 +1,7 @@
 # Nhận diện tên người trong câu transcript đã làm sạch
 import re
 
-from tu_dien import DANH_SACH_TU_CHUC_NANG
+from tu_dien import DANH_SACH_DONG_TU, DANH_SACH_TU_CHUC_NANG
 
 
 def chuan_hoa_ten(ten):
@@ -13,7 +13,8 @@ def chuan_hoa_ten(ten):
         return ten
     chuoi = []
     for phan in ten.split():
-        if phan.lower() in {"bạn", "anh", "chị", "em", "cô", "thầy"}:
+        # Danh xưng hợp lệ; "thầy" không tính (giảng viên, không tham dự họp)
+        if phan.lower() in {"bạn", "anh", "chị", "em", "cô", "chú"}:
             continue
         chuoi.append(phan[0].upper() + phan[1:] if phan else phan)
     return " ".join(chuoi)
@@ -22,6 +23,92 @@ def chuan_hoa_ten(ten):
 def loai_bo_ten_cong_ty(van_ban):
     """Bỏ cụm tên công ty/tổ chức khỏi danh sách tên người để tránh nhầm người."""
     return re.sub(r"\bcông ty\s+[A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+)?", "", van_ban, flags=re.IGNORECASE)
+
+
+# Danh xưng hợp lệ (quy tắc a): chỉ nhận tên người khi đứng sau danh xưng này
+# hoặc khi là chữ viết hoa giữa câu (quy tắc b). "thầy" không dùng vì đó là
+# giảng viên, không phải người trong cuộc họp.
+DANH_XUNG = r"(?:bạn|anh|chị|em|cô|chú)"
+
+
+def _la_dau_cau(van_ban, vi_tri):
+    """Vị trí có phải đầu câu (đầu chuỗi hoặc sau dấu . ! ?) không."""
+    if vi_tri <= 0:
+        return True
+    return re.search(r"[.!?]\s*$", van_ban[:vi_tri]) is not None
+
+
+def _tu_hop_le_sau_danh_xung(danh, chu_dau):
+    """Quy tắc (a): chữ đầu sau danh xưng.
+    "cô/chú" chỉ nhận tên khi chữ đứng sau viết hoa (isupper() trên ký tự đầu);
+    "bạn/anh/chị/em" vẫn nhận chữ thường như trước, trừ khi chữ thường đó
+    nằm trong DANH_SACH_TU_CHUC_NANG hoặc DANH_SACH_DONG_TU.
+    """
+    if not chu_dau or chu_dau.lower() in DANH_SACH_TU_CHUC_NANG:
+        return None
+    if danh and danh.strip().lower() in {"cô", "chú"}:
+        if not chu_dau[0].isupper():
+            return None
+    elif chu_dau.lower() in DANH_SACH_DONG_TU and not chu_dau[0].isupper():
+        return None
+    return chuan_hoa_ten(chu_dau)
+
+
+def _tu_hop_le_viet_hoa(van_ban, vi_tri, chu_dau):
+    """Quy tắc (b): chữ viết hoa, không ở đầu câu, không từ chức năng, không sau "thầy"."""
+    if not chu_dau or not chu_dau[0].isupper():
+        return None
+    if chu_dau.lower() in DANH_SACH_TU_CHUC_NANG:
+        return None
+    if _la_dau_cau(van_ban, vi_tri):
+        return None
+    if re.search(r"thầy\s+$", van_ban[:vi_tri], flags=re.IGNORECASE):
+        return None
+    return chuan_hoa_ten(chu_dau)
+
+
+def _gop_chu_thu_hai(ten_name, chu_thu_hai):
+    """Chữ thứ hai chỉ gộp vào tên khi viết hoa và không phải từ chức năng hay động từ."""
+    if not chu_thu_hai:
+        return ten_name
+    chu_thu_hai = chu_thu_hai.strip()
+    if not chu_thu_hai[0].isupper():
+        return ten_name
+    if chu_thu_hai.lower() in DANH_SACH_TU_CHUC_NANG:
+        return ten_name
+    if chu_thu_hai.lower() in DANH_SACH_DONG_TU:
+        return ten_name
+    return f"{ten_name} {chu_thu_hai}"
+
+
+def _chu_hai_tai(van_ban, vi_tri):
+    """Chữ hoa ngay sau vị trí (nếu có) để gộp tên hai chữ."""
+    match = re.match(r"\s+([A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)", van_ban[vi_tri:])
+    return match.group(1) if match else None
+
+
+def _ten_tu_match(van_ban, match):
+    """Tên hợp lệ từ một match mẫu cấu trúc (quy tắc a/b), không thì None."""
+    groups = match.groupdict()
+    danh = groups.get("danh")
+    chu_dau = groups.get("chu_dau")
+    chu_hai = groups.get("chu_hai")
+    if not chu_dau:
+        return None
+    if danh is not None:
+        ten_name = _tu_hop_le_sau_danh_xung(danh, chu_dau)
+    else:
+        ten_name = _tu_hop_le_viet_hoa(van_ban, match.start("chu_dau"), chu_dau)
+    if ten_name is None:
+        return None
+    ten_name = _gop_chu_thu_hai(ten_name, chu_hai)
+    if any(tu.lower() in {"mình", "tôi", "em", "anh", "chị", "bạn"} for tu in ten_name.split()):
+        return None
+    if ten_name.lower() in DANH_SACH_TU_CHUC_NANG:
+        return None
+    if ten_name.lower() in {"mọi người", "người chủ trì"}:
+        return None
+    return ten_name
 
 
 def _ten_hop_le(ten_name):
@@ -33,6 +120,8 @@ def _ten_hop_le(ten_name):
         return False
     if ten_name.lower() in {"mình", "tôi", "em", "anh", "chị", "bạn", "mọi người", "người chủ trì", "để", "ok", "nếu", "còn", "về", "đầu", "tiếp", "xong", "phụ trách", "làm", "đã", "trước", "thứ", "hôm", "này"}:
         return False
+    if ten_name.lower() in DANH_SACH_TU_CHUC_NANG:
+        return False
     if re.fullmatch(r"(?:[A-ZÀ-Ỹa-zà-ỹ]+|[A-ZÀ-Ỹa-zà-ỹ]+\s+[A-ZÀ-Ỹa-zà-ỹ]+)", ten_name) is None:
         return False
     return len(ten_name.split()) <= 2
@@ -43,20 +132,28 @@ def tim_ten_biet(cac_cau):
     ten = set()
     for cau in cac_cau:
         text = loai_bo_ten_cong_ty(cau["sach"])
+
+        # (a) đứng sau danh xưng: "bạn Thanh Hà"; "bạn thảo" (thường, một chữ) vẫn nhận
         for match in re.finditer(
-            r"\b(?:bạn|anh|chị|em)\s+([A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)(?:\s+[A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)?\b",
+            rf"\b(?P<danh>{DANH_XUNG})\s+(?P<chu_dau>[A-ZÀ-Ỹa-zà-ỹ]+)",
             text,
             flags=re.IGNORECASE,
         ):
-            ten_name = chuan_hoa_ten(match.group(1))
+            ten_name = _tu_hop_le_sau_danh_xung(match.group("danh"), match.group("chu_dau"))
+            if ten_name is None:
+                continue
+            ten_name = _gop_chu_thu_hai(ten_name, _chu_hai_tai(text, match.end()))
             if _ten_hop_le(ten_name):
                 ten.add(ten_name)
 
+        # (b) chữ viết hoa trước động từ, không ở đầu câu, không phải từ chức năng
         for match in re.finditer(
-            r"\b([A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)(?=\s+(?:bên|làm|sẽ|phải|nên|cần|nhớ|gửi|viết|cập nhật|update|fix|sửa|upload|phụ trách|xong|chạy|theo|test|thiết kế))",
+            r"\b(?P<chu_dau>[A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)(?=\s+(?:bên|làm|sẽ|phải|nên|cần|nhớ|gửi|viết|cập nhật|update|fix|sửa|upload|phụ trách|xong|chạy|theo|test|thiết kế))",
             text,
         ):
-            ten_name = chuan_hoa_ten(match.group(1))
+            ten_name = _tu_hop_le_viet_hoa(text, match.start("chu_dau"), match.group("chu_dau"))
+            if ten_name is None:
+                continue
             if _ten_hop_le(ten_name):
                 ten.add(ten_name)
 
@@ -76,18 +173,23 @@ def lay_ten_nguoi_phan_anh(van_ban, ten_biet):
             if re.search(rf"\b(?:giao cho|phụ trách)\s+(?:bạn\s+)?{re.escape(ten)}\b", van_ban, flags=re.IGNORECASE):
                 return ten
 
+    # Mẫu tên theo cấu trúc (không viết cứng tên hay câu mẫu): có danh xưng
+    # (quy tắc a) hoặc chữ viết hoa giữa câu (quy tắc b); chữ thứ hai chỉ gộp
+    # khi viết hoa và không phải từ chức năng hay động từ (xem _gop_chu_thu_hai).
+    mau_ten = (
+        rf"(?P<danh>(?i:{DANH_XUNG})\s+)?"
+        r"(?P<chu_dau>[A-ZÀ-Ỹa-zà-ỹ]+)"
+        r"(?P<chu_hai>\s+[A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)?"
+    )
     for mau in [
-        r"\b(?:giao cho|phụ trách)\s+(?:bạn\s+)?([A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+)*)\b",
-        r"\b([A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+)*)\s+(?:sẽ|phải|nên)\s+",
-        r"\b([A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+)*)\s+(?:làm|viết|gửi|upload|update|fix|sửa|cập nhật|phụ trách|chạy|test)\b",
-        r"\b(?:bạn|anh|chị|em)\s+([A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+)*)\b.*(?:sẽ|phải|nên|làm|viết|gửi|update|fix|sửa|upload|cập nhật|chạy|test)\b",
+        rf"\b(?i:giao\s+cho|phụ\s+trách)\s+{mau_ten}",
+        rf"\b{mau_ten}\s+(?i:sẽ|phải|nên)\b",
+        rf"\b{mau_ten}\s+(?i:làm|viết|gửi|upload|update|fix|sửa|cập nhật|phụ trách|chạy|test)\b",
+        rf"\b(?P<danh>(?i:{DANH_XUNG})\s+)(?P<chu_dau>[A-ZÀ-Ỹa-zà-ỹ]+)(?P<chu_hai>\s+[A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)?\b.*(?i:sẽ|phải|nên|làm|viết|gửi|update|fix|sửa|upload|cập nhật|chạy|test)\b",
     ]:
-        match = re.search(mau, van_ban, flags=re.IGNORECASE)
-        if match:
-            ten_name = chuan_hoa_ten(match.group(1) if match.lastindex else match.group(0))
-            if any(word.lower() in {"mình", "tôi", "em", "anh", "chị", "bạn"} for word in ten_name.split()):
-                continue
-            if len(ten_name.split()) <= 2 and ten_name and ten_name.lower() not in DANH_SACH_TU_CHUC_NANG and ten_name.lower() not in {"mọi người", "người chủ trì"}:
+        for match in re.finditer(mau, van_ban):
+            ten_name = _ten_tu_match(van_ban, match)
+            if ten_name:
                 return ten_name
 
     if re.search(r"\b(mình|tôi|em)\b.*\b(làm|sẽ|gửi|viết|update|fix|upload|cập nhật|xong)\b", van_ban, flags=re.IGNORECASE):

@@ -14,13 +14,12 @@ KHOANG_CACH_CAU = 4.0
 # Mỗi ca: ten (tên hiển thị), cau (một hoặc vài câu liền nhau), mong_doi
 # ("không có việc" hoặc danh sách (chủ, từ khóa nội dung, hạn; hạn so khớp
 # bằng hoặc None)), dang_loi_da_biet (True nếu ca KHÔNG ĐẠT do chức năng
-# chưa làm, False nếu lỗi lạ).
+# chưa làm; thiếu trường này nghĩa là lỗi lạ).
 DANH_SACH_CA = (
     {
         "ten": "Góp ý 'nên' không phải giao việc",
         "cau": ["Theo anh thì nên gửi báo giá sớm hơn."],
         "mong_doi": "không có việc",
-        "dang_loi_da_biet": True,
     },
     {
         "ten": "Câu điều kiện 'nếu làm theo cách cũ'",
@@ -90,6 +89,28 @@ DANH_SACH_CA = (
         ],
         "mong_doi": "không có việc",
         "dang_loi_da_biet": False,
+    },
+    {
+        "ten": "Tên hai chữ 'Thanh Hà'",
+        "cau": ["Chị Thanh Hà sẽ gửi báo cáo trước thứ 6."],
+        "mong_doi": [("Thanh Hà", "báo cáo", "thứ 6")],
+        "dang_loi_da_biet": False,
+    },
+    {
+        "ten": "Câu điều kiện 'nếu ... thì sẽ'",
+        "cau": ["Nếu mọi người đồng ý thì sẽ chốt luôn."],
+        "mong_doi": "không có việc",
+        "dang_loi_da_biet": False,
+    },
+    {
+        # Đỏ do trich_viec.cat_viec (ngoài C2, không được sửa): cụm
+        # "\b(?:bạn|anh|chị|em)\s+<tên>" bỏ "anh Bảo " trước, rồi cụm
+        # "giao cho <từ>" nuốt luôn động từ "nộp" → mô tả thiếu "nộp".
+        # Chứng minh độc lập: thay "chú giải" bằng "biên soạn" cũng mất "nộp".
+        "ten": "Chú giải giao cho anh Bảo",
+        "cau": ["Phần chú giải giao cho anh Bảo nộp trước chủ nhật."],
+        "mong_doi": [("Bảo", "nộp", "chủ nhật")],
+        "dang_loi_da_biet": True,
     },
 )
 
@@ -198,7 +219,7 @@ def chay_kiem_cau():
             so_dat += 1
             print(f"ĐẠT | ca {chi_so}: {ca['ten']}")
             continue
-        if ca["dang_loi_da_biet"]:
+        if ca.get("dang_loi_da_biet", False):
             loi_da_biet += 1
         else:
             loi_la += 1
@@ -206,7 +227,7 @@ def chay_kiem_cau():
         print(f"  Việc thực tế ({len(tasks)}): {so_viec(tasks)!r}")
         if thieu:
             print(f"  Việc thiếu ({len(thieu)}): {thieu!r}")
-        if ca["dang_loi_da_biet"]:
+        if ca.get("dang_loi_da_biet", False):
             print("  Đang lỗi đã biết (dang_loi_da_biet=True)")
     tong = len(DANH_SACH_CA)
     print(

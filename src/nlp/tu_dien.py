@@ -55,6 +55,19 @@ DANH_SACH_TU_CHUC_NANG = {
     "vậy",
     "hôm",
     "ok",
+    # Liên từ, trạng từ nối câu và từ nối: không bao giờ là tên người (C2)
+    "thì",
+    "mà",
+    "nên",
+    "rồi",
+    "theo",
+    "khi",
+    "vì",
+    "để",
+    "và",
+    "cũng",
+    # "thầy" là danh xưng giảng viên: không nhận là người trong cuộc họp (C2)
+    "thầy",
 }
 
 # Tín hiệu cho thấy câu đang giao việc (không phải đề mục dù mở đầu bằng
