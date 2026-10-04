@@ -10,22 +10,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from doc_transcript import doc_transcript
 from tien_xu_ly import tien_xu_ly
+from tu_dien import DIEM_BO_SUNG, SO_CAU_TOI_DA, SO_CAU_TOI_THIEU
 
 sys.stdout.reconfigure(encoding="utf-8")
-
-SO_CAU_TOI_THIEU = 2
-SO_CAU_TOI_DA = 5
-DIEM_BO_SUNG = {
-    "chốt": 0.35,
-    "thống nhất": 0.35,
-    "quyết định": 0.4,
-    "đồng ý": 0.3,
-    "%": 0.15,
-    "tỷ": 0.15,
-    "hôm nay": 0.1,
-    "mục tiêu": 0.15,
-    "tối thiểu": 0.15,
-}
 
 
 def chon_cau_ung_vien(cac_cau):

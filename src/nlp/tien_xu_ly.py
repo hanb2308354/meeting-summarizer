@@ -7,34 +7,15 @@ from pathlib import Path
 from pyvi import ViTokenizer
 
 from doc_transcript import doc_transcript
+from tu_dien import (
+    MAU_XA_GIAO,
+    SO_TU_TOI_DA_XA_GIAO,
+    SUA_LOI,
+    TU_DEM,
+)
 
 # In tiếng Việt bằng UTF-8, tránh lỗi bảng mã trên PowerShell
 sys.stdout.reconfigure(encoding="utf-8")
-
-# Lỗi Whisper hay nhận sai (mẫu -> sửa lại). Thêm dần khi gặp lỗi mới
-SUA_LOI = [
-    (r"\bSpring\b", "Sprint"),
-    (r"\bshopping\b", "Shopee"),
-    (r"\breact\b", "React"),
-    (r"\b(dùng|không dùng)\s+view\b", r"\1 Vue"),
-    (r"\bview\b", "Vue"),
-    (r"\bFacebook\b", "Facebook"),
-    (r"\bTikTok\b", "TikTok"),
-    (r"\bGoogle Drive\b", "Google Drive"),
-    (r"\bGoogle Meet\b", "Google Meet"),
-    (r"\bMessenger\b", "Messenger"),
-    (r"\bAPI\b", "API"),
-    (r"\bSprint\b", "Sprint"),
-]
-
-TU_DEM = r"\b(?:ờ|ừm|à|ạ|nha|nhé|á|ok)\b"
-MAU_XA_GIAO = [
-    r"cảm ơn",
-    r"có ai.*(câu hỏi|ý kiến)",
-    r"bắt đầu.*(họp|meeting)",
-    r"vào đủ rồi",
-]
-SO_TU_TOI_DA_XA_GIAO = 15
 
 
 def sua_loi_nhan_dang(van_ban):

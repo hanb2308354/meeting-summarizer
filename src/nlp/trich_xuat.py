@@ -5,82 +5,14 @@ from pathlib import Path
 
 from doc_transcript import doc_transcript
 from tien_xu_ly import tien_xu_ly
-
-sys.stdout.reconfigure(encoding="utf-8")
-
-THU_MUC_CAU = [
-    "đầu tiên là",
-    "tiếp theo là",
-    "thứ",
-    "cuối cùng là",
-    "tiếp theo đó là",
-]
-
-DANH_SACH_DONG_TU = (
-    "làm",
-    "update",
-    "sửa",
-    "fix",
-    "viết",
-    "gửi",
-    "upload",
-    "cập nhật",
-    "phụ trách",
-    "chạy",
-    "test",
-    "thiết kế",
-    "hoàn thành",
-    "nộp",
-    "điều",
-    "xong",
-    "hỗ trợ",
-    "nhớ",
-    "thực hiện",
+from tu_dien import (
+    DANH_SACH_DONG_TU,
+    DANH_SACH_HAN_CHOT,
+    DANH_SACH_TU_CHUC_NANG,
+    THU_MUC_CAU,
 )
 
-DANH_SACH_HAN_CHOT = [
-    r"(?:deadline|hạn chót|chậm nhất)\s*(?:là|:)\s*(.+?)(?:\.|$)",
-    r"\btrước\s+(.+?)(?:\.|$)",
-    r"\bngày\s+\d+\s+tháng\s+\d+\b",
-    r"\bthứ\s+\d+\s+(?:tuần\s+(?:này|sau)|\w+)",
-    r"\bchủ nhật\b",
-    r"\bcuối\s+tuần\b",
-]
-
-DANH_SACH_TU_CHUC_NANG = {
-    "nào",
-    "nữa",
-    "bên",
-    "trước",
-    "sau",
-    "là",
-    "sẽ",
-    "phải",
-    "làm",
-    "gửi",
-    "có",
-    "cần",
-    "ơi",
-    "ấy",
-    "kia",
-    "đó",
-    "tuần",
-    "tháng",
-    "mình",
-    "mọi",
-    "ai",
-    "này",
-    "nơi",
-    "tiếp",
-    "còn",
-    "về",
-    "đầu",
-    "nếu",
-    "vậy",
-    "hôm",
-    "ok",
-}
-
+sys.stdout.reconfigure(encoding="utf-8")
 
 
 def chuan_hoa_ten(ten):
