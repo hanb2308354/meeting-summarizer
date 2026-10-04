@@ -223,6 +223,12 @@ def lay_ten_nguoi_phan_anh(van_ban, ten_biet):
 def co_dong_tu_hanh_dong(van_ban):
     """Mệnh đề có động từ hành động thì coi là việc cần làm."""
     van_ban = van_ban.lower().strip()
+    van_ban = re.sub(
+        r"^(?:vì vậy|do đó|ngoài ra|tuy nhiên|nhưng|nên|còn)\b\s*,?\s*",
+        "",
+        van_ban,
+        flags=re.IGNORECASE,
+    )
     if not van_ban:
         return False
     if re.fullmatch(r"(?:để|phụ trách|làm|xong)\s*[,.;]?\s*", van_ban):
