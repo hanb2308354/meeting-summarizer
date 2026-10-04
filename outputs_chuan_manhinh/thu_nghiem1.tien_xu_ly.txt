@@ -1,0 +1,20 @@
+ 0. [xã giao] mọi người vào đủ rồi thì mình bắt đầu.
+ 1. Hôm nay mình họp để chia việc cho Sprint tiếp theo của project quản lý thư viện.
+ 2. Đầu tiên là phần database.
+ 3. Tuần trước bạn Khoa đã thiết kế xong sơ đồ, nhưng thầy review thì nói bảng mượn sách, còn thiếu cột ngày trả.
+ 4. Nên bạn Khoa update lại database.
+ 5. Deadline là thứ 3 tuần sau.
+ 6. Tiếp theo là phần API.
+ 7. Phần này giao cho bạn Vi phụ trách, làm các API thêm sách, sửa sách với xóa sách.
+ 8. Vi nhớ viết document cho từng API luôn, để bên frontend biết đường gọi.
+ 9. Hạn chót là ngày 25 tháng 10.
+10. Còn phần giao diện, bạn Phúc sẽ làm trang tìm kiếm sách.
+11. Mình đã chốt là dùng React chứ không dùng Vue nữa vì cả nhóm quen React hơn.
+12. Phúc cố gắng xong trước chủ nhật, để thứ 2 mình test chung.
+13. còn một việc nữa là viết báo cáo chương 1.
+14. Việc này để mình làm, mình sẽ gửi bản draft lên Google Drive trước thứ 6.
+15. [xã giao] Có ai có câu hỏi gì không?
+16. Khoa làm database, Vi làm API, Phúc làm giao diện.
+17. Mình viết báo cáo buổi họp sau là tối thứ 4 lúc 8 giờ.
+18. Họp online trên Google Meet.
+19. [xã giao] cảm ơn mọi người.

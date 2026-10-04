@@ -13,6 +13,7 @@ Không có
 | update lại | Người chủ trì | Chưa rõ |
 | lại trang chủ với trang đăng nhập. | Tuấn | thứ 4 tuần sau |
 | fix lỗi đăng ký tài khoản | Ngọc | ngày 20 tháng 10 |
+| upload lên Google Drive. | Mọi người | Chưa rõ |
 
 ## Cuộc họp tiếp theo
 - Thời gian: tối chủ nhật lúc 9h

@@ -1,0 +1,8 @@
+Quyết định:
+
+Việc cần làm:
+ - Lam: cập nhật bảng ánh xạ trước thứ 5 tuần sau. | thứ 5 tuần sau | 0.0
+ - Mai: viết danh mục trước thứ 4 tuần sau. | thứ 4 tuần sau | 20.4
+
+Họp tiếp theo:
+None

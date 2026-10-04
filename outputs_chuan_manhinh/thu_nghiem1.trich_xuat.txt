@@ -1,0 +1,12 @@
+Quyết định:
+ - Mình đã chốt là dùng React chứ không dùng Vue nữa vì cả nhóm quen React hơn. (start=31.86)
+
+Việc cần làm:
+ - Khoa: update lại database. | thứ 3 tuần sau | 13.86
+ - Vi: viết document cho từng API luôn | ngày 25 tháng 10 | 22.84
+ - Phúc: làm trang tìm kiếm sách. | không rõ | 28.66
+ - Phúc: xong trước chủ nhật | chủ nhật | 35.8
+ - Phúc: test chung. | test chung | 35.8
+
+Họp tiếp theo:
+{'time': 'tối thứ 4 lúc 8 giờ', 'place': 'online trên Google Meet', 'start': 50.42}

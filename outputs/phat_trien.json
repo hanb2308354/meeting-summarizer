@@ -1,0 +1,20 @@
+{
+  "source": "phat_trien.json",
+  "summary": "Còn chị Lam sẽ cập nhật bảng ánh xạ trước thứ 5 tuần sau. Riêng bảng lỗi trên bản demo, mình sẽ cập nhật checklist trước ngày 18 tháng 11.",
+  "decisions": [],
+  "tasks": [
+    {
+      "task": "cập nhật bảng ánh xạ trước thứ 5 tuần sau.",
+      "owner": "Lam",
+      "deadline": "thứ 5 tuần sau",
+      "start": 0.0
+    },
+    {
+      "task": "viết danh mục trước thứ 4 tuần sau.",
+      "owner": "Mai",
+      "deadline": "thứ 4 tuần sau",
+      "start": 20.4
+    }
+  ],
+  "next_meeting": null
+}

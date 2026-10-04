@@ -1,0 +1,11 @@
+Quyết định:
+ - Về giá bán thì lúc đầu mình định giảm giá 20% cho đơn hàng lớn, nhưng tính lại thì lợi nhuận quá thấp, nên ban giám đốc đã chốt là chỉ giảm 10%, kèm miễn phí vận chuyển, cuối cùng là KPI., Từ tháng này, mỗi nhân viên sales phải đạt tối thiểu 30 đơn hàng mỗi tháng. (start=39.12)
+
+Việc cần làm:
+ - Hạnh: Facebook và TikTok | không rõ | 18.5
+ - Hạnh: gửi kế hoạch chi tiết cho thứ 4 tuần này. | thứ 4 tuần này | 24.62
+ - Dũng: gửi báo giá cho họ chậm nhất là ngày 10 tháng 10. | ngày 10 tháng 10 | 34.52
+ - Thảo: gửi email cho toàn bộ nhân viên trước thứ 6 | thứ 6 | 53.24
+
+Họp tiếp theo:
+{'time': '9 giờ sáng thứ 2 tuần sau', 'place': 'tại phòng họp tầng 3', 'start': 59.28}

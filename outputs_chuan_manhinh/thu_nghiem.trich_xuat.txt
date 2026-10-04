@@ -1,0 +1,10 @@
+Quyết định:
+
+Việc cần làm:
+ - Người chủ trì: update lại | không rõ | 2.3
+ - Tuấn: lại trang chủ với trang đăng nhập. | thứ 4 tuần sau | 2.3
+ - Ngọc: fix lỗi đăng ký tài khoản | ngày 20 tháng 10 | 10.46
+ - Mọi người: upload lên Google Drive. | không rõ | 10.46
+
+Họp tiếp theo:
+{'time': 'tối chủ nhật lúc 9h', 'place': None, 'start': 19.22}
