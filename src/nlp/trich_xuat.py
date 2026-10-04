@@ -1,21 +1,13 @@
 # Trích xuất quyết định, việc cần làm, lịch họp tiếp theo từ transcript đã làm sạch
-import re
 import sys
 from pathlib import Path
 
 from doc_transcript import doc_transcript
-from nhan_dien_han import tim_han_chot
-from nhan_dien_ten import lay_ten_nguoi_phan_anh, tim_ten_biet
+from nhan_dien_ten import tim_ten_biet
 from tien_xu_ly import tien_xu_ly
-from trich_lich_hop import la_lich_hop, lay_lich_hop
+from trich_lich_hop import lay_lich_hop
 from trich_quyet_dinh import trich_quyet_dinh
-from trich_viec import co_dong_tu_hanh_dong, la_de_muc, lay_viec
-from tu_dien import (
-    DANH_SACH_DONG_TU,
-    DANH_SACH_HAN_CHOT,
-    DANH_SACH_TU_CHUC_NANG,
-    THU_MUC_CAU,
-)
+from trich_viec import lay_viec
 
 sys.stdout.reconfigure(encoding="utf-8")
 
