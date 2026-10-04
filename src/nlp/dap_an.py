@@ -25,12 +25,13 @@ DAP_AN = {
         ],
         "required_task_deadlines": [
             ("Khoa", "database", "thứ 3 tuần sau"),
-            ("Vi", "API", "ngày 25 tháng 10"),
+            ("Vi", "xóa sách", "ngày 25 tháng 10"),
             ("Vi", "document", "ngày 25 tháng 10"),
             ("Phúc", "trang tìm kiếm", "chủ nhật"),
             ("Người chủ trì", "bản draft", "thứ 6"),
         ],
         "next_meeting_time": "thứ 4",
+        "next_meeting_place": "online trên Google Meet",
         "decision_count": 1,
     },
     "thu_nghiem2.json": {

@@ -337,12 +337,12 @@ def kiem_tra_file(ten_file):
             )
 
     so_quyet_dinh = len(ket_qua.get("decisions", []))
-    quyet_dinh_dat = so_quyet_dinh >= dap_an["decision_count"]
+    quyet_dinh_dat = so_quyet_dinh == dap_an["decision_count"]
     if not quyet_dinh_dat:
         ghi_loi(
             "decision",
-            "DECISION_COUNT_BELOW_EXPECTATION",
-            f"số quyết định thực tế {so_quyet_dinh} ít hơn yêu cầu {dap_an['decision_count']}"
+            "DECISION_COUNT_MISMATCHED",
+            f"số quyết định thực tế {so_quyet_dinh} khác yêu cầu {dap_an['decision_count']}"
         )
 
     next_time = chuan_hoa(ket_qua.get("next_meeting", {}).get("time")) if ket_qua.get("next_meeting") else ""
@@ -361,6 +361,18 @@ def kiem_tra_file(ten_file):
             "NEXT_MEETING_TIME_MISSING_OR_MISMATCHED",
             f"không có thời gian họp tiếp theo hợp lệ; giá trị thực tế: {next_time!r}"
         )
+
+    dia_diem_mong_muon = dap_an.get("next_meeting_place")
+    if isinstance(dia_diem_mong_muon, str) and chuan_hoa(dia_diem_mong_muon):
+        dia_diem_thuc_te = chuan_hoa((ket_qua.get("next_meeting") or {}).get("place"))
+        dia_diem_dat = dia_diem_thuc_te == chuan_hoa(dia_diem_mong_muon)
+        if not dia_diem_dat:
+            lich_hop_dat = False
+            ghi_loi(
+                "next_meeting",
+                "NEXT_MEETING_PLACE_MISMATCHED",
+                f"địa điểm họp tiếp theo thực tế {dia_diem_thuc_te!r} khác yêu cầu {chuan_hoa(dia_diem_mong_muon)!r}"
+            )
 
     task_dat = (
         len(tasks_hop_le) >= 1
