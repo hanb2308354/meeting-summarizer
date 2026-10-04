@@ -10,6 +10,24 @@
       "start": 0.0
     },
     {
+      "task": "cập nhật checklist trước ngày 18 tháng 11.",
+      "owner": "Người chủ trì",
+      "deadline": "ngày 18 tháng 11",
+      "start": 5.6
+    },
+    {
+      "task": "gửi bản tổng hợp trước thứ 6.",
+      "owner": "Người chủ trì",
+      "deadline": "thứ 6",
+      "start": 11.0
+    },
+    {
+      "task": "nộp bản đối chiếu trước chủ nhật.",
+      "owner": "Bảo",
+      "deadline": "chủ nhật",
+      "start": 15.4
+    },
+    {
       "task": "viết danh mục trước thứ 4 tuần sau.",
       "owner": "Mai",
       "deadline": "thứ 4 tuần sau",

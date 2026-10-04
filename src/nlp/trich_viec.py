@@ -7,6 +7,40 @@ from trich_lich_hop import la_lich_hop
 from tu_dien import DANH_SACH_DONG_TU, TIN_HIEU_GIAO_VIEC
 from vet import ghi_vet
 
+# Từ mở đầu mệnh đề: không phải lý do để loại, chỉ bỏ ra rồi kiểm động từ trên phần còn lại
+MO_DAU_MENH_DE = r"^(?:mình|tôi|em|việc\s+này|còn|thứ(?:\s+\d+)?|phần(?:\s+này)?|bên)\b\s*"
+
+# Cụm gán chủ đứng cuối mệnh đề: không có đối tượng công việc theo sau
+# "giao cho (bạn|anh|chị|em|cô|chú)? Tên (phụ trách)?", "Tên phụ trách", "để (mình|tôi|em) làm"
+CUM_GAN_CHU_CUOI = (
+    r"(?:"
+    r"giao\s+cho\s+(?:(?:bạn|anh|chị|em|cô|chú)\s+)?[a-zà-ỹ]+(?:\s+[a-zà-ỹ]+)?(?:\s+phụ\s+trách)?"
+    r"|[a-zà-ỹ]+(?:\s+[a-zà-ỹ]+)?\s+phụ\s+trách"
+    r"|để\s+(?:mình|tôi|em)\s+làm"
+    r")\s*[,.;:!?]*$"
+)
+
+
+def bo_mo_dau(van_ban):
+    """Bỏ từ mở đầu (và đại từ chủ ngữ) khỏi mệnh đề."""
+    return re.sub(MO_DAU_MENH_DE, "", van_ban, count=1, flags=re.IGNORECASE)
+
+
+def bo_cum_gan_chu_cuoi(van_ban):
+    """Bỏ cụm gán chủ đứng cuối mệnh đề, trả về phần còn lại; không có thì trả None."""
+    khop = re.search(CUM_GAN_CHU_CUOI, van_ban, flags=re.IGNORECASE)
+    if not khop:
+        return None
+    return (van_ban[: khop.start()] + van_ban[khop.end() :]).strip()
+
+
+def co_dong_tu_trong_danh_sach(phan):
+    """Phần còn lại có động từ hành động trong DANH_SACH_DONG_TU không."""
+    return any(
+        re.search(rf"\b{re.escape(dong_tu)}\b", phan, flags=re.IGNORECASE)
+        for dong_tu in DANH_SACH_DONG_TU
+    )
+
 
 def la_de_muc(phan):
     """Nhận diện các câu đề mục không mang việc như 'Đầu tiên là phần API'"""
@@ -32,8 +66,9 @@ def la_de_muc(phan):
     return False
 
 
-def co_dong_tu_hanh_dong(van_ban):
+def co_dong_tu_hanh_dong(van_ban, stt_cau=None):
     """Mệnh đề có động từ hành động thì coi là việc cần làm."""
+    van_ban_goc = van_ban.strip()
     van_ban = van_ban.lower().strip()
     van_ban = re.sub(
         r"^(?:vì vậy|do đó|ngoài ra|tuy nhiên|nhưng|nên|còn)\b\s*,?\s*",
@@ -47,10 +82,26 @@ def co_dong_tu_hanh_dong(van_ban):
     if re.fullmatch(r"(?:để|phụ trách|làm|xong)\s*[,.;]?\s*", van_ban):
         ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "loại")
         return False
-    if re.fullmatch(r"(?:mình|tôi|em|việc này|còn|thứ|phần|bên)\b.*", van_ban):
-        ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "loại")
+    # Cụm gán chủ đứng cuối mệnh đề: áp dụng cho mọi mệnh đề, chỉ loại nếu sau khi bỏ
+    # cụm không còn động từ hành động; nếu còn thì giữ rồi kiểm bình thường ở dưới
+    phan_gan_chu = bo_cum_gan_chu_cuoi(van_ban)
+    if phan_gan_chu is not None and not co_dong_tu_trong_danh_sach(phan_gan_chu):
+        ghi_vet(
+            "LOAI_KHONG_DONG_TU",
+            stt_cau,
+            van_ban_goc,
+            "loại: chỉ còn cụm gán chủ",
+        )
         return False
-    if re.search(r"\b(?:làm|update|sửa|fix|viết|gửi|upload|cập nhật|phụ trách|chạy|test|thiết kế|hoàn thành|nộp|xong|hỗ trợ|thực hiện|điều|cố gắng)\b", van_ban):
+    if re.match(MO_DAU_MENH_DE, van_ban, flags=re.IGNORECASE):
+        # Bỏ từ mở đầu rồi mới kiểm động từ hành động trên phần còn lại
+        phan_con = bo_mo_dau(van_ban)
+        if not phan_con:
+            ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "loại: bỏ từ mở đầu xong rỗng")
+            return False
+    else:
+        phan_con = van_ban
+    if re.search(r"\b(?:làm|update|sửa|fix|viết|gửi|upload|cập nhật|phụ trách|chạy|test|thiết kế|hoàn thành|nộp|xong|hỗ trợ|thực hiện|điều|cố gắng)\b", phan_con):
         ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "giữ")
         return True
     ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "loại")
@@ -156,7 +207,7 @@ def lay_viec(cac_cau, ten_biet):
             if owner is not None:
                 ghi_vet("GAN_CHU_VIEC", stt_cau, clause, f"gắn {owner}")
                 sentence_owner = owner
-                if not co_dong_tu_hanh_dong(clause):
+                if not co_dong_tu_hanh_dong(clause, stt_cau):
                     ghi_vet("LOAI_KHONG_DONG_TU", stt_cau, clause, "loại")
                     continue
                 task_text = cat_viec(clause, owner)
@@ -173,7 +224,7 @@ def lay_viec(cac_cau, ten_biet):
                     task_item["deadline"] = han[0]
                 continue
 
-            if sentence_owner and co_dong_tu_hanh_dong(clause):
+            if sentence_owner and co_dong_tu_hanh_dong(clause, stt_cau):
                 task_text = cat_viec(clause, sentence_owner)
                 if task_text and task_text.lower() not in {"họp", "đầu tiên là", "tiếp theo là", "điều này", "theo điều này"}:
                     if last_task and last_task["owner"] == sentence_owner and last_task["start"] == cau["start"] and re.search(r"\b(?:và|cùng|cũng|đồng thời)\b", clause, flags=re.IGNORECASE):

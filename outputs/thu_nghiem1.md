@@ -17,6 +17,7 @@ Hôm nay mình họp để chia việc cho Sprint tiếp theo của project qu�
 | làm trang tìm kiếm sách. | Phúc | Chưa rõ |
 | xong trước chủ nhật | Phúc | chủ nhật |
 | test chung. | Phúc | test chung |
+| gửi bản draft lên Google Drive trước thứ 6. | Người chủ trì | thứ 6 |
 
 ## Cuộc họp tiếp theo
 - Thời gian: tối thứ 4 lúc 8 giờ

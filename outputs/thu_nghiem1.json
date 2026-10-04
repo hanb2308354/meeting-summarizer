@@ -49,6 +49,12 @@
       "owner": "Phúc",
       "deadline": "test chung",
       "start": 35.8
+    },
+    {
+      "task": "gửi bản draft lên Google Drive trước thứ 6.",
+      "owner": "Người chủ trì",
+      "deadline": "thứ 6",
+      "start": 41.3
     }
   ],
   "next_meeting": {
