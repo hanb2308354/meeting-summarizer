@@ -203,12 +203,30 @@ def kiem_tra_file(ten_file):
         owner_key = chuan_hoa_chu(owner)
         if owner_key not in ket_qua_task:
             ket_qua_metric.append(False)
-            ghi_loi(
-                "task",
-                "TASK_EXPECTED_OWNER_OR_DEADLINE_MISSING",
-                f"thiếu cặp (người, hạn) mong đợi: {mo_ta_cap(owner, han_mong_muon)}; "
-                f'việc thực tế của file: {[mo_ta_task(task) for task in tasks]!r}',
-            )
+            cac_viec_cua_nguoi = [
+                task
+                for task in tasks
+                if chuan_hoa_chu(task.get("owner"), cau_nguon(task)) == owner_key
+            ]
+            if not cac_viec_cua_nguoi:
+                ghi_loi(
+                    "task",
+                    "TASK_EXPECTED_OWNER_OR_DEADLINE_MISSING",
+                    f"thiếu cặp (người, hạn) mong đợi: {mo_ta_cap(owner, han_mong_muon)}; "
+                    f'việc thực tế của file: {[mo_ta_task(task) for task in tasks]!r}',
+                )
+            else:
+                chi_tiet_loai = "; ".join(
+                    f"{mo_ta_task(task)!r}: {'; '.join(ly_do_task_khong_hop_le(task, cau_nguon(task))) or 'không rõ lý do'}"
+                    for task in cac_viec_cua_nguoi
+                )
+                ghi_loi(
+                    "task",
+                    "TASK_EXPECTED_OWNER_OR_DEADLINE_MISSING",
+                    f"có việc của {owner!r} nhưng bị loại vì: {chi_tiet_loai}; "
+                    f"cặp mong đợi: {mo_ta_cap(owner, han_mong_muon)}; "
+                    f'việc thực tế của file: {[mo_ta_task(task) for task in tasks]!r}',
+                )
             continue
         if han_mong_muon is None:
             ket_qua_metric.append(True)
