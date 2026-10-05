@@ -145,6 +145,13 @@ def co_dong_tu_hanh_dong(van_ban, stt_cau=None, chu=None):
     if re.fullmatch(r"(?:để|phụ trách|làm|xong)\s*[,.;]?\s*", van_ban):
         ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "loại")
         return False
+
+    # Tập thể đồng ý/thống nhất là quyết định đã chốt, không phải lời giao việc.
+    # Có tín hiệu giao việc mạnh trong câu thì giữ nguyên hành vi cũ.
+    if MAU_DONG_Y_TAP_THE.search(van_ban) and not MAU_TIN_HIEU_MANH.search(van_ban):
+        ghi_vet("LOAI_KHONG_DONG_TU", stt_cau, van_ban_goc, "loại: tập thể đồng ý/thống nhất (quyết định, không phải giao việc)")
+        return False
+        
     # Cụm gán chủ đứng cuối mệnh đề: áp dụng cho mọi mệnh đề, chỉ loại nếu sau khi bỏ
     # cụm không còn động từ hành động; nếu còn thì giữ rồi kiểm bình thường ở dưới
     phan_gan_chu = bo_cum_gan_chu_cuoi(van_ban)
@@ -320,6 +327,13 @@ MAU_DAN_LOI = re.compile(
     r"\b(?:có|đã|vừa|mới)\s+(?:bảo|nói|kể|than|phản\s+ánh)\b", re.IGNORECASE
 )
 
+# Tập thể đồng ý/thống nhất/nhất trí: quyết định đã chốt, không phải lời giao việc
+# ("Lúc nãy mọi người đồng ý để demo chạy trên máy cục bộ"). Một người nhận việc ("Nam đồng ý làm …") không thuộc luật này.
+MAU_DONG_Y_TAP_THE = re.compile(
+    r"\b(?:mọi\s+người|cả\s+(?:nhóm|team|lớp)|nhóm(?:\s+mình)?|team(?:\s+mình)?)\s+"
+    r"(?:(?:đã|cùng|đều|vừa)\s+)*(?:đồng\s+ý|thống\s+nhất|nhất\s+trí)\b",
+    re.IGNORECASE,
+)
 
 def ly_do_khong_giao_viec(clause):
     """Trả lý do nếu mệnh đề là lời kể/phủ định/ước đoán/dẫn lời (không phải giao việc); không thì None."""
