@@ -23,6 +23,19 @@ DANH_SACH_DONG_TU = (
     "thực hiện",
 )
 
+# Động từ bổ sung chỉ dùng để nhận ra mệnh đề giao việc và cắt mô tả việc.
+# Không gộp vào DANH_SACH_DONG_TU: danh sách đó còn dùng để lọc tên người
+# (nhan_dien_ten.py).
+# Chưa bật (cần đi kèm sửa khác để không tăng việc giả): nhận, lập, xếp, lo, rà, gom.
+DONG_TU_BO_SUNG = (
+    "tổng hợp",
+    "đối chiếu",
+    "rà soát",
+    "chuẩn bị",
+    "liên hệ",
+    "chỉnh",
+)
+
 DANH_SACH_TU_CHUC_NANG = {
     "nào",
     "nữa",

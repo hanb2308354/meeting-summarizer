@@ -1,8 +1,7 @@
 # Nhận diện tên người trong câu transcript đã làm sạch
 import re
 
-from tu_dien import DANH_SACH_DONG_TU, DANH_SACH_TU_CHUC_NANG
-
+from tu_dien import DANH_SACH_DONG_TU, DANH_SACH_TU_CHUC_NANG, DONG_TU_BO_SUNG
 
 def chuan_hoa_ten(ten):
     """Viết hoa chữ cái đầu của tên người, giữ nguyên cách viết nhiều từ."""
@@ -29,6 +28,11 @@ def loai_bo_ten_cong_ty(van_ban):
 # hoặc khi là chữ viết hoa giữa câu (quy tắc b). "thầy" không dùng vì đó là
 # giảng viên, không phải người trong cuộc họp.
 DANH_XUNG = r"(?:bạn|anh|chị|em|cô|chú)"
+
+# Động từ bổ sung đứng ngay sau tên đã biết ("Thư tổng hợp …"): tên là người làm
+MAU_DONG_TU_BO_SUNG = (
+    r"(?:" + "|".join(re.escape(d) for d in sorted(DONG_TU_BO_SUNG, key=len, reverse=True)) + r")\b"
+)
 
 # Động từ/từ đứng ngay sau tên viết hoa giữa câu (quy tắc b).
 MAU_SAU_TEN_VIET_HOA = (
@@ -244,7 +248,13 @@ def lay_ten_nguoi_phan_anh(van_ban, ten_biet):
                 return ten
             if re.search(rf"\b(?:giao cho|phụ trách)\s+(?:bạn\s+)?{re.escape(ten)}\b", van_ban, flags=re.IGNORECASE):
                 return ten
-
+            
+            if re.search(
+                rf"\b{re.escape(ten)}\s+(?:(?:cũng|tự|đang)\s+)?{MAU_DONG_TU_BO_SUNG}",
+                van_ban,
+                flags=re.IGNORECASE,
+            ):
+                return ten
     # Mẫu tên theo cấu trúc (không viết cứng tên hay câu mẫu): có danh xưng
     # (quy tắc a) hoặc chữ viết hoa giữa câu (quy tắc b); chữ thứ hai chỉ gộp
     # khi viết hoa và không phải từ chức năng hay động từ (xem _gop_chu_thu_hai).

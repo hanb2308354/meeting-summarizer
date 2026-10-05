@@ -5,12 +5,18 @@ from nhan_dien_han import tim_han_chot
 from nhan_dien_ten import lay_ten_nguoi_phan_anh
 from trich_lich_hop import la_lich_hop
 from tu_dien import (
-    DANH_SACH_DONG_TU,
+    DANH_SACH_DONG_TU, DONG_TU_BO_SUNG,
     MAU_CAU_GAN_CHU_CHO_VIEC,
     MAU_VIEC_CHO_CHU,
     TIN_HIEU_GIAO_VIEC,
 )
 from vet import ghi_vet
+
+# Động từ bổ sung (tu_dien.DONG_TU_BO_SUNG), khớp nguyên từ
+MAU_DONG_TU_BO_SUNG = re.compile(
+    r"\b(?:" + "|".join(re.escape(d) for d in sorted(DONG_TU_BO_SUNG, key=len, reverse=True)) + r")\b",
+    re.IGNORECASE,
+)
 
 # Từ mở đầu mệnh đề: không phải lý do để loại, chỉ bỏ ra rồi kiểm động từ trên phần còn lại
 MO_DAU_MENH_DE = r"^(?:mình|tôi|em|việc\s+này|còn|thứ(?:\s+\d+)?|phần(?:\s+này)?|bên)\b\s*"
@@ -180,6 +186,9 @@ def co_dong_tu_hanh_dong(van_ban, stt_cau=None, chu=None):
     if re.search(r"\b(?:làm|update|sửa|fix|viết|gửi|upload|cập nhật|phụ trách|chạy|test|thiết kế|hoàn thành|nộp|xong|hỗ trợ|thực hiện|điều|cố gắng)\b", phan_con):
         ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "giữ")
         return True
+    if MAU_DONG_TU_BO_SUNG.search(phan_con):
+        ghi_vet("LOAI_KHONG_DONG_TU", stt_cau, van_ban_goc, "giữ: động từ bổ sung")
+        return True
     # Tín hiệu mạnh: "<Tên> sẽ/cần/nhớ <từ>" là giao việc dù động từ chưa có trong danh sách
     # (vd "Khoa sẽ optimize ..."). Chỉ áp dụng cho chủ có tên; "mình/em" chờ xử lý riêng.
     if chu and chu not in ("Người chủ trì", "Mọi người") and re.search(
@@ -281,6 +290,9 @@ def cat_viec(van_ban, owner):
         text = re.sub(r"^(?:phải|cần|nên|sẽ)\s+", "", text.strip(), flags=re.IGNORECASE)
     elif vi_tri:
         text = text[min(vi_tri):].strip()
+    elif MAU_DONG_TU_BO_SUNG.search(text):
+        # Không có động từ trong DANH_SACH_DONG_TU: bắt đầu từ động từ bổ sung
+        text = text[MAU_DONG_TU_BO_SUNG.search(text).start():].strip()
     text = re.sub(r"^(?:là|đó\s+là)\s+", "", text, flags=re.IGNORECASE)
     text = re.sub(r"(?:,\s*)?(?:còn\s+)?(?:ai\s+có\s+ý\s+kiến\s+gì\s+không\?|có\s+ai\s+.*\bý\s+kiến\b.*\?|cảm\s+ơn.*|để\s+thứ\s+\d+\s+mình\s+test\s+chung.*)$", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\s+[,;]$", "", text)
@@ -296,6 +308,7 @@ làm lại gửi viết nộp sửa chạy test update cập nhật phụ trách
 bản phần việc file cái các những từng mỗi mọi
 và cùng cũng với cho của để là thì mà nên rồi luôn nhé nha nữa thôi ạ gấp sớm ngay
 trước sau vào đến này đó kia thứ tuần tháng ngày hôm nay mai chủ
+lúc giờ phút hai ba tư năm sáu bảy nhật
 """.split())
 
 # Mệnh đề nói về ý định/phân công cũ: không tạo việc
