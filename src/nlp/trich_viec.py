@@ -121,13 +121,23 @@ def cat_viec(van_ban, owner):
 
     text = re.sub(r"^\s*(?:còn\s+)?(?:một\s+việc\s+nữa\s+là|việc\s+nữa\s+là|một\s+việc\s+là)\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"^\s*(?:tiếp\s+theo\s+là|đầu\s+tiên\s+là|cuối\s+cùng\s+là|thứ\s+\d+\s+là)\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"^\s*việc\s+(?:này|đó)\s+", "", text, flags=re.IGNORECASE)
+
+    # Cụm gán chủ theo tên đã biết: chỉ bỏ đúng tên chủ, không ăn từ đứng sau
+    if owner and owner != "Người chủ trì":
+        ten = re.escape(owner)
+        text = re.sub(
+            rf"\b(?:giao\s+cho|chuyển\s+(?:sang\s+)?cho|phụ\s+trách)\s+(?:(?:bạn|anh|chị|em|cô|chú)\s+)?{ten}\b\s*",
+            "",
+            text,
+            flags=re.IGNORECASE,
+        )
 
     for mau in [
         r"\b(?:bạn|anh|chị|em)\s+[A-ZÀ-Ỹa-zà-ỹ]+\s+",
         r"\b[A-ZÀ-Ỹa-zà-ỹ]+\s+(?:sẽ|phải|nên|cần|nhớ)\s+",
         r"\b(?:để|việc này\s+để|nên)\s+",
         r"\b(?:mình|tôi|em)\s+(?:sẽ\s+)?",
-        r"\b(?:giao\s+cho|phụ\s+trách)\s+(?:bạn\s+)?[A-ZÀ-Ỹa-zà-ỹ]+\s*",
         r"^(?:bên|trong|ở|tại)\s+[^,;.!?]+?\s+(?:sẽ|phải|nên|cần|nhớ)\s+",
     ]:
         text = re.sub(mau, "", text, flags=re.IGNORECASE)
@@ -135,15 +145,39 @@ def cat_viec(van_ban, owner):
     if owner == "Người chủ trì":
         text = re.sub(r"^\s*(?:việc này\s+)?(?:để\s+)?(?:mình|tôi|em)\s*(?:sẽ\s+)?", "", text, flags=re.IGNORECASE)
 
+    # Kiểu "<đối tượng> (thì) làm": giữ đối tượng, bỏ động từ nhẹ đứng cuối
+    khop_cuoi = re.match(r"^(?P<dau>.+?)\s+(?:thì\s+)?(?:làm|phụ\s+trách)\s*[,;:.!?]*$", text, flags=re.IGNORECASE)
+    if khop_cuoi and len(khop_cuoi.group("dau").split()) >= 2:
+        text = re.sub(r"^(?:về|còn|riêng|việc)\s+", "", khop_cuoi.group("dau").strip(), flags=re.IGNORECASE)
+        
+        # Kiểu "<đối tượng> phụ trách <việc>" (sau khi đã bỏ cụm "giao cho <chủ>"):
+    # đưa việc lên trước, đối tượng ra sau. Chỉ áp dụng khi đối tượng không chứa động từ hành động
+    khop_phu_trach = re.match(r"^(?P<dau>.+?)\s+phụ\s+trách\s+(?P<duoi>\S.*)$", text, flags=re.IGNORECASE)
+    if khop_phu_trach and len(khop_phu_trach.group("dau").split()) >= 2:
+        dau = khop_phu_trach.group("dau").strip()
+        co_dong_tu_that = any(
+            re.search(rf"\b{re.escape(dong_tu)}\b", dau, flags=re.IGNORECASE)
+            for dong_tu in DANH_SACH_DONG_TU
+            if dong_tu not in ("làm", "phụ trách", "xong")
+        )
+        if not co_dong_tu_that:
+            dau = re.sub(r"\s+này$", "", dau, flags=re.IGNORECASE)
+            dau = re.sub(r"^(?:Phần|Mục)\b", lambda m: m.group(0).lower(), dau)
+            duoi = re.sub(r"[,;:.!?\s]+$", "", khop_phu_trach.group("duoi"))
+            text = f"{duoi} {dau}"
+
     text = re.sub(r"^(?:phụ\s+trách|để|làm|nên|cố\s+gắng)\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"^(?:bên|trong|ở|tại|trên)\s+[A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+){0,3}\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"^(?:trên|tại|ở)\s+", "", text, flags=re.IGNORECASE)
 
+    # Điểm bắt đầu: động từ hành động xuất hiện SỚM NHẤT theo vị trí trong câu
+    vi_tri = []
     for dong_tu in DANH_SACH_DONG_TU:
         match = re.search(rf"\b{re.escape(dong_tu)}\b", text, flags=re.IGNORECASE)
         if match:
-            text = text[match.start():].strip()
-            break
+            vi_tri.append(match.start())
+    if vi_tri:
+        text = text[min(vi_tri):].strip()
 
     text = re.sub(r"^(?:là|đó\s+là)\s+", "", text, flags=re.IGNORECASE)
     text = re.sub(r"(?:,\s*)?(?:còn\s+)?(?:ai\s+có\s+ý\s+kiến\s+gì\s+không\?|có\s+ai\s+.*\bý\s+kiến\b.*\?|cảm\s+ơn.*|để\s+thứ\s+\d+\s+mình\s+test\s+chung.*)$", "", text, flags=re.IGNORECASE)
@@ -152,7 +186,6 @@ def cat_viec(van_ban, owner):
     if not re.search(r"[A-Za-zÀ-Ỹà-ỹ0-9]", text):
         return ""
     return text.strip()
-
 
 def lay_viec(cac_cau, ten_biet):
     """Dựng danh sách việc cần làm từ các câu đã làm sạch."""
