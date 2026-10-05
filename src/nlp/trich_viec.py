@@ -78,6 +78,25 @@ def tach_dong_tu_tran(van_ban):
     khop = re.match(MAU_DONG_TU_TRAN, phan.strip(), flags=re.IGNORECASE)
     return khop.group("dt") if khop else None
 
+# Lời gọi tên ngôi hai: "Ngân, em đối chiếu…", "Hiếu, để em lo…" → "Ngân sẽ đối chiếu…"
+# Chỉ áp dụng khi chữ trước dấu phẩy là tên đã biết (viết hoa, đứng đầu câu); loại câu hỏi ý kiến ("em thấy…")
+TU_NHAN_THUC_SAU_EM = r"(?:thấy|nghĩ|biết|hiểu|muốn|có\s+thể|có\s+ý\s+kiến)"
+
+
+def chuan_hoa_goi_ten(text, ten_biet):
+    """Đổi "<Tên>, (để) em/bạn <việc>" thành "<Tên> sẽ <việc>"; trả (text mới, có đổi không).
+    Tên đứng sau dấu chấm của câu trước thì đổi dấu chấm thành dấu phẩy để tên mở một mệnh đề riêng."""
+    if not ten_biet:
+        return text, False
+    nhom_ten = "|".join(re.escape(ten) for ten in ten_biet)
+    goi_ten = (
+        rf"(?P<ten>{nhom_ten}),\s+(?:để\s+)?(?:em|bạn)\s+(?:sẽ\s+)?"
+        rf"(?!{TU_NHAN_THUC_SAU_EM}\b)"
+    )
+    moi = re.sub(rf"[.!?]\s+{goi_ten}", lambda m: ", " + m.group("ten") + " sẽ ", text)
+    moi = re.sub(rf"^{goi_ten}", lambda m: m.group("ten") + " sẽ ", moi)
+    return moi, moi != text
+
 def co_dong_tu_trong_danh_sach(phan):
     """Phần còn lại có động từ hành động trong DANH_SACH_DONG_TU không."""
     return any(
@@ -344,6 +363,30 @@ def tim_viec_trung(tasks, owner, mo_ta, cap_nhat_han):
             tot_nhat, diem_nhat = task, (chung, ti_le)
     return tot_nhat
 
+# Mệnh đề không tên nhưng có hạn và nhắc lại nội dung một việc chưa có hạn: gắn hạn cho việc đó
+KHOANG_CACH_HAN_THEO_NOI_DUNG = 3   # số đoạn tối đa giữa việc và mệnh đề chứa hạn
+SO_TU_CHUNG_HAN_THEO_NOI_DUNG = 3   # số từ nội dung chung tối thiểu
+
+
+def gan_han_theo_noi_dung(tasks, clause, chi_so, vi_tri_viec, stt_cau):
+    """Trả True nếu đã gắn hạn của mệnh đề cho một việc chưa có hạn (khớp theo nội dung)."""
+    han = tim_han_chot(clause)
+    if not han:
+        return False
+    tot_nhat, diem_nhat = None, (0, 0.0)
+    for task in tasks:
+        if task["deadline"] is not None:
+            continue
+        if chi_so - vi_tri_viec.get(id(task), -99) > KHOANG_CACH_HAN_THEO_NOI_DUNG:
+            continue
+        chung, ti_le = do_trung_noi_dung(task["task"], clause)
+        if chung >= SO_TU_CHUNG_HAN_THEO_NOI_DUNG and ti_le >= 0.5 and (chung, ti_le) > diem_nhat:
+            tot_nhat, diem_nhat = task, (chung, ti_le)
+    if tot_nhat is None:
+        return False
+    tot_nhat["deadline"] = han[0]
+    ghi_vet("GAN_HAN_THEO_NOI_DUNG", stt_cau, clause, f"gắn {han[0]} cho việc của {tot_nhat['owner']}: {tot_nhat['task']}")
+    return True
 
 def ghi_nhan_viec(tasks, owner, task_text, start, clause, chi_so_cau, vi_tri_viec, last_task, stt_cau):
     """Tạo việc mới, hoặc gộp/cập nhật hạn vào việc cũ của cùng chủ; trả về việc đã ghi."""
@@ -471,7 +514,9 @@ def lay_viec(cac_cau, ten_biet):
                 "start": cau["start"],
             }
             ghi_vet("VIEC_CHO_CHU", stt_cau, text, f"ghi nhớ: {mo_ta_cho}")
-
+        text, da_doi = chuan_hoa_goi_ten(text, ten_biet)
+        if da_doi:
+            ghi_vet("CHUAN_HOA_GOI_TEN", stt_cau, text, "đổi 'Tên, em …' thành 'Tên sẽ …'")
         clauses = [part.strip() for part in re.split(r"\s*,\s*", text) if part.strip()]
         sentence_owner = None
         sau_gan_chu = False  # chỉ bật lại nếu chính mệnh đề này là cụm gán chủ thuần
@@ -610,6 +655,6 @@ def lay_viec(cac_cau, ten_biet):
                 else:
                     ghi_vet("LOAI_MO_TA_RONG", stt_cau, clause, "loại")
                 continue
-            ghi_vet("LOAI_KHONG_CHU_VIEC", stt_cau, clause, "loại")
-
+            if not gan_han_theo_noi_dung(tasks, clause, chi_so, vi_tri_viec, stt_cau):
+                ghi_vet("LOAI_KHONG_CHU_VIEC", stt_cau, clause, "loại")
     return tasks
