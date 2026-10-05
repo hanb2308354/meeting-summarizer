@@ -38,11 +38,35 @@ def _la_dau_cau(van_ban, vi_tri):
     return re.search(r"[.!?]\s*$", van_ban[:vi_tri]) is not None
 
 
-def _tu_hop_le_sau_danh_xung(danh, chu_dau):
+# Chữ thường sau danh xưng chỉ là tên khi đứng ở vị trí người làm/người nhận việc.
+# Lý do: "anh thấy", "em xem", "anh không muốn", "anh bảo vệ" là tự xưng + từ thường,
+# không phải tên. (Tạm để ở đây; khi dọn kỹ thuật thì chuyển sang tu_dien.py.)
+MAU_SAU_TEN_THUONG = re.compile(
+    r"^\s+(?:bên\s+\w+(?:\s+\w+)?\s+)?(?:sẽ|phải|nên|cần|nhớ|cố\s+gắng|đang|"
+    + "|".join(re.escape(d) for d in DANH_SACH_DONG_TU)
+    + r")\b",
+    flags=re.IGNORECASE,
+)
+MAU_TRUOC_NGUOI_NHAN = re.compile(
+    r"(?:giao\s+cho|chuyển\s+(?:sang\s+)?cho|nhờ|phụ\s+trách)\s+$",
+    flags=re.IGNORECASE,
+)
+
+
+def _chu_thuong_la_ten(danh, truoc, sau):
+    """Chữ thường sau danh xưng: chỉ "bạn" mới nhận, và phải ở vị trí người làm/người nhận."""
+    if (danh or "").strip().lower() != "bạn":
+        return False
+    return bool(MAU_SAU_TEN_THUONG.match(sau) or MAU_TRUOC_NGUOI_NHAN.search(truoc))
+
+
+def _tu_hop_le_sau_danh_xung(danh, chu_dau, truoc="", sau=""):
     """Quy tắc (a): chữ đầu sau danh xưng.
     "cô/chú" chỉ nhận tên khi chữ đứng sau viết hoa (isupper() trên ký tự đầu);
-    "bạn/anh/chị/em" vẫn nhận chữ thường như trước, trừ khi chữ thường đó
-    nằm trong DANH_SACH_TU_CHUC_NANG hoặc DANH_SACH_DONG_TU.
+    chữ thường chỉ nhận khi danh xưng là "bạn" và đứng ở vị trí người làm/người nhận
+    (xem _chu_thuong_la_ten); chữ thường nằm trong DANH_SACH_TU_CHUC_NANG hoặc
+    DANH_SACH_DONG_TU không bao giờ là tên.
+    truoc: phần văn bản đứng trước danh xưng; sau: phần đứng ngay sau chữ đó.
     """
     if not chu_dau or chu_dau.lower() in DANH_SACH_TU_CHUC_NANG:
         return None
@@ -50,6 +74,8 @@ def _tu_hop_le_sau_danh_xung(danh, chu_dau):
         if not chu_dau[0].isupper():
             return None
     elif chu_dau.lower() in DANH_SACH_DONG_TU and not chu_dau[0].isupper():
+        return None
+    elif not chu_dau[0].isupper() and not _chu_thuong_la_ten(danh, truoc, sau):
         return None
     return chuan_hoa_ten(chu_dau)
 
@@ -96,7 +122,10 @@ def _ten_tu_match(van_ban, match):
     if not chu_dau:
         return None
     if danh is not None:
-        ten_name = _tu_hop_le_sau_danh_xung(danh, chu_dau)
+        ten_name = _tu_hop_le_sau_danh_xung(
+            danh, chu_dau,
+            truoc=van_ban[: match.start("danh")], sau=van_ban[match.end("chu_dau"):],
+        )
     else:
         ten_name = _tu_hop_le_viet_hoa(van_ban, match.start("chu_dau"), chu_dau)
     if ten_name is None:
@@ -139,7 +168,10 @@ def tim_ten_biet(cac_cau):
             text,
             flags=re.IGNORECASE,
         ):
-            ten_name = _tu_hop_le_sau_danh_xung(match.group("danh"), match.group("chu_dau"))
+            ten_name = _tu_hop_le_sau_danh_xung(
+                match.group("danh"), match.group("chu_dau"),
+                truoc=text[: match.start()], sau=text[match.end():],
+            )
             if ten_name is None:
                 continue
             ten_name = _gop_chu_thu_hai(ten_name, _chu_hai_tai(text, match.end()))
