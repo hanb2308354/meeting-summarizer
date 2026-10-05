@@ -386,6 +386,12 @@ def lay_viec(cac_cau, ten_biet):
         if la_lich_hop(text):
             ghi_vet("LOAI_LICH_HOP", stt_cau, text, "loại")
             continue
+                # Whisper hay dính hai câu vào một đoạn: bỏ các câu đề mục ở đầu đoạn, giữ phần còn lại
+        cac_phan = [phan for phan in re.split(r"(?<=[.!?])\s+", text) if phan.strip()]
+        while len(cac_phan) > 1 and la_de_muc(cac_phan[0]):
+            ghi_vet("BO_DE_MUC_DAU_DOAN", stt_cau, cac_phan[0], "bỏ câu đề mục, giữ phần sau")
+            cac_phan.pop(0)
+        text = " ".join(cac_phan)
         if la_de_muc(text):
             ghi_vet("LOAI_DE_MUC", stt_cau, text, "loại")
             continue
