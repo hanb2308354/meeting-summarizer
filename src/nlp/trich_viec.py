@@ -38,6 +38,26 @@ def bo_cum_gan_chu_cuoi(van_ban):
         return None
     return (van_ban[: khop.start()] + van_ban[khop.end() :]).strip()
 
+# Kiểu "<đối tượng> (thì) (tự) làm" / "... phụ trách": đối tượng, rồi động từ nhẹ cuối mệnh đề
+MAU_DOI_TUONG_LAM = r"^(?P<dau>.+?)\s+(?:thì\s+)?(?:tự\s+)?(?:làm|phụ\s+trách)\s*[,;:.!?]*$"
+
+# Từ đệm đứng đầu đối tượng: "thì phần", "còn về", "riêng việc"
+MAU_TU_DEM_DAU = r"^(?:(?:thì|còn|về|riêng|việc)\s+)+"
+
+
+def tach_han_cuoi(van_ban):
+    """Cắt cụm hạn đứng cuối mệnh đề; trả (phần còn lại, cụm hạn) hoặc (van_ban, None)."""
+    han = tim_han_chot(van_ban)
+    if not han:
+        return van_ban, None
+    khop = re.search(
+        rf"\s+(?:(?:chậm\s+nhất|trước|vào|đến)\s+)?{re.escape(han[0])}\s*[,;:.!?]*$",
+        van_ban,
+        flags=re.IGNORECASE,
+    )
+    if not khop:
+        return van_ban, None
+    return van_ban[: khop.start()].rstrip(), han[0]
 
 def co_dong_tu_trong_danh_sach(phan):
     """Phần còn lại có động từ hành động trong DANH_SACH_DONG_TU không."""
@@ -164,9 +184,17 @@ def cat_viec(van_ban, owner):
         text = re.sub(r"^\s*(?:việc này\s+)?(?:để\s+)?(?:mình|tôi|em)\s*(?:sẽ\s+)?", "", text, flags=re.IGNORECASE)
 
     # Kiểu "<đối tượng> (thì) làm": giữ đối tượng, bỏ động từ nhẹ đứng cuối
-    khop_cuoi = re.match(r"^(?P<dau>.+?)\s+(?:thì\s+)?(?:làm|phụ\s+trách)\s*[,;:.!?]*$", text, flags=re.IGNORECASE)
+    khop_cuoi = None
+    giu_dong_tu_dau = False
+    khop_cuoi = re.match(MAU_DOI_TUONG_LAM, text, flags=re.IGNORECASE)
+    if not khop_cuoi:
+        # Có cụm hạn đứng sau "làm" ("... thì để mình tự làm trước ngày 15 tháng 12"): cắt hạn rồi khớp lại
+        phan_truoc_han, han_cuoi = tach_han_cuoi(text)
+        if han_cuoi:
+            giu_dong_tu_dau = False
+            khop_cuoi = re.match(MAU_DOI_TUONG_LAM, phan_truoc_han, flags=re.IGNORECASE)
     if khop_cuoi and len(khop_cuoi.group("dau").split()) >= 2:
-        text = re.sub(r"^(?:về|còn|riêng|việc)\s+", "", khop_cuoi.group("dau").strip(), flags=re.IGNORECASE)
+        text = re.sub(MAU_TU_DEM_DAU, "", khop_cuoi.group("dau").strip(), flags=re.IGNORECASE)
         
         # Kiểu "<đối tượng> phụ trách <việc>" (sau khi đã bỏ cụm "giao cho <chủ>"):
     # đưa việc lên trước, đối tượng ra sau. Chỉ áp dụng khi đối tượng không chứa động từ hành động
@@ -179,13 +207,19 @@ def cat_viec(van_ban, owner):
             if dong_tu not in ("làm", "phụ trách", "xong")
         )
         if not co_dong_tu_that:
+            dau = re.sub(MAU_TU_DEM_DAU, "", dau, flags=re.IGNORECASE)
             dau = re.sub(r"\s+này$", "", dau, flags=re.IGNORECASE)
+            duoi = re.sub(r"[,;:.!?\s]+$", "", khop_phu_trach.group("duoi"))
             if len(dau.split()) >= 2:
                 dau = re.sub(r"^(?:Phần|Mục)\b", lambda m: m.group(0).lower(), dau)
-                duoi = re.sub(r"[,;:.!?\s]+$", "", khop_phu_trach.group("duoi"))
                 text = f"{duoi} {dau}"
+            elif dau.lower() in ("phần", "mục"):
+                # Đối tượng chỉ còn chữ đề mục ("Phần này giao cho Lan phụ trách làm ..."): bỏ đề mục
+                text = duoi
+                giu_dong_tu_dau = True
 
-    text = re.sub(r"^(?:phụ\s+trách|để|làm|nên|cố\s+gắng)\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
+    if not giu_dong_tu_dau:
+        text = re.sub(r"^(?:phụ\s+trách|để|làm|nên|cố\s+gắng)\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"^(?:bên|trong|ở|tại|trên)\s+[A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+){0,3}\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"^(?:trên|tại|ở)\s+", "", text, flags=re.IGNORECASE)
 
