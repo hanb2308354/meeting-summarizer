@@ -4,16 +4,12 @@
     "viec_bat_buoc": [
       {
         "chu": "Tuấn",
-        "tu_khoa": [
-          "trang chủ"
-        ],
+        "tu_khoa": ["trang chủ"],
         "han": "thứ 4 tuần sau"
       },
       {
         "chu": "Ngọc",
-        "tu_khoa": [
-          "lỗi đăng ký"
-        ],
+        "tu_khoa": ["lỗi đăng ký"],
         "han": "ngày 20 tháng 10"
       },
       {
@@ -25,9 +21,7 @@
     "viec_tuy_chon": [
       {
         "chu": "Người chủ trì",
-        "tu_khoa": [
-          "link"
-        ]
+        "tu_khoa": ["link"]
       }
     ],
     "viec_cam": [],
@@ -42,60 +36,48 @@
     "viec_bat_buoc": [
       {
         "chu": "Khoa",
-        "tu_khoa": [
-          "database"
-        ],
+        "tu_khoa": ["database"],
         "han": "thứ 3 tuần sau"
       },
       {
         "chu": "Vi",
-        "tu_khoa": [
-          "xóa sách"
-        ],
+        "tu_khoa": ["xóa sách"],
         "han": "ngày 25 tháng 10"
       },
       {
         "chu": "Phúc",
-        "tu_khoa": [
-          "trang tìm kiếm"
-        ],
+        "tu_khoa": ["trang tìm kiếm"],
         "han": "chủ nhật"
       },
       {
         "chu": "Người chủ trì",
-        "tu_khoa": [
-          "bản draft"
-        ],
+        "tu_khoa": ["bản draft"],
         "han": "thứ 6"
       }
     ],
     "viec_tuy_chon": [
       {
         "chu": "Vi",
-        "tu_khoa": [
-          "document"
-        ]
+        "tu_khoa": ["document"]
       },
       {
         "chu": "Người chủ trì",
-        "tu_khoa": [
-          "test chung"
-        ]
+        "tu_khoa": ["test chung"]
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": ["chương 1"]
       }
     ],
     "viec_cam": [
       {
         "chu": "Khoa",
-        "tu_khoa": [
-          "thiết kế"
-        ]
+        "tu_khoa": ["thiết kế"]
       }
     ],
     "quyet_dinh": [
       {
-        "tu_khoa": [
-          "react"
-        ]
+        "tu_khoa": ["react"]
       }
     ],
     "quyet_dinh_tuy_chon": [],
@@ -109,23 +91,17 @@
     "viec_bat_buoc": [
       {
         "chu": "Hạnh",
-        "tu_khoa": [
-          "campaign"
-        ],
+        "tu_khoa": ["campaign"],
         "han": null
       },
       {
         "chu": "Hạnh",
-        "tu_khoa": [
-          "kế hoạch"
-        ],
+        "tu_khoa": ["kế hoạch"],
         "han": "thứ 4 tuần này"
       },
       {
         "chu": "Dũng",
-        "tu_khoa": [
-          "báo giá"
-        ],
+        "tu_khoa": ["báo giá"],
         "han": "ngày 10 tháng 10"
       },
       {
@@ -142,21 +118,15 @@
       },
       {
         "chu": null,
-        "tu_khoa": [
-          "giảm giá 20%"
-        ]
+        "tu_khoa": ["giảm giá 20%"]
       }
     ],
     "quyet_dinh": [
       {
-        "tu_khoa": [
-          "10%"
-        ]
+        "tu_khoa": ["10%"]
       },
       {
-        "tu_khoa": [
-          "kpi"
-        ]
+        "tu_khoa": ["kpi"]
       }
     ],
     "quyet_dinh_tuy_chon": [],
@@ -170,37 +140,27 @@
     "viec_bat_buoc": [
       {
         "chu": "Lam",
-        "tu_khoa": [
-          "ánh xạ"
-        ],
+        "tu_khoa": ["ánh xạ"],
         "han": "thứ 5 tuần sau"
       },
       {
         "chu": "Người chủ trì",
-        "tu_khoa": [
-          "checklist"
-        ],
+        "tu_khoa": ["checklist"],
         "han": "ngày 18 tháng 11"
       },
       {
         "chu": "Người chủ trì",
-        "tu_khoa": [
-          "bản tổng hợp"
-        ],
+        "tu_khoa": ["bản tổng hợp"],
         "han": "thứ 6"
       },
       {
         "chu": "Bảo",
-        "tu_khoa": [
-          "trích dẫn"
-        ],
+        "tu_khoa": ["trích dẫn"],
         "han": "chủ nhật"
       },
       {
         "chu": "Mai",
-        "tu_khoa": [
-          "phụ lục"
-        ],
+        "tu_khoa": ["phụ lục"],
         "han": "thứ 4 tuần sau"
       }
     ],
@@ -218,45 +178,33 @@
     "viec_bat_buoc": [
       {
         "chu": "Minh",
-        "tu_khoa": [
-          "api"
-        ],
+        "tu_khoa": ["api"],
         "han": "thứ 3 tuần sau",
         "han_bi_thay": "thứ 6 tuần này"
       },
       {
         "chu": "Minh",
-        "tu_khoa": [
-          "export"
-        ],
+        "tu_khoa": ["export"],
         "han": null
       },
       {
         "chu": "Lan",
-        "tu_khoa": [
-          "dashboard"
-        ],
+        "tu_khoa": ["dashboard"],
         "han": "chủ nhật tuần này"
       },
       {
         "chu": "Khoa",
-        "tu_khoa": [
-          "query"
-        ],
+        "tu_khoa": ["query"],
         "han": "ngày 25 tháng 10"
       },
       {
         "chu": "Nam",
-        "tu_khoa": [
-          "unit test"
-        ],
+        "tu_khoa": ["unit test"],
         "han": "ngày 5 tháng 11"
       },
       {
         "chu": "Mọi người",
-        "tu_khoa": [
-          "jira"
-        ],
+        "tu_khoa": ["jira"],
         "han": null
       }
     ],
@@ -268,15 +216,11 @@
       },
       {
         "chu": "Nam",
-        "tu_khoa": [
-          "docker"
-        ]
+        "tu_khoa": ["docker"]
       },
       {
         "chu": "Nam",
-        "tu_khoa": [
-          "server"
-        ]
+        "tu_khoa": ["server"]
       },
       {
         "chu": "Nam Hà",
@@ -289,14 +233,10 @@
     ],
     "quyet_dinh": [
       {
-        "tu_khoa": [
-          "react"
-        ]
+        "tu_khoa": ["react"]
       },
       {
-        "tu_khoa": [
-          "xác thực"
-        ]
+        "tu_khoa": ["xác thực"]
       }
     ],
     "quyet_dinh_tuy_chon": [],
@@ -310,40 +250,30 @@
     "viec_bat_buoc": [
       {
         "chu": "Hạnh",
-        "tu_khoa": [
-          "quảng cáo"
-        ],
+        "tu_khoa": ["quảng cáo"],
         "han": "thứ 5 tuần này"
       },
       {
         "chu": "Hạnh",
-        "tu_khoa": [
-          "dự trù"
-        ],
+        "tu_khoa": ["dự trù"],
         "han": "ngày 20 tháng 11"
       },
       {
         "chu": "Thảo",
-        "tu_khoa": [
-          "báo giá"
-        ],
+        "tu_khoa": ["báo giá"],
         "han": "thứ 6 tuần này",
         "han_bi_thay": "thứ 3 tuần sau"
       },
       {
         "chu": "Người chủ trì",
-        "tu_khoa": [
-          "crm"
-        ],
+        "tu_khoa": ["crm"],
         "han": "ngày 15 tháng 12"
       }
     ],
     "viec_tuy_chon": [
       {
         "chu": "Mọi người",
-        "tu_khoa": [
-          "báo cáo"
-        ]
+        "tu_khoa": ["báo cáo"]
       }
     ],
     "viec_cam": [
@@ -366,19 +296,13 @@
     ],
     "quyet_dinh": [
       {
-        "tu_khoa": [
-          "100 triệu"
-        ]
+        "tu_khoa": ["100 triệu"]
       },
       {
-        "tu_khoa": [
-          "15%"
-        ]
+        "tu_khoa": ["15%"]
       },
       {
-        "tu_khoa": [
-          "kpi"
-        ]
+        "tu_khoa": ["kpi"]
       }
     ],
     "quyet_dinh_tuy_chon": [],
@@ -392,32 +316,24 @@
     "viec_bat_buoc": [
       {
         "chu": "Long",
-        "tu_khoa": [
-          "trang chủ"
-        ],
+        "tu_khoa": ["trang chủ"],
         "han": "thứ 5 tuần này"
       },
       {
         "chu": "Nam",
-        "tu_khoa": [
-          "api"
-        ],
+        "tu_khoa": ["api"],
         "han": "20 tháng 11"
       },
       {
         "chu": "Người chủ trì",
-        "tu_khoa": [
-          "database"
-        ],
+        "tu_khoa": ["database"],
         "han": "ngày mai"
       }
     ],
     "viec_tuy_chon": [
       {
         "chu": "Nam",
-        "tu_khoa": [
-          "document"
-        ]
+        "tu_khoa": ["document"]
       }
     ],
     "viec_cam": [
@@ -436,16 +352,12 @@
     ],
     "quyet_dinh": [
       {
-        "tu_khoa": [
-          "sđt"
-        ]
+        "tu_khoa": ["sđt"]
       }
     ],
     "quyet_dinh_tuy_chon": [
       {
-        "tu_khoa": [
-          "view"
-        ]
+        "tu_khoa": ["view"]
       }
     ],
     "lich_hop": {
