@@ -275,9 +275,46 @@ trước sau vào đến này đó kia thứ tuần tháng ngày hôm nay mai ch
 # Mệnh đề nói về ý định/phân công cũ: không tạo việc
 MAU_Y_DINH_CU = r"\b(?:ban\s+đầu|lúc\s+đầu|dự\s+định\s+giao|định\s+giao|tính\s+giao)\b"
 
+
 # Câu đổi/gia hạn: việc này cập nhật một việc đã có của cùng chủ
 MAU_CAP_NHAT_HAN = r"\b(?:gia\s+hạn|dời\s+hạn|lùi\s+hạn|đổi\s+hạn|hạn\s+mới)\b"
 
+# Mệnh đề không phải lời giao việc: lời kể quá khứ, phủ định/cấm, ước đoán, dẫn lời.
+# Có tín hiệu giao việc mạnh trong mệnh đề thì KHÔNG loại ("Nam sẽ làm, không cần ai giúp").
+MAU_TIN_HIEU_MANH = re.compile(
+    r"(?<!không\s)(?<!chưa\s)\b(?:sẽ|phải|nhớ|phụ\s+trách|giao\s+cho)\b", re.IGNORECASE
+)
+MAU_KE_QUA_KHU = re.compile(
+    r"^(?:(?:mà|còn|nhưng|và)\s+)?(?:hôm\s+qua|hôm\s+trước|bữa\s+trước|bữa\s+nọ|"
+    r"(?:tuần|tháng|buổi)\s+trước|(?:tuần|tháng)\s+rồi|lúc\s+nãy|hồi\s+nãy|vừa\s+rồi)\b"
+    r"|\b(?:hôm\s+qua|hôm\s+trước|bữa\s+trước|tuần\s+trước|tuần\s+rồi|lúc\s+nãy|hồi\s+nãy)\s+thì\b",
+    re.IGNORECASE,
+)
+MAU_PHU_DINH_CAM = re.compile(
+    r"\b(?:đừng(?!\s+quên)|không\s+cần|khỏi\s+phải|chưa\s+cần)\b", re.IGNORECASE
+)
+MAU_UOC_DOAN = re.compile(
+    r"^(?:(?:mà|còn|nhưng|và)\s+)?(?:có\s+thể|có\s+lẽ|hình\s+như|chắc\b(?!\s+chắn))",
+    re.IGNORECASE,
+)
+MAU_DAN_LOI = re.compile(
+    r"\b(?:có|đã|vừa|mới)\s+(?:bảo|nói|kể|than|phản\s+ánh)\b", re.IGNORECASE
+)
+
+
+def ly_do_khong_giao_viec(clause):
+    """Trả lý do nếu mệnh đề là lời kể/phủ định/ước đoán/dẫn lời (không phải giao việc); không thì None."""
+    if MAU_TIN_HIEU_MANH.search(clause):
+        return None
+    if MAU_KE_QUA_KHU.search(clause):
+        return "lời kể quá khứ"
+    if MAU_PHU_DINH_CAM.search(clause):
+        return "phủ định/cấm"
+    if MAU_UOC_DOAN.search(clause):
+        return "ước đoán"
+    if MAU_DAN_LOI.search(clause) and not tim_han_chot(clause):
+        return "dẫn lời"
+    return None
 
 def tu_noi_dung(mo_ta):
     """Tập từ mang nội dung của mô tả việc (bỏ động từ nhẹ, từ chức năng, số)."""
@@ -480,6 +517,11 @@ def lay_viec(cac_cau, ten_biet):
                 ghi_vet("LOAI_Y_DINH_CU", stt_cau, clause, "loại: ý định/phân công cũ")
                 continue
 
+            ly_do = ly_do_khong_giao_viec(clause)
+            if ly_do:
+                ghi_vet("LOAI_KHONG_GIAO_VIEC", stt_cau, clause, f"loại: {ly_do}")
+                continue
+            
             owner = lay_ten_nguoi_phan_anh(clause, ten_biet)
             if owner is not None:
                 ghi_vet("GAN_CHU_VIEC", stt_cau, clause, f"gắn {owner}")
