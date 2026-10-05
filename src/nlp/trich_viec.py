@@ -267,7 +267,7 @@ def cat_viec(van_ban, owner):
                 giu_dong_tu_dau = True
 
     if not giu_dong_tu_dau:
-        text = re.sub(r"^(?:phụ\s+trách|để|làm|nên|cố\s+gắng)\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"^(?:phụ\s+trách|để|làm(?!\s+lại\b)|nên|cố\s+gắng)\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"^(?:bên|trong|ở|tại|trên)\s+[A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+){0,3}\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"^(?:trên|tại|ở)\s+", "", text, flags=re.IGNORECASE)
 
@@ -443,6 +443,31 @@ def ghi_nhan_viec(tasks, owner, task_text, start, clause, chi_so_cau, vi_tri_vie
 
     vi_tri_viec[id(task_item)] = chi_so_cau
     return task_item
+
+# Từ nối đứng trước cụm hạn ở cuối mô tả: bỏ cùng với hạn
+MAU_NOI_TRUOC_HAN = (
+    r"(?:(?:hạn\s+chót|deadline|hoàn\s+thành)\s+là\s+|chậm\s+nhất\s+là\s+|chậm\s+nhất\s+"
+    r"|trước\s+|vào\s+|đến\s+|cho\s+|là\s+)*"
+)
+# Giờ đứng ngay sau hạn ("thứ Năm lúc 21 giờ", "thứ Sáu 18 giờ 30")
+MAU_GIO_SAU_HAN = r"(?:\s+(?:lúc\s+)?\d{1,2}(?:\s*giờ|h)(?:\s*\d{1,2})?)?"
+
+
+def lam_sach_mo_ta(mo_ta, han):
+    """Bỏ dấu câu thừa đầu/cuối; bỏ cụm hạn (kèm từ nối, giờ) nếu nó đứng cuối mô tả.
+    Chỉ bỏ khi phần còn lại vẫn có từ nội dung; không đổi gì khác."""
+    text = re.sub(r"^[\s.,;:!?]+|[\s.,;:!?]+$", "", mo_ta or "")
+    if han:
+        khop = re.search(
+            rf"\s*{MAU_NOI_TRUOC_HAN}{re.escape(han)}{MAU_GIO_SAU_HAN}$",
+            text,
+            flags=re.IGNORECASE,
+        )
+        if khop:
+            phan = re.sub(r"[\s.,;:!?]+$", "", text[: khop.start()])
+            if tu_noi_dung(phan):
+                text = phan
+    return text
 
 def lay_viec(cac_cau, ten_biet):
     """Dựng danh sách việc cần làm từ các câu đã làm sạch."""

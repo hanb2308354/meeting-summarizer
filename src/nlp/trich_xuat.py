@@ -8,7 +8,7 @@ from nhan_dien_ten import tim_ten_biet
 from tien_xu_ly import tien_xu_ly
 from trich_lich_hop import lay_lich_hop
 from trich_quyet_dinh import trich_quyet_dinh
-from trich_viec import lay_viec
+from trich_viec import lay_viec, lam_sach_mo_ta
 from vet import bat_vet, lay_vet
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -23,7 +23,7 @@ def trich_xuat(cac_cau):
         "decisions": trich_quyet_dinh(cac_cau, ten_biet),
         "tasks": [
             {
-                "task": task["task"],
+                "task": lam_sach_mo_ta(task["task"], task["deadline"]),
                 "owner": task["owner"],
                 "deadline": task["deadline"],
                 "start": task["start"],
