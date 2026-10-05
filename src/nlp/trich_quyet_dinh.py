@@ -17,12 +17,64 @@ MAU_DUOI_CHU_DE = re.compile(
 MAU_NOI_TIEP = re.compile(r"^(?:kèm|và|cùng)\b", flags=re.IGNORECASE)
 
 
+# Từ khóa động từ của quyết định; chỉ tính khi không bị phủ định/mục đích đứng trước
+TU_KHOA_DONG_TU = re.compile(r"\b(?:chốt|thống\s+nhất|quyết\s+định|đồng\s+ý)\b", flags=re.IGNORECASE)
+TU_KHOA_PHU = re.compile(
+    r"\b(?:kpi|không\s+dùng|tối\s+thiểu|miễn\s+phí\s+vận\s+chuyển)\b", flags=re.IGNORECASE
+)
+
+# Phủ định đứng trước từ khóa trong cùng mệnh đề (dấu phẩy/chấm chặn lại):
+# "Đừng hiểu là mình vừa chốt tên mới" (đừng + tới 6 từ), "chưa chốt", "không thể chốt" (tối đa 2 từ chen giữa)
+MAU_PHU_DINH_TRUOC = re.compile(
+    r"\b(?:đừng(?:\s+[^\s,.;:]+){0,6}|(?:chưa|không|chẳng|chả)(?:\s+[^\s,.;:]+){0,2})\s*$",
+    flags=re.IGNORECASE,
+)
+# "để thống nhất cách hiểu", "nhằm chốt kế hoạch": nêu mục đích, chưa phải quyết định
+MAU_MUC_DICH_TRUOC = re.compile(r"\b(?:để|nhằm)\s+(?:cùng\s+)?$", flags=re.IGNORECASE)
+
+# Quyết định dạng quy định/thể lệ, không cần chữ "chốt": "Từ tuần này, ...", "Từ nay, ...",
+# "... phải được anh duyệt trước khi ..."; "từ giờ đến thứ 6" là khoảng thời gian của một việc nên loại
+MAU_QUY_DINH = re.compile(
+    r"\btừ\s+(?:tuần|tháng)\s+(?:này|sau|tới)\b(?!\s+(?:đến|tới|cho\s+đến))"
+    r"|\btừ\s+(?:hôm\s+nay|nay|giờ|bây\s+giờ|buổi\s+(?:sau|tới)|lần\s+(?:sau|tới))\b(?!\s+(?:đến|tới|cho\s+đến))"
+    r"|\b(?:phải|bắt\s+buộc)\s+được\b[^.]{0,60}?\btrước\s+khi\b"
+    r"|\bmỗi\b.*\bphải\s+đạt\b",
+    flags=re.IGNORECASE,
+)
+
+# Tên mà `lay_ten_nguoi_phan_anh` trả về khi chủ ngữ là người họp tự xưng (mình/tôi/em),
+# không phải một người cụ thể được giao việc
+NGUOI_CHU_TRI = "Người chủ trì"
+
+
+def co_tu_khoa_quyet_dinh(van_ban):
+    """Có từ khóa quyết định không bị phủ định hoặc nêu mục đích đứng trước."""
+    for khop in TU_KHOA_DONG_TU.finditer(van_ban):
+        truoc = van_ban[:khop.start()]
+        if MAU_PHU_DINH_TRUOC.search(truoc):
+            ghi_vet("BO_TU_KHOA_PHU_DINH", None, van_ban, f"bỏ '{khop.group(0)}': có phủ định đứng trước")
+            continue
+        if MAU_MUC_DICH_TRUOC.search(truoc):
+            ghi_vet("BO_TU_KHOA_MUC_DICH", None, van_ban, f"bỏ '{khop.group(0)}': nêu mục đích")
+            continue
+        return True
+    return bool(TU_KHOA_PHU.search(van_ban))
+
+
+def la_quy_dinh(van_ban):
+    """Câu dạng quy định/thể lệ áp dụng từ một mốc ('Từ nay, ...', 'phải được ... trước khi ...')."""
+    return bool(MAU_QUY_DINH.search(van_ban))
+
+
 def la_quyet_dinh(van_ban):
     """Nhận diện mệnh đề quyết định của cuộc họp."""
-    if re.search(r"\b(chốt|thống nhất|quyết định|đồng ý|kpi|không dùng|tối thiểu|miễn phí vận chuyển)\b", van_ban, flags=re.IGNORECASE):
+    if co_tu_khoa_quyet_dinh(van_ban):
         ghi_vet("GIU_QUYET_DINH", None, van_ban, "giữ")
         return True
-    if re.search(r"\b(từ tháng này|mỗi.*phải đạt|chỉ giảm|giảm\s+10%|giảm\s+20%)\b", van_ban, flags=re.IGNORECASE):
+    if la_quy_dinh(van_ban):
+        ghi_vet("GIU_QUYET_DINH", None, van_ban, "giữ: dạng quy định")
+        return True
+    if re.search(r"\b(chỉ giảm|giảm\s+10%|giảm\s+20%)\b", van_ban, flags=re.IGNORECASE):
         ghi_vet("GIU_QUYET_DINH", None, van_ban, "giữ")
         return True
     ghi_vet("LOAI_KHONG_QUYET_DINH", None, van_ban, "loại")
@@ -61,9 +113,15 @@ def trich_quyet_dinh(cac_cau, ten_biet):
         if not la_quyet_dinh(text):
             ghi_vet("LOAI_QUYET_DINH_NEN", stt_cau, text, "loại")
             continue
-        if lay_ten_nguoi_phan_anh(text, ten_biet) is not None and co_dong_tu_hanh_dong(text):
-            ghi_vet("LOAI_QUYET_DINH_LA_VIEC", stt_cau, text, "loại")
-            continue
+        ten_chu = lay_ten_nguoi_phan_anh(text, ten_biet)
+        if ten_chu is not None and co_dong_tu_hanh_dong(text):
+            # Quy định áp dụng từ một mốc do người chủ trì tự nêu ("Từ tuần này, mình kiểm quầy
+            # hai lượt") là quyết định chứ không phải việc giao cho một người cụ thể
+            if la_quy_dinh(text) and ten_chu == NGUOI_CHU_TRI:
+                ghi_vet("GIU_QUY_DINH_DU_CO_CHU", stt_cau, text, "giữ: quy định của người chủ trì")
+            else:
+                ghi_vet("LOAI_QUYET_DINH_LA_VIEC", stt_cau, text, "loại")
+                continue
 
         phan, chu_de_moi = tach_duoi_chu_de(text)
         if chu_de_moi:
