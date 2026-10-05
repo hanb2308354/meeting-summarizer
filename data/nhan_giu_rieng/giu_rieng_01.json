@@ -1,0 +1,104 @@
+{
+ "giu_rieng_01.json": {
+  "tap": "tap_phat_trien_2",
+  "viec_bat_buoc": [
+   {
+    "chu": "Thư",
+    "tu_khoa": [
+     "phản hồi dùng thử"
+    ],
+    "han": "thứ Năm"
+   },
+   {
+    "chu": "Đạt",
+    "tu_khoa": [
+     "dữ liệu mẫu"
+    ],
+    "han": "thứ Tư"
+   },
+   {
+    "chu": "Nhiên",
+    "tu_khoa": [
+     "màn Figma"
+    ],
+    "han": "thứ Sáu"
+   },
+   {
+    "chu": "Đặng Mỹ Duyên",
+    "tu_khoa": [
+     "trích dẫn"
+    ],
+    "han": "thứ Năm"
+   },
+   {
+    "chu": "Người chủ trì",
+    "tu_khoa": [
+     "báo cáo tiến độ"
+    ],
+    "han": "thứ Năm"
+   }
+  ],
+  "viec_tuy_chon": [
+   {
+    "chu": "Thư",
+    "tu_khoa": [
+     "bản tổng hợp"
+    ]
+   },
+   {
+    "chu": "Người chủ trì",
+    "tu_khoa": [
+     "trả bút"
+    ]
+   }
+  ],
+  "viec_cam": [
+   {
+    "chu": "Bích Trâm",
+    "tu_khoa": [
+     "thư mời"
+    ]
+   },
+   {
+    "chu": null,
+    "tu_khoa": [
+     "nhận diện cảm xúc"
+    ]
+   },
+   {
+    "chu": "Tuấn",
+    "tu_khoa": [
+     "máy chiếu"
+    ]
+   },
+   {
+    "chu": "Người chủ trì",
+    "tu_khoa": [
+     "màu sắc"
+    ]
+   },
+   {
+    "chu": "Thịnh",
+    "tu_khoa": []
+   },
+   {
+    "chu": null,
+    "tu_khoa": [
+     "dây nối dài"
+    ]
+   }
+  ],
+  "quyet_dinh": [
+   {
+    "tu_khoa": [
+     "máy cục bộ"
+    ]
+   }
+  ],
+  "quyet_dinh_tuy_chon": [],
+  "lich_hop": {
+   "thoi_gian_chua": "15 giờ 30",
+   "noi_bang": "phòng B.204"
+  }
+ }
+}
