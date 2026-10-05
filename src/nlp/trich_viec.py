@@ -106,6 +106,9 @@ def co_dong_tu_hanh_dong(van_ban, stt_cau=None):
             return False
     else:
         phan_con = van_ban
+
+        # "chưa/đã/vừa xong" là trạng thái, không phải việc phải làm
+    phan_con = re.sub(r"\b(?:chưa|đã|vừa|mới|chẳng)\s+xong\b", " ", phan_con)
     if re.search(r"\b(?:làm|update|sửa|fix|viết|gửi|upload|cập nhật|phụ trách|chạy|test|thiết kế|hoàn thành|nộp|xong|hỗ trợ|thực hiện|điều|cố gắng)\b", phan_con):
         ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "giữ")
         return True
@@ -188,13 +191,100 @@ def cat_viec(van_ban, owner):
         return ""
     return text.strip()
 
+# Từ không mang nội dung khi so hai mô tả việc: động từ nhẹ, từ chức năng, từ chỉ ngày
+# (tạm để ở đây; khi dọn kỹ thuật thì chuyển sang tu_dien.py)
+TU_KHONG_NOI_DUNG = frozenset("""
+làm lại gửi viết nộp sửa chạy test update cập nhật phụ trách hoàn thành thực hiện cố gắng xong
+bản phần việc file cái các những từng mỗi mọi
+và cùng cũng với cho của để là thì mà nên rồi luôn nhé nha nữa thôi ạ gấp sớm ngay
+trước sau vào đến này đó kia thứ tuần tháng ngày hôm nay mai chủ
+""".split())
+
+# Mệnh đề nói về ý định/phân công cũ: không tạo việc
+MAU_Y_DINH_CU = r"\b(?:ban\s+đầu|lúc\s+đầu|dự\s+định\s+giao|định\s+giao|tính\s+giao)\b"
+
+# Câu đổi/gia hạn: việc này cập nhật một việc đã có của cùng chủ
+MAU_CAP_NHAT_HAN = r"\b(?:gia\s+hạn|dời\s+hạn|lùi\s+hạn|đổi\s+hạn|hạn\s+mới)\b"
+
+
+def tu_noi_dung(mo_ta):
+    """Tập từ mang nội dung của mô tả việc (bỏ động từ nhẹ, từ chức năng, số)."""
+    return {
+        tu for tu in re.findall(r"\w+", mo_ta.lower())
+        if not tu.isdigit() and tu not in TU_KHONG_NOI_DUNG
+    }
+
+
+def do_trung_noi_dung(mo_ta_a, mo_ta_b):
+    """Trả (số từ nội dung chung, tỷ lệ chung so với mô tả ngắn hơn)."""
+    a, b = tu_noi_dung(mo_ta_a), tu_noi_dung(mo_ta_b)
+    chung = len(a & b)
+    nho = min(len(a), len(b))
+    return chung, (chung / nho if nho else 0.0)
+
+
+def tim_viec_trung(tasks, owner, mo_ta, cap_nhat_han):
+    """Tìm việc cũ của cùng chủ mà mô tả mới nhắc lại; không có thì trả None."""
+    tot_nhat, diem_nhat = None, (0, 0.0)
+    for task in tasks:
+        if task["owner"] != owner:
+            continue
+        chung, ti_le = do_trung_noi_dung(task["task"], mo_ta)
+        hop_le = chung >= 1 if cap_nhat_han else (chung >= 2 and ti_le >= 0.5)
+        if hop_le and (chung, ti_le) >= diem_nhat:
+            tot_nhat, diem_nhat = task, (chung, ti_le)
+    return tot_nhat
+
+
+def ghi_nhan_viec(tasks, owner, task_text, start, clause, chi_so_cau, vi_tri_viec, last_task, stt_cau):
+    """Tạo việc mới, hoặc gộp/cập nhật hạn vào việc cũ của cùng chủ; trả về việc đã ghi."""
+    han = tim_han_chot(clause)
+    han_moi = han[0] if han else None
+    cap_nhat_han = re.search(MAU_CAP_NHAT_HAN, clause, flags=re.IGNORECASE) is not None
+
+    viec_cu, kieu = None, "moi"
+    if not tu_noi_dung(task_text):
+        # Không có đối tượng công việc: chỉ là cập nhật hạn cho việc ngay trước của cùng chủ
+        gan = (
+            last_task is not None
+            and last_task["owner"] == owner
+            and chi_so_cau - vi_tri_viec.get(id(last_task), -99) <= 2
+        )
+        if gan:
+            viec_cu, kieu = last_task, "cap_nhat"
+    else:
+        viec_cu = tim_viec_trung(tasks, owner, task_text, cap_nhat_han)
+        if viec_cu is not None:
+            kieu = "gop"
+
+    if viec_cu is None:
+        task_item = {"task": task_text, "owner": owner, "deadline": None, "start": start}
+        tasks.append(task_item)
+        ghi_vet("TAO_VIEC", stt_cau, clause, f"giữ {owner}: {task_text}")
+        if han_moi:
+            ghi_vet("GAN_HAN_TRUC_TIEP", stt_cau, clause, f"gắn {han_moi}")
+            task_item["deadline"] = han_moi
+    else:
+        task_item = viec_cu
+        if kieu == "gop":
+            task_item["task"] = task_text  # mô tả lấy từ lần nhắc sau cùng
+            ghi_vet("GOP_VIEC_TRUNG", stt_cau, clause, f"gộp vào việc của {owner}: {task_text}")
+        else:
+            ghi_vet("CAP_NHAT_VIEC", stt_cau, clause, f"chỉ cập nhật hạn cho việc của {owner}")
+        if han_moi:  # hạn lần sau thay hạn cũ; không có thì giữ hạn cũ
+            ghi_vet("GAN_HAN_TRUC_TIEP", stt_cau, clause, f"gắn {han_moi} (thay hạn cũ)")
+            task_item["deadline"] = han_moi
+
+    vi_tri_viec[id(task_item)] = chi_so_cau
+    return task_item
+
 def lay_viec(cac_cau, ten_biet):
     """Dựng danh sách việc cần làm từ các câu đã làm sạch."""
     tasks = []
     last_task = None
     viec_cho_chu = None
-
-    for cau in cac_cau:
+    vi_tri_viec = {}  # id(việc) -> chỉ số câu nhắc gần nhất (để giới hạn khoảng cách cập nhật hạn)
+    for chi_so, cau in enumerate(cac_cau):
         text = cau["sach"].strip()
         stt_cau = cau.get("stt", None)
 
@@ -293,6 +383,10 @@ def lay_viec(cac_cau, ten_biet):
                     ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, "loại")
                 continue
 
+            if re.search(MAU_Y_DINH_CU, clause, flags=re.IGNORECASE):
+                ghi_vet("LOAI_Y_DINH_CU", stt_cau, clause, "loại: ý định/phân công cũ")
+                continue
+
             owner = lay_ten_nguoi_phan_anh(clause, ten_biet)
             if owner is not None:
                 ghi_vet("GAN_CHU_VIEC", stt_cau, clause, f"gắn {owner}")
@@ -304,14 +398,10 @@ def lay_viec(cac_cau, ten_biet):
                 if not task_text or task_text.lower() in {"họp", "đầu tiên là", "tiếp theo là", "điều này", "theo điều này"}:
                     ghi_vet("LOAI_MO_TA_RONG", stt_cau, clause, "loại")
                     continue
-                task_item = {"task": task_text, "owner": owner, "deadline": None, "start": cau["start"]}
-                tasks.append(task_item)
-                last_task = task_item
-                ghi_vet("TAO_VIEC", stt_cau, clause, f"giữ {owner}: {task_text}")
-                han = tim_han_chot(clause)
-                if han and task_item["deadline"] is None:
-                    ghi_vet("GAN_HAN_TRUC_TIEP", stt_cau, clause, f"gắn {han[0]}")
-                    task_item["deadline"] = han[0]
+                last_task = ghi_nhan_viec(
+                    tasks, owner, task_text, cau["start"], clause,
+                    chi_so, vi_tri_viec, last_task, stt_cau,
+                )
                 continue
 
             if sentence_owner and co_dong_tu_hanh_dong(clause, stt_cau):
@@ -321,10 +411,10 @@ def lay_viec(cac_cau, ten_biet):
                         ghi_vet("GOP_VIEC", stt_cau, clause, f"gộp {sentence_owner}: {task_text}")
                         last_task["task"] = f"{last_task['task']}, {task_text}"
                     else:
-                        task_item = {"task": task_text, "owner": sentence_owner, "deadline": None, "start": cau["start"]}
-                        tasks.append(task_item)
-                        last_task = task_item
-                        ghi_vet("TAO_VIEC", stt_cau, clause, f"giữ {sentence_owner}: {task_text}")
+                        last_task = ghi_nhan_viec(
+                            tasks, sentence_owner, task_text, cau["start"], clause,
+                            chi_so, vi_tri_viec, last_task, stt_cau,
+                        )
                     han = tim_han_chot(clause)
                     if han and last_task["deadline"] is None:
                         ghi_vet("GAN_HAN_TRUC_TIEP", stt_cau, clause, f"gắn {han[0]}")
