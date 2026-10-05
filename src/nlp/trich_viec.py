@@ -44,6 +44,11 @@ MAU_DOI_TUONG_LAM = r"^(?P<dau>.+?)\s+(?:thì\s+)?(?:tự\s+)?(?:làm|phụ\s+tr
 # Từ đệm đứng đầu đối tượng: "thì phần", "còn về", "riêng việc"
 MAU_TU_DEM_DAU = r"^(?:(?:thì|còn|về|riêng|việc)\s+)+"
 
+# Chủ ngữ "mình/tôi/em" đứng trước động từ ("để thứ 2 mình test chung"); không tính khi là tân ngữ
+MAU_CHU_NGU_TU_XUNG = (
+    r"(?<!\bcho\s)(?<!\bvới\s)(?<!\bgiúp\s)(?<!\bnhờ\s)(?<!\bbảo\s)"
+    r"\b(?:mình|tôi|em)\s+(?:sẽ\s+|tự\s+)?\S"
+)
 
 def tach_han_cuoi(van_ban):
     """Cắt cụm hạn đứng cuối mệnh đề; trả (phần còn lại, cụm hạn) hoặc (van_ban, None)."""
@@ -465,14 +470,19 @@ def lay_viec(cac_cau, ten_biet):
                 continue
 
             if sentence_owner and co_dong_tu_hanh_dong(clause, stt_cau):
-                task_text = cat_viec(clause, sentence_owner)
+                # Mệnh đề không có tên nhưng có chủ ngữ "mình/tôi/em": không kế thừa chủ của mệnh đề trước
+                chu_menh_de = sentence_owner
+                if re.search(MAU_CHU_NGU_TU_XUNG, clause, flags=re.IGNORECASE):
+                    chu_menh_de = "Người chủ trì"
+                    ghi_vet("DOI_CHU_TU_XUNG", stt_cau, clause, "chủ ngữ tự xưng: Người chủ trì")
+                task_text = cat_viec(clause, chu_menh_de)
                 if task_text and task_text.lower() not in {"họp", "đầu tiên là", "tiếp theo là", "điều này", "theo điều này"}:
-                    if last_task and last_task["owner"] == sentence_owner and last_task["start"] == cau["start"] and re.search(r"\b(?:và|cùng|cũng|đồng thời)\b", clause, flags=re.IGNORECASE):
-                        ghi_vet("GOP_VIEC", stt_cau, clause, f"gộp {sentence_owner}: {task_text}")
+                    if last_task and last_task["owner"] == chu_menh_de and last_task["start"] == cau["start"] and re.search(r"\b(?:và|cùng|cũng|đồng thời)\b", clause, flags=re.IGNORECASE):
+                        ghi_vet("GOP_VIEC", stt_cau, clause, f"gộp {chu_menh_de}: {task_text}")
                         last_task["task"] = f"{last_task['task']}, {task_text}"
                     else:
                         last_task = ghi_nhan_viec(
-                            tasks, sentence_owner, task_text, cau["start"], clause,
+                            tasks, chu_menh_de, task_text, cau["start"], clause,
                             chi_so, vi_tri_viec, last_task, stt_cau,
                         )
                     han = tim_han_chot(clause)
