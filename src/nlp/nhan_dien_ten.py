@@ -30,6 +30,24 @@ def loai_bo_ten_cong_ty(van_ban):
 # giảng viên, không phải người trong cuộc họp.
 DANH_XUNG = r"(?:bạn|anh|chị|em|cô|chú)"
 
+# Động từ/từ đứng ngay sau tên viết hoa giữa câu (quy tắc b).
+MAU_SAU_TEN_VIET_HOA = (
+    r"(?:bên|làm|sẽ|phải|nên|cần|nhớ|gửi|viết|cập nhật|update|fix|sửa|upload|"
+    r"phụ trách|xong|chạy|theo|test|thiết kế)"
+)
+
+# Chữ hoa đứng trước tên nhưng KHÔNG phải họ/tên đệm: danh từ chung, số/thứ, buổi,
+# từ nối hay đứng đầu câu, danh xưng. (Tạm để ở đây; khi dọn kỹ thuật thì chuyển sang tu_dien.py.)
+TU_KHONG_PHAI_HO_DEM = {
+    "phần", "mục", "việc", "tôi", "thứ", "ngày", "dạ", "chốt",
+    "hai", "ba", "tư", "năm", "sáu", "bảy", "nhật",
+    "sáng", "trưa", "chiều", "tối", "đêm", "giờ", "lúc",
+    "hiện", "tạm", "sớm", "nhưng", "với", "cho", "các", "những",
+    "cả", "tất", "thế", "ừ",
+    "còn", "và", "rồi", "vậy", "thì", "nếu", "ok", "để", "về", "đã",
+    "này", "hôm", "tuần", "tháng",
+    "mình", "em", "anh", "chị", "bạn", "cô", "chú", "thầy",
+}
 
 def _la_dau_cau(van_ban, vi_tri):
     """Vị trí có phải đầu câu (đầu chuỗi hoặc sau dấu . ! ?) không."""
@@ -112,6 +130,21 @@ def _chu_hai_tai(van_ban, vi_tri):
     match = re.match(r"\s+([A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)", van_ban[vi_tri:])
     return match.group(1) if match else None
 
+def _them_ho_dem(cac_chu):
+    """cac_chu: các chữ hoa liên tiếp trước động từ, chữ cuối là tên chính.
+    Trả về họ/tên đệm đứng ngay trước tên chính (đi ngược từ phải sang trái),
+    dừng ở chữ đầu tiên không phải họ/đệm."""
+    ho_dem = []
+    for chu in reversed(cac_chu[:-1]):
+        thuong = chu.lower()
+        if not chu[0].isupper():
+            break
+        if (thuong in TU_KHONG_PHAI_HO_DEM
+                or thuong in DANH_SACH_TU_CHUC_NANG
+                or thuong in DANH_SACH_DONG_TU):
+            break
+        ho_dem.insert(0, chu)
+    return ho_dem
 
 def _ten_tu_match(van_ban, match):
     """Tên hợp lệ từ một match mẫu cấu trúc (quy tắc a/b), không thì None."""
@@ -151,10 +184,9 @@ def _ten_hop_le(ten_name):
         return False
     if ten_name.lower() in DANH_SACH_TU_CHUC_NANG:
         return False
-    if re.fullmatch(r"(?:[A-ZÀ-Ỹa-zà-ỹ]+|[A-ZÀ-Ỹa-zà-ỹ]+\s+[A-ZÀ-Ỹa-zà-ỹ]+)", ten_name) is None:
+    if re.fullmatch(r"[A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+){0,2}", ten_name) is None:
         return False
-    return len(ten_name.split()) <= 2
-
+    return len(ten_name.split()) <= 3
 
 def tim_ten_biet(cac_cau):
     """Dựng danh sách tên người đã biết qua cả cuộc họp."""
@@ -178,16 +210,24 @@ def tim_ten_biet(cac_cau):
             if _ten_hop_le(ten_name):
                 ten.add(ten_name)
 
-        # (b) chữ viết hoa trước động từ, không ở đầu câu, không phải từ chức năng
+                # (b) 1-3 chữ hoa liên tiếp trước động từ, không ở đầu câu, không phải từ chức năng.
+        # Chữ cuối là tên chính; họ/tên đệm đứng trước được gộp theo _them_ho_dem.
+        # Giữ cả dạng đầy đủ lẫn dạng một chữ để lần nhắc ngắn ("Trâm sẽ…") vẫn khớp.
         for match in re.finditer(
-            r"\b(?P<chu_dau>[A-ZÀ-Ỹ][A-Za-zÀ-Ỹ]*)(?=\s+(?:bên|làm|sẽ|phải|nên|cần|nhớ|gửi|viết|cập nhật|update|fix|sửa|upload|phụ trách|xong|chạy|theo|test|thiết kế))",
+            r"\b(?P<chuoi>[A-ZÀ-Ỹ][A-Za-zà-ỹÀ-Ỹ]*(?:\s+[A-ZÀ-Ỹ][A-Za-zà-ỹÀ-Ỹ]*){0,2})"
+            rf"(?=\s+{MAU_SAU_TEN_VIET_HOA})",
             text,
         ):
-            ten_name = _tu_hop_le_viet_hoa(text, match.start("chu_dau"), match.group("chu_dau"))
-            if ten_name is None:
+            cac_chu = match.group("chuoi").split()
+            chu_cuoi = cac_chu[-1]
+            vi_tri_cuoi = match.end("chuoi") - len(chu_cuoi)
+            ten_chinh = _tu_hop_le_viet_hoa(text, vi_tri_cuoi, chu_cuoi)
+            if ten_chinh is None:
                 continue
-            if _ten_hop_le(ten_name):
-                ten.add(ten_name)
+            ho_dem = [chuan_hoa_ten(chu) for chu in _them_ho_dem(cac_chu)]
+            for ten_name in {" ".join(ho_dem + [ten_chinh]), ten_chinh}:
+                if _ten_hop_le(ten_name):
+                    ten.add(ten_name)
 
     return sorted(ten, key=len, reverse=True)
 
