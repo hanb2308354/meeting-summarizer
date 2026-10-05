@@ -64,6 +64,20 @@ def tach_han_cuoi(van_ban):
         return van_ban, None
     return van_ban[: khop.start()].rstrip(), han[0]
 
+# Mệnh đề chỉ có động từ ("mình sẽ rà soát lại"), dùng khi mệnh đề liền trước đã nêu đối tượng
+MAU_DONG_TU_TRAN = (
+    r"^(?:(?:mình|tôi|em)\s+)?(?:(?:sẽ|tự|cũng|rồi|sau\s+đó)\s+)*"
+    r"(?P<dt>(?:rà\s+soát|kiểm\s+tra|review|check|test|hoàn\s+thiện|xử\s+lý|làm|sửa|viết|chạy|gửi|nộp|cập\s+nhật|update|fix|thiết\s+kế)"
+    r"(?:\s+(?:lại|kỹ|xong|luôn|nốt))?)\s*[,;:.!?]*$"
+)
+
+
+def tach_dong_tu_tran(van_ban):
+    """Trả cụm động từ nếu mệnh đề (sau khi cắt hạn cuối) chỉ gồm chủ ngữ tự xưng + động từ; không thì None."""
+    phan, _ = tach_han_cuoi(van_ban.strip())
+    khop = re.match(MAU_DONG_TU_TRAN, phan.strip(), flags=re.IGNORECASE)
+    return khop.group("dt") if khop else None
+
 def co_dong_tu_trong_danh_sach(phan):
     """Phần còn lại có động từ hành động trong DANH_SACH_DONG_TU không."""
     return any(
@@ -420,8 +434,11 @@ def lay_viec(cac_cau, ten_biet):
 
         clauses = [part.strip() for part in re.split(r"\s*,\s*", text) if part.strip()]
         sentence_owner = None
+        doi_tuong_truoc = None
+        doi_tuong_cho = None
 
         for clause in clauses:
+            doi_tuong_truoc, doi_tuong_cho = doi_tuong_cho, None  # chỉ giữ đối tượng cho mệnh đề liền sau
             if not clause:
                 ghi_vet("LOAI_MENH_DE_RONG", stt_cau, clause, "loại")
                 continue
@@ -462,7 +479,25 @@ def lay_viec(cac_cau, ten_biet):
             if owner is not None:
                 ghi_vet("GAN_CHU_VIEC", stt_cau, clause, f"gắn {owner}")
                 sentence_owner = owner
+                                # Mệnh đề chỉ có động từ ngay sau mệnh đề gán chủ cùng chủ: việc = động từ + đối tượng trước đó
+                dong_tu_tran = None
+                if doi_tuong_truoc and doi_tuong_truoc[0] == owner:
+                    dong_tu_tran = tach_dong_tu_tran(clause)
+                if dong_tu_tran:
+                    task_text = f"{dong_tu_tran} {doi_tuong_truoc[1]}"
+                    ghi_vet("NOI_DOI_TUONG_CHO", stt_cau, clause, f"nối đối tượng mệnh đề trước: {task_text}")
+                    last_task = ghi_nhan_viec(
+                        tasks, owner, task_text, cau["start"], clause,
+                        chi_so, vi_tri_viec, last_task, stt_cau,
+                    )
+                    continue
                 if not co_dong_tu_hanh_dong(clause, stt_cau, owner):
+                    # Mệnh đề chỉ còn cụm gán chủ ("phần database để mình làm"): nhớ đối tượng cho mệnh đề liền sau
+                    phan_gan_chu = bo_cum_gan_chu_cuoi(clause.strip())
+                    if phan_gan_chu:
+                        phan_gan_chu = re.sub(MAU_TU_DEM_DAU, "", phan_gan_chu, flags=re.IGNORECASE).strip()
+                        if tu_noi_dung(phan_gan_chu):
+                            doi_tuong_cho = (owner, phan_gan_chu)
                     ghi_vet("LOAI_KHONG_DONG_TU", stt_cau, clause, "loại")
                     continue
                 task_text = cat_viec(clause, owner)
