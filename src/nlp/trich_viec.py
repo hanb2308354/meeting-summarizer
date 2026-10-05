@@ -162,9 +162,10 @@ def cat_viec(van_ban, owner):
         )
         if not co_dong_tu_that:
             dau = re.sub(r"\s+này$", "", dau, flags=re.IGNORECASE)
-            dau = re.sub(r"^(?:Phần|Mục)\b", lambda m: m.group(0).lower(), dau)
-            duoi = re.sub(r"[,;:.!?\s]+$", "", khop_phu_trach.group("duoi"))
-            text = f"{duoi} {dau}"
+            if len(dau.split()) >= 2:
+                dau = re.sub(r"^(?:Phần|Mục)\b", lambda m: m.group(0).lower(), dau)
+                duoi = re.sub(r"[,;:.!?\s]+$", "", khop_phu_trach.group("duoi"))
+                text = f"{duoi} {dau}"
 
     text = re.sub(r"^(?:phụ\s+trách|để|làm|nên|cố\s+gắng)\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"^(?:bên|trong|ở|tại|trên)\s+[A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+){0,3}\s*[,;:.-]*\s*", "", text, flags=re.IGNORECASE)
