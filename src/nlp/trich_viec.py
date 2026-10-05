@@ -148,6 +148,9 @@ def co_dong_tu_hanh_dong(van_ban, stt_cau=None, chu=None):
 
         # "chưa/đã/vừa xong" là trạng thái, không phải việc phải làm
     phan_con = re.sub(r"\b(?:chưa|đã|vừa|mới|chẳng)\s+xong\b", " ", phan_con)
+        # "làm việc với <ai>" là làm việc cùng, không phải giao việc: bỏ cụm này trước khi kiểm động từ
+    phan_con = re.sub(r"\blàm\s+việc\s+với\b", " ", phan_con)
+
     if re.search(r"\b(?:làm|update|sửa|fix|viết|gửi|upload|cập nhật|phụ trách|chạy|test|thiết kế|hoàn thành|nộp|xong|hỗ trợ|thực hiện|điều|cố gắng)\b", phan_con):
         ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "giữ")
         return True
@@ -434,9 +437,11 @@ def lay_viec(cac_cau, ten_biet):
 
         clauses = [part.strip() for part in re.split(r"\s*,\s*", text) if part.strip()]
         sentence_owner = None
+        sau_gan_chu = False  # chỉ bật lại nếu chính mệnh đề này là cụm gán chủ thuần
         doi_tuong_truoc = None
         doi_tuong_cho = None
-
+        viec_liet_ke = None   # việc đang nhận các mảnh liệt kê không tên sau câu gán chủ
+        sau_gan_chu = False   # mệnh đề liền trước là cụm gán chủ thuần
         for clause in clauses:
             doi_tuong_truoc, doi_tuong_cho = doi_tuong_cho, None  # chỉ giữ đối tượng cho mệnh đề liền sau
             if not clause:
@@ -479,7 +484,8 @@ def lay_viec(cac_cau, ten_biet):
             if owner is not None:
                 ghi_vet("GAN_CHU_VIEC", stt_cau, clause, f"gắn {owner}")
                 sentence_owner = owner
-                                # Mệnh đề chỉ có động từ ngay sau mệnh đề gán chủ cùng chủ: việc = động từ + đối tượng trước đó
+                sau_gan_chu = False  # chỉ bật lại nếu chính mệnh đề này là cụm gán chủ thuần
+                # Mệnh đề chỉ có động từ ngay sau mệnh đề gán chủ cùng chủ: việc = động từ + đối tượng trước đó
                 dong_tu_tran = None
                 if doi_tuong_truoc and doi_tuong_truoc[0] == owner:
                     dong_tu_tran = tach_dong_tu_tran(clause)
@@ -492,18 +498,37 @@ def lay_viec(cac_cau, ten_biet):
                     )
                     continue
                 if not co_dong_tu_hanh_dong(clause, stt_cau, owner):
-                    # Mệnh đề chỉ còn cụm gán chủ ("phần database để mình làm"): nhớ đối tượng cho mệnh đề liền sau
+                    # Mệnh đề chỉ còn cụm gán chủ: nhớ để các mệnh đề không tên liền sau là phần liệt kê của việc này
                     phan_gan_chu = bo_cum_gan_chu_cuoi(clause.strip())
+                    if phan_gan_chu is not None:
+                        sau_gan_chu = True
+                        viec_liet_ke = None
                     if phan_gan_chu:
                         phan_gan_chu = re.sub(MAU_TU_DEM_DAU, "", phan_gan_chu, flags=re.IGNORECASE).strip()
                         if tu_noi_dung(phan_gan_chu):
                             doi_tuong_cho = (owner, phan_gan_chu)
                     ghi_vet("LOAI_KHONG_DONG_TU", stt_cau, clause, "loại")
                     continue
+
                 task_text = cat_viec(clause, owner)
                 if not task_text or task_text.lower() in {"họp", "đầu tiên là", "tiếp theo là", "điều này", "theo điều này"}:
                     ghi_vet("LOAI_MO_TA_RONG", stt_cau, clause, "loại")
                     continue
+
+                                # Chủ tự xưng/tập thể mà mô tả chỉ có động từ ("nhóm mình phải update lại"): không có đối tượng nên không là việc,
+                # trừ khi đó là câu cập nhật hạn cho việc ngay trước của cùng chủ
+                if (
+                    owner in ("Người chủ trì", "Mọi người")
+                    and not tu_noi_dung(task_text)
+                    and not (
+                        last_task is not None
+                        and last_task["owner"] == owner
+                        and chi_so - vi_tri_viec.get(id(last_task), -99) <= 2
+                    )
+                ):
+                    ghi_vet("LOAI_THIEU_DOI_TUONG", stt_cau, clause, f"loại: chỉ có động từ, chủ {owner}")
+                    continue
+
                 last_task = ghi_nhan_viec(
                     tasks, owner, task_text, cau["start"], clause,
                     chi_so, vi_tri_viec, last_task, stt_cau,
@@ -511,14 +536,22 @@ def lay_viec(cac_cau, ten_biet):
                 continue
 
             if sentence_owner and co_dong_tu_hanh_dong(clause, stt_cau):
-                # Mệnh đề không có tên nhưng có chủ ngữ "mình/tôi/em": không kế thừa chủ của mệnh đề trước
+                # Mệnh đề không tên có chủ ngữ "mình/tôi/em": không kế thừa chủ của mệnh đề trước
                 chu_menh_de = sentence_owner
                 if re.search(MAU_CHU_NGU_TU_XUNG, clause, flags=re.IGNORECASE):
                     chu_menh_de = "Người chủ trì"
                     ghi_vet("DOI_CHU_TU_XUNG", stt_cau, clause, "chủ ngữ tự xưng: Người chủ trì")
                 task_text = cat_viec(clause, chu_menh_de)
                 if task_text and task_text.lower() not in {"họp", "đầu tiên là", "tiếp theo là", "điều này", "theo điều này"}:
-                    if last_task and last_task["owner"] == chu_menh_de and last_task["start"] == cau["start"] and re.search(r"\b(?:và|cùng|cũng|đồng thời)\b", clause, flags=re.IGNORECASE):
+                    if (
+                        viec_liet_ke is not None
+                        and last_task is viec_liet_ke
+                        and chu_menh_de == viec_liet_ke["owner"]
+                    ):
+                        # Mảnh liệt kê tiếp theo sau câu gán chủ ("giao cho X phụ trách, làm A, sửa B với xóa C"): một việc
+                        ghi_vet("GOP_LIET_KE", stt_cau, clause, f"nối vào việc của {chu_menh_de}: {task_text}")
+                        viec_liet_ke["task"] = viec_liet_ke["task"].rstrip(" .,;") + ", " + task_text
+                    elif last_task and last_task["owner"] == chu_menh_de and last_task["start"] == cau["start"] and re.search(r"\b(?:và|cùng|cũng|đồng thời)\b", clause, flags=re.IGNORECASE):
                         ghi_vet("GOP_VIEC", stt_cau, clause, f"gộp {chu_menh_de}: {task_text}")
                         last_task["task"] = f"{last_task['task']}, {task_text}"
                     else:
@@ -526,6 +559,8 @@ def lay_viec(cac_cau, ten_biet):
                             tasks, chu_menh_de, task_text, cau["start"], clause,
                             chi_so, vi_tri_viec, last_task, stt_cau,
                         )
+                        viec_liet_ke = last_task if sau_gan_chu else None
+                        sau_gan_chu = False
                     han = tim_han_chot(clause)
                     if han and last_task["deadline"] is None:
                         ghi_vet("GAN_HAN_TRUC_TIEP", stt_cau, clause, f"gắn {han[0]}")
