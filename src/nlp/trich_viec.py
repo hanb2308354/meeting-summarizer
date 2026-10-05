@@ -71,7 +71,7 @@ def la_de_muc(phan):
     return False
 
 
-def co_dong_tu_hanh_dong(van_ban, stt_cau=None):
+def co_dong_tu_hanh_dong(van_ban, stt_cau=None, chu=None):
     """Mệnh đề có động từ hành động thì coi là việc cần làm."""
     van_ban_goc = van_ban.strip()
     van_ban = van_ban.lower().strip()
@@ -112,6 +112,15 @@ def co_dong_tu_hanh_dong(van_ban, stt_cau=None):
     if re.search(r"\b(?:làm|update|sửa|fix|viết|gửi|upload|cập nhật|phụ trách|chạy|test|thiết kế|hoàn thành|nộp|xong|hỗ trợ|thực hiện|điều|cố gắng)\b", phan_con):
         ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "giữ")
         return True
+    # Tín hiệu mạnh: "<Tên> sẽ/cần/nhớ <từ>" là giao việc dù động từ chưa có trong danh sách
+    # (vd "Khoa sẽ optimize ..."). Chỉ áp dụng cho chủ có tên; "mình/em" chờ xử lý riêng.
+    if chu and chu not in ("Người chủ trì", "Mọi người") and re.search(
+        rf"\b{re.escape(chu)}\b\s+(?:sẽ|cần|nhớ)\s+(?!(?:là|có|được|bị|đi|gặp|ở)\b)\S+",
+        van_ban,
+        flags=re.IGNORECASE,
+    ):
+        ghi_vet("LOAI_KHONG_DONG_TU", stt_cau, van_ban_goc, "giữ: tín hiệu mạnh")
+        return True
     ghi_vet("LOAI_KHONG_DONG_TU", None, van_ban, "loại")
     return False
 
@@ -126,6 +135,12 @@ def cat_viec(van_ban, owner):
     text = re.sub(r"^\s*(?:tiếp\s+theo\s+là|đầu\s+tiên\s+là|cuối\s+cùng\s+là|thứ\s+\d+\s+là)\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"^\s*việc\s+(?:này|đó)\s+", "", text, flags=re.IGNORECASE)
 
+    # Chủ có tên đứng ngay trước "sẽ/cần/nhớ": mô tả bắt đầu sau tín hiệu, không cần động từ trong danh sách
+    sau_tin_hieu = bool(
+        owner
+        and owner not in ("Người chủ trì", "Mọi người")
+        and re.search(rf"\b{re.escape(owner)}\b\s+(?:sẽ|cần|nhớ)\s+\S", text, flags=re.IGNORECASE)
+    )
     # Cụm gán chủ theo tên đã biết: chỉ bỏ đúng tên chủ, không ăn từ đứng sau
     if owner and owner != "Người chủ trì":
         ten = re.escape(owner)
@@ -180,9 +195,10 @@ def cat_viec(van_ban, owner):
         match = re.search(rf"\b{re.escape(dong_tu)}\b", text, flags=re.IGNORECASE)
         if match:
             vi_tri.append(match.start())
-    if vi_tri:
+    if sau_tin_hieu:
+        text = re.sub(r"^(?:phải|cần|nên|sẽ)\s+", "", text.strip(), flags=re.IGNORECASE)
+    elif vi_tri:
         text = text[min(vi_tri):].strip()
-
     text = re.sub(r"^(?:là|đó\s+là)\s+", "", text, flags=re.IGNORECASE)
     text = re.sub(r"(?:,\s*)?(?:còn\s+)?(?:ai\s+có\s+ý\s+kiến\s+gì\s+không\?|có\s+ai\s+.*\bý\s+kiến\b.*\?|cảm\s+ơn.*|để\s+thứ\s+\d+\s+mình\s+test\s+chung.*)$", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\s+[,;]$", "", text)
@@ -379,6 +395,16 @@ def lay_viec(cac_cau, ten_biet):
                 if han and last_task and last_task["deadline"] is None:
                     ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, f"gắn {han[0]}")
                     last_task["deadline"] = han[0]
+                    # Hạn nói một lần cho cả cụm việc cùng chủ liền trước (chưa có hạn, trong 3 câu)
+                    for viec_truoc in reversed(tasks):
+                        if viec_truoc is last_task:
+                            continue
+                        if viec_truoc["owner"] != last_task["owner"] or viec_truoc["deadline"] is not None:
+                            break
+                        if chi_so - vi_tri_viec.get(id(viec_truoc), -99) > 3:
+                            break
+                        ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, f"gắn {han[0]} cho cả việc trước của {viec_truoc['owner']}")
+                        viec_truoc["deadline"] = han[0]
                 else:
                     ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, "loại")
                 continue
@@ -391,7 +417,7 @@ def lay_viec(cac_cau, ten_biet):
             if owner is not None:
                 ghi_vet("GAN_CHU_VIEC", stt_cau, clause, f"gắn {owner}")
                 sentence_owner = owner
-                if not co_dong_tu_hanh_dong(clause, stt_cau):
+                if not co_dong_tu_hanh_dong(clause, stt_cau, owner):
                     ghi_vet("LOAI_KHONG_DONG_TU", stt_cau, clause, "loại")
                     continue
                 task_text = cat_viec(clause, owner)

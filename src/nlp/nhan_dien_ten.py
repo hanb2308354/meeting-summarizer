@@ -168,7 +168,7 @@ def lay_ten_nguoi_phan_anh(van_ban, ten_biet):
 
     for ten in ten_biet:
         if re.search(rf"\b(?:bạn|anh|chị|em)?\s*{re.escape(ten)}\b", van_ban, flags=re.IGNORECASE):
-            if re.search(rf"\b{re.escape(ten)}\b.*(?:sẽ|phải|nên|làm|gửi|viết|update|fix|sửa|upload|cập nhật|phụ trách|nhớ|chạy|xong|test)\b", van_ban, flags=re.IGNORECASE):
+            if re.search(rf"\b{re.escape(ten)}\b.*(?:sẽ|phải|nên|làm|gửi|viết|update|fix|sửa|upload|cập nhật|phụ trách|nhớ|chạy|xong|test|cố gắng|hoàn thành|nộp|thiết kế|thực hiện|hỗ trợ)\b", van_ban, flags=re.IGNORECASE):
                 return ten
             if re.search(rf"\b(?:giao cho|phụ trách)\s+(?:bạn\s+)?{re.escape(ten)}\b", van_ban, flags=re.IGNORECASE):
                 return ten
