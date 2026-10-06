@@ -1,7 +1,10 @@
 # Nhận diện tên người trong câu transcript đã làm sạch
 import re
 
-from tu_dien import DANH_SACH_DONG_TU, DANH_SACH_TU_CHUC_NANG, DONG_TU_BO_SUNG
+from tu_dien import (
+    DANH_SACH_DONG_TU, DANH_SACH_TU_CHUC_NANG, DONG_TU_BO_SUNG,
+    DONG_TU_VI_TRI_NGUOI_LAM, TU_SAU_DONG_TU_KHONG_PHAI_VIEC,
+)
 
 def chuan_hoa_ten(ten):
     """Viết hoa chữ cái đầu của tên người, giữ nguyên cách viết nhiều từ."""
@@ -34,6 +37,11 @@ MAU_DONG_TU_BO_SUNG = (
     r"(?:" + "|".join(re.escape(d) for d in sorted(DONG_TU_BO_SUNG, key=len, reverse=True)) + r")\b"
 )
 
+# Động từ vị trí người làm đứng ngay sau tên ("Bách nhận", "Ngân lập"); loại "nhận thấy", "lo lắng"...
+MAU_DONG_TU_NGUOI_LAM = (
+    r"(?:" + "|".join(re.escape(d) for d in DONG_TU_VI_TRI_NGUOI_LAM) + r")\b"
+    r"(?!\s+(?:" + "|".join(re.escape(t) for t in TU_SAU_DONG_TU_KHONG_PHAI_VIEC) + r")\b)"
+)
 # Động từ/từ đứng ngay sau tên viết hoa giữa câu (quy tắc b).
 MAU_SAU_TEN_VIET_HOA = (
     r"(?:bên|làm|sẽ|phải|nên|cần|nhớ|gửi|viết|cập nhật|update|fix|sửa|upload|"
@@ -255,6 +263,13 @@ def lay_ten_nguoi_phan_anh(van_ban, ten_biet):
                 flags=re.IGNORECASE,
             ):
                 return ten
+                        # Tên viết hoa (hoặc danh xưng + tên) liền trước "nhận/lập/xếp/lo/gom/rà"
+            if re.search(
+                rf"(?:\b(?i:{DANH_XUNG})\s+(?i:{re.escape(ten)})|\b{re.escape(ten)})\s+"
+                rf"(?:(?i:cũng|tự|đang)\s+)*(?i:{MAU_DONG_TU_NGUOI_LAM})",
+                van_ban,
+            ):
+                return ten
     # Mẫu tên theo cấu trúc (không viết cứng tên hay câu mẫu): có danh xưng
     # (quy tắc a) hoặc chữ viết hoa giữa câu (quy tắc b); chữ thứ hai chỉ gộp
     # khi viết hoa và không phải từ chức năng hay động từ (xem _gop_chu_thu_hai).
@@ -275,5 +290,10 @@ def lay_ten_nguoi_phan_anh(van_ban, ten_biet):
                 return ten_name
 
     if re.search(r"\b(mình|tôi|em)\b.*\b(làm|sẽ|gửi|viết|update|fix|upload|cập nhật|xong)\b", van_ban, flags=re.IGNORECASE):
+        return "Người chủ trì"
+    if re.search(
+        rf"\b(?:mình|tôi|em)\s+(?:(?:sẽ|tự|cũng)\s+)*{MAU_DONG_TU_NGUOI_LAM}",
+        van_ban, flags=re.IGNORECASE,
+    ):
         return "Người chủ trì"
     return None

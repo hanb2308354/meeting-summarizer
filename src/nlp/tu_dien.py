@@ -155,3 +155,9 @@ DIEM_BO_SUNG = {
     "mục tiêu": 0.15,
     "tối thiểu": 0.15,
 }
+
+# Động từ chỉ coi là hành động khi đứng ở vị trí người làm (sau tên chủ, sau tự xưng/danh xưng,
+# sau sẽ/phải/cần/giúp/rồi...). "nhận/lo" còn là từ khác nghĩa nên KHÔNG gộp vào DANH_SACH_DONG_TU.
+DONG_TU_VI_TRI_NGUOI_LAM = ("nhận", "lập", "xếp", "lo", "gom", "rà")
+# Từ đứng ngay sau các động từ trên làm nó hết là việc ("nhận thấy", "lo lắng", "nhận định")
+TU_SAU_DONG_TU_KHONG_PHAI_VIEC = ("thấy", "ra", "xét", "định", "thức", "diện", "được", "lắng", "ngại", "sợ", "âu")

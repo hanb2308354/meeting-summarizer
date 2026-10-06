@@ -6,6 +6,7 @@ from nhan_dien_ten import lay_ten_nguoi_phan_anh
 from trich_lich_hop import la_lich_hop
 from tu_dien import (
     DANH_SACH_DONG_TU, DONG_TU_BO_SUNG,
+    DONG_TU_VI_TRI_NGUOI_LAM, TU_SAU_DONG_TU_KHONG_PHAI_VIEC,
     MAU_CAU_GAN_CHU_CHO_VIEC,
     MAU_VIEC_CHO_CHU,
     TIN_HIEU_GIAO_VIEC,
@@ -17,7 +18,33 @@ MAU_DONG_TU_BO_SUNG = re.compile(
     r"\b(?:" + "|".join(re.escape(d) for d in sorted(DONG_TU_BO_SUNG, key=len, reverse=True)) + r")\b",
     re.IGNORECASE,
 )
+# Động từ vị trí người làm (tu_dien.DONG_TU_VI_TRI_NGUOI_LAM): chỉ tính khi đứng sau tên chủ,
+# sau tự xưng/danh xưng, hoặc sau sẽ/phải/cần/giúp/rồi...; không tính "phiếu nhận hàng", "lo lắng"
+_NHOM_DONG_TU_NGUOI_LAM = "|".join(re.escape(d) for d in DONG_TU_VI_TRI_NGUOI_LAM)
+_NHOM_TU_SAU_KHONG_PHAI_VIEC = "|".join(re.escape(t) for t in TU_SAU_DONG_TU_KHONG_PHAI_VIEC)
+_MAU_DONG_TU_NGUOI_LAM = (
+    rf"(?P<dt>(?:{_NHOM_DONG_TU_NGUOI_LAM})\b(?!\s+(?:{_NHOM_TU_SAU_KHONG_PHAI_VIEC})\b))"
+)
+_TU_TRUOC_NGUOI_LAM = r"(?:sẽ|phải|cần|nên|nhớ|giúp|tự|cũng|rồi|đó|thì|để|mình|tôi|em|anh|chị|bạn)"
+_TU_CHEN_NGUOI_LAM = r"(?:(?:cũng|tự|đang|sẽ)\s+)*"
 
+# "lo/nhận" chỉ là động từ nhẹ đứng đầu mô tả ("lo phần báo cáo", "nhận phần này"): bỏ như "làm"/"phụ trách"
+MAU_DONG_TU_NHE_DAU = (
+    r"^(?:lo(?!\s+(?:lắng|ngại|sợ|âu))|nhận(?=\s+(?:phần|việc|mục|giúp|nhiệm\s+vụ)\b))\s+"
+)
+
+
+def tim_dong_tu_nguoi_lam(van_ban, chu=None, cho_phep_dau=False):
+    """Tìm động từ nhận/lập/xếp/lo/gom/rà ở vị trí người làm; trả match (nhóm 'dt') hoặc None.
+    chu: tên chủ đã biết (được phép đứng ngay trước động từ). cho_phep_dau: động từ đứng đầu chuỗi
+    cũng hợp lệ (dùng trong cat_viec, nơi chủ ngữ đã bị cắt)."""
+    truoc = _TU_TRUOC_NGUOI_LAM
+    if chu and chu not in ("Người chủ trì", "Mọi người"):
+        truoc = rf"(?:{truoc}|{re.escape(chu)})"
+    mau = rf"\b{truoc}\s+{_TU_CHEN_NGUOI_LAM}"
+    if cho_phep_dau:
+        mau = rf"(?:^\s*|{mau})"
+    return re.search(mau + _MAU_DONG_TU_NGUOI_LAM, van_ban, flags=re.IGNORECASE)
 # Từ mở đầu mệnh đề: không phải lý do để loại, chỉ bỏ ra rồi kiểm động từ trên phần còn lại
 MO_DAU_MENH_DE = r"^(?:mình|tôi|em|việc\s+này|còn|thứ(?:\s+\d+)?|phần(?:\s+này)?|bên)\b\s*"
 
@@ -189,6 +216,10 @@ def co_dong_tu_hanh_dong(van_ban, stt_cau=None, chu=None):
     if MAU_DONG_TU_BO_SUNG.search(phan_con):
         ghi_vet("LOAI_KHONG_DONG_TU", stt_cau, van_ban_goc, "giữ: động từ bổ sung")
         return True
+        # Dùng van_ban (chưa bỏ từ mở đầu) vì "em/mình" đứng trước động từ là chính ngữ cảnh người làm
+    if tim_dong_tu_nguoi_lam(van_ban, chu):
+        ghi_vet("LOAI_KHONG_DONG_TU", stt_cau, van_ban_goc, "giữ: động từ vị trí người làm")
+        return True
     # Tín hiệu mạnh: "<Tên> sẽ/cần/nhớ <từ>" là giao việc dù động từ chưa có trong danh sách
     # (vd "Khoa sẽ optimize ..."). Chỉ áp dụng cho chủ có tên; "mình/em" chờ xử lý riêng.
     if chu and chu not in ("Người chủ trì", "Mọi người") and re.search(
@@ -229,7 +260,7 @@ def cat_viec(van_ban, owner):
         )
 
     for mau in [
-        r"\b(?:bạn|anh|chị|em)\s+[A-ZÀ-Ỹa-zà-ỹ]+\s+",
+        r"\b(?:bạn|anh|chị|em)\s+(?!(?:" + _NHOM_DONG_TU_NGUOI_LAM + r")\b)[A-ZÀ-Ỹa-zà-ỹ]+\s+",
         r"\b[A-ZÀ-Ỹa-zà-ỹ]+\s+(?:sẽ|phải|nên|cần|nhớ)\s+",
         r"\b(?:để|việc này\s+để|nên)\s+",
         r"\b(?:mình|tôi|em)\s+(?:sẽ\s+)?",
@@ -290,10 +321,20 @@ def cat_viec(van_ban, owner):
         text = re.sub(r"^(?:phải|cần|nên|sẽ)\s+", "", text.strip(), flags=re.IGNORECASE)
     elif vi_tri:
         text = text[min(vi_tri):].strip()
-    elif MAU_DONG_TU_BO_SUNG.search(text):
-        # Không có động từ trong DANH_SACH_DONG_TU: bắt đầu từ động từ bổ sung
-        text = text[MAU_DONG_TU_BO_SUNG.search(text).start():].strip()
+    else:
+        # Không có động từ trong DANH_SACH_DONG_TU: bắt đầu từ động từ bổ sung hoặc động từ vị trí người làm,
+        # cái nào đứng sớm hơn
+        ung_vien = []
+        khop_bo_sung = MAU_DONG_TU_BO_SUNG.search(text)
+        if khop_bo_sung:
+            ung_vien.append(khop_bo_sung.start())
+        khop_nguoi_lam = tim_dong_tu_nguoi_lam(text, owner, cho_phep_dau=True)
+        if khop_nguoi_lam:
+            ung_vien.append(khop_nguoi_lam.start("dt"))
+        if ung_vien:
+            text = text[min(ung_vien):].strip()
     text = re.sub(r"^(?:là|đó\s+là)\s+", "", text, flags=re.IGNORECASE)
+    text = re.sub(MAU_DONG_TU_NHE_DAU, "", text, flags=re.IGNORECASE)
     text = re.sub(r"(?:,\s*)?(?:còn\s+)?(?:ai\s+có\s+ý\s+kiến\s+gì\s+không\?|có\s+ai\s+.*\bý\s+kiến\b.*\?|cảm\s+ơn.*|để\s+thứ\s+\d+\s+mình\s+test\s+chung.*)$", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\s+[,;]$", "", text)
     text = re.sub(r"\s*[,;]\s*(?:để|và|cùng|cũng)\s+.*$", "", text, flags=re.IGNORECASE)
@@ -361,6 +402,42 @@ def ly_do_khong_giao_viec(clause):
     if MAU_DAN_LOI.search(clause) and not tim_han_chot(clause):
         return "dẫn lời"
     return None
+
+# Tách câu để xét D (phủ định/cấm, dẫn lời) theo từng câu; các luật neo đầu mệnh đề giữ nguyên
+MAU_TACH_CAU = r"(?<=[.!?])\s+"
+
+# Từ nối bước đứng đầu mệnh đề không tên: "rồi gửi...", "sau đó lập...", "xong thì gửi..."
+MAU_NOI_TIEP_VIEC = r"^(?:(?:và|thì)\s+)?(?:rồi|sau\s+đó|xong(?:\s+rồi)?(?:\s+thì)?)\s+"
+
+
+def loc_cau_khong_giao_viec(clause):
+    """Trả (mệnh đề còn lại, lý do loại). Mệnh đề một câu: y hệt ly_do_khong_giao_viec.
+    Mệnh đề nhiều câu dính nhau, không có tín hiệu giao việc mạnh: bỏ riêng câu phủ định/dẫn lời,
+    giữ các câu còn lại; chỉ loại cả mệnh đề khi không còn câu nào."""
+    cac_cau = [c for c in re.split(MAU_TACH_CAU, clause.strip()) if c.strip()]
+    if len(cac_cau) <= 1:
+        return clause, ly_do_khong_giao_viec(clause)
+    if MAU_TIN_HIEU_MANH.search(clause):
+        return clause, None  # như cũ: có tín hiệu mạnh thì không loại gì
+    if MAU_KE_QUA_KHU.search(clause):
+        return clause, "lời kể quá khứ"
+    if MAU_UOC_DOAN.search(clause):
+        return clause, "ước đoán"
+    giu, ly_do_dau = [], None
+    for cau in cac_cau:
+        if MAU_PHU_DINH_CAM.search(cau):
+            ly_do = "phủ định/cấm"
+        elif MAU_DAN_LOI.search(cau) and not tim_han_chot(cau):
+            ly_do = "dẫn lời"
+        else:
+            ly_do = None
+        if ly_do:
+            ly_do_dau = ly_do_dau or ly_do
+        else:
+            giu.append(cau)
+    if not giu:
+        return clause, ly_do_dau
+    return " ".join(giu), None
 
 def tu_noi_dung(mo_ta):
     """Tập từ mang nội dung của mô tả việc (bỏ động từ nhẹ, từ chức năng, số)."""
@@ -614,12 +691,15 @@ def lay_viec(cac_cau, ten_biet):
                 ghi_vet("LOAI_Y_DINH_CU", stt_cau, clause, "loại: ý định/phân công cũ")
                 continue
 
-            ly_do = ly_do_khong_giao_viec(clause)
+            clause_goc = clause
+            clause, ly_do = loc_cau_khong_giao_viec(clause_goc)
             if ly_do:
-                ghi_vet("LOAI_KHONG_GIAO_VIEC", stt_cau, clause, f"loại: {ly_do}")
+                ghi_vet("LOAI_KHONG_GIAO_VIEC", stt_cau, clause_goc, f"loại: {ly_do}")
                 continue
-            
-            owner = lay_ten_nguoi_phan_anh(clause, ten_biet)
+            if clause != clause_goc:
+                ghi_vet("BO_CAU_KHONG_GIAO_VIEC", stt_cau, clause_goc, f"bỏ câu phủ định/dẫn lời, giữ: {clause}")
+
+            owner = lay_ten_nguoi_phan_anh(clause_goc, ten_biet)
             if owner is not None:
                 ghi_vet("GAN_CHU_VIEC", stt_cau, clause, f"gắn {owner}")
                 sentence_owner = owner
@@ -681,6 +761,8 @@ def lay_viec(cac_cau, ten_biet):
                     chu_menh_de = "Người chủ trì"
                     ghi_vet("DOI_CHU_TU_XUNG", stt_cau, clause, "chủ ngữ tự xưng: Người chủ trì")
                 task_text = cat_viec(clause, chu_menh_de)
+                khop_noi = re.match(MAU_NOI_TIEP_VIEC, clause, flags=re.IGNORECASE)
+                phan_noi = cat_viec(clause[khop_noi.end():], chu_menh_de) if khop_noi else ""
                 if task_text and task_text.lower() not in {"họp", "đầu tiên là", "tiếp theo là", "điều này", "theo điều này"}:
                     if (
                         viec_liet_ke is not None
@@ -690,6 +772,16 @@ def lay_viec(cac_cau, ten_biet):
                         # Mảnh liệt kê tiếp theo sau câu gán chủ ("giao cho X phụ trách, làm A, sửa B với xóa C"): một việc
                         ghi_vet("GOP_LIET_KE", stt_cau, clause, f"nối vào việc của {chu_menh_de}: {task_text}")
                         viec_liet_ke["task"] = viec_liet_ke["task"].rstrip(" .,;") + ", " + task_text
+                    elif (
+                        phan_noi
+                        and tu_noi_dung(phan_noi)
+                        and last_task is not None
+                        and last_task["owner"] == chu_menh_de
+                        and last_task["start"] == cau["start"]
+                    ):
+                        # "A, rồi/sau đó/xong thì B" cùng chủ, cùng đoạn: một việc gồm hai bước
+                        ghi_vet("NOI_VIEC_TIEP_NOI", stt_cau, clause, f"nối vào việc của {chu_menh_de}: {phan_noi}")
+                        last_task["task"] = last_task["task"].rstrip(" .,;") + ", rồi " + phan_noi
                     elif last_task and last_task["owner"] == chu_menh_de and last_task["start"] == cau["start"] and re.search(r"\b(?:và|cùng|cũng|đồng thời)\b", clause, flags=re.IGNORECASE):
                         ghi_vet("GOP_VIEC", stt_cau, clause, f"gộp {chu_menh_de}: {task_text}")
                         last_task["task"] = f"{last_task['task']}, {task_text}"
