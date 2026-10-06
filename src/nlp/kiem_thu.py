@@ -24,6 +24,14 @@ TU_CHUC_NANG = {
     "cần", "này", "phần", "còn", "trước", "sau", "hôm", "ok",
 }
 TEN_CONG_TY = {"minh phát"}
+# Việc tùy chọn theo nhãn (nhan_dap_an.json): chấp nhận được dù mô tả ngắn/không có động từ,
+# nên không bị tính là "task không hợp lệ". ĐẶC THÙ DỮ LIỆU: khóa là tên file transcript.
+VIEC_TUY_CHON = {
+    "thu_nghiem1.json": (("người chủ trì", "test chung"),),
+}
+# Hạn nói một lần có thể gắn cho các việc cùng chủ nằm trong chừng này đoạn liền nhau
+# (khớp luật gắn hạn ngược của pipeline: cụm việc cùng chủ trong tối đa 3 câu)
+KHOANG_CACH_VIEC_CUNG_HAN = 3
 TU_MANG_Y_NGIA = tuple(dict.fromkeys(TU_MANG_Y_NGIA + (
     "rà soát", "đối chiếu", "hoàn tất", "tổng hợp", "kiểm tra", "biên soạn",
 )))
@@ -121,8 +129,36 @@ def mo_ta_cap(owner, deadline):
     return f"({json.dumps(owner, ensure_ascii=False)}, {json.dumps(deadline, ensure_ascii=False)})"
 
 
-def la_cung_menh_de_liet_ke(tasks, cac_cau):
-    """Chỉ cho phép lặp hạn khi cùng chủ và cùng mệnh đề liệt kê."""
+def la_viec_tuy_chon(ten_file, task_item, source_text=""):
+    """Việc nằm trong bảng VIEC_TUY_CHON của file (so theo chủ và mô tả đã chuẩn hóa)."""
+    owner = chuan_hoa_chu(task_item.get("owner"), source_text)
+    mo_ta = chuan_hoa(task_item.get("task") or "")
+    return any(
+        owner == chu and mo_ta == viec
+        for chu, viec in VIEC_TUY_CHON.get(ten_file, ())
+    )
+
+
+def la_cum_viec_cung_chu_ke_nhau(tasks, cac_cau):
+    """Các việc cùng chủ (khác rỗng) nằm trong tối đa KHOANG_CACH_VIEC_CUNG_HAN đoạn liền nhau."""
+    chi_so_theo_start = {}
+    for i, item in enumerate(cac_cau):
+        chi_so_theo_start.setdefault(item.get("start"), i)
+    vi_tri, chu = [], set()
+    for task in tasks:
+        i = chi_so_theo_start.get(task.get("start"))
+        if i is None or task.get("start") is None:
+            return False
+        vi_tri.append(i)
+        van_ban = chuan_hoa(cac_cau[i].get("text") or cac_cau[i].get("sach") or "")
+        chu.add(chuan_hoa_chu(task.get("owner"), van_ban))
+    if len(chu) != 1 or "" in chu:
+        return False
+    return max(vi_tri) - min(vi_tri) <= KHOANG_CACH_VIEC_CUNG_HAN
+
+
+def la_cung_menh_de_liet_ke_trong_cau(tasks, cac_cau):
+    """Cùng chủ và cùng mệnh đề liệt kê trong một đoạn (có từ nối giữa các động từ)."""
     if not tasks:
         return False
     starts = {task.get("start") for task in tasks}
@@ -162,6 +198,15 @@ def la_cung_menh_de_liet_ke(tasks, cac_cau):
         if re.search(r"(?:,|\b(?:và|với|cùng|đồng thời)\b)", noi_tu):
             return True
     return False
+
+
+def la_cung_menh_de_liet_ke(tasks, cac_cau):
+    """Cho phép lặp hạn khi cùng chủ và liệt kê trong một mệnh đề,
+    hoặc khi là cụm việc cùng chủ ở các đoạn liền nhau (hạn nói một lần)."""
+    return (
+        la_cung_menh_de_liet_ke_trong_cau(tasks, cac_cau)
+        or la_cum_viec_cung_chu_ke_nhau(tasks, cac_cau)
+    )
 
 
 def kiem_tra_file(ten_file):
@@ -347,6 +392,8 @@ def kiem_tra_file(ten_file):
             )
 
     for task in tasks:
+        if la_viec_tuy_chon(ten_file, task, cau_nguon(task)):
+            continue  # việc tùy chọn theo nhãn: không tính là task không hợp lệ
         ly_do_task = ly_do_task_khong_hop_le(task, cau_nguon(task))
         if ly_do_task:
             ghi_loi(
