@@ -24,11 +24,22 @@ PHAT_GIAO_VIEC = 0.2       # câu thuần giao việc: đã có ở mục "Việ
 TU_NOI_DUNG = ("nguyên nhân", "vì vậy", "tập trung", "vấn đề", "kết quả", "budget", "ngân sách")
 PHAT_LICH_HOP = 0.5        # câu nói về buổi họp sau: đã có ở mục "Cuộc họp tiếp theo"
 PHAT_DA_CO = 0.3           # câu trùng với mục Quyết định/Việc (nếu truyền vào)
-
+TOI_DA_TU_CAU = 40         # câu dài hơn thì tách ở dấu ; hoặc cắt ở dấu , gần ngưỡng nhất
+TOI_DA_TU_TOM_TAT = 150    # tổng số từ tối đa của bản tóm tắt
 MO_DAU = re.compile(r"^(?:đầu tiên|tiếp theo|thứ\s+\d+|cuối cùng|ngoài ra|bên cạnh đó)\s*(?:là)?\s*[,:]?\s*", re.I)
 VE_THI = re.compile(r"^về\s+(?P<chu_de>[^,]{2,30}?)\s+thì\s+", re.I)
 DUOI_CUT = re.compile(r"\s*,?\s*cuối cùng là\s+\S+(?:\s+\S+){0,2}\s*$", re.I)
 
+def cat_cau_dai(text, toi_da=TOI_DA_TU_CAU):
+    """Câu quá dài (Whisper không đặt chấm): cắt ở dấu ; hoặc , cuối cùng trước ngưỡng."""
+    tu = text.split()
+    if len(tu) <= toi_da:
+        return text
+    dau = " ".join(tu[:toi_da])
+    vi_tri = max(dau.rfind(";"), dau.rfind(","))
+    if vi_tri >= len(dau) // 2:
+        dau = dau[:vi_tri]
+    return dau.rstrip(" ,;")
 
 def rut_gon(text):
     """Gọt từ nối đầu câu, đuôi bị Whisper cắt, đại từ 'mình'; đưa chủ đề lên đầu."""
@@ -46,6 +57,7 @@ def rut_gon(text):
     t = re.sub(r"\s+", " ", t).strip(" ,;")
     if chu_de:
         t = f"{chu_de.capitalize()}: {t}"
+    t = cat_cau_dai(t)
     t = t[0].upper() + t[1:] if t else t
     return t if t.endswith(".") else t + "."
 
@@ -74,11 +86,17 @@ MAU_GIU_LAI = re.compile(r"quyết định|thống nhất|đồng ý", re.I)
 
 
 def tach_thanh_cau(cac_cau):
-    """Tách mỗi đoạn Whisper thành từng câu để chọn câu chứ không chọn cả đoạn."""
+    """Tách mỗi đoạn Whisper thành từng câu; câu quá dài thì tách thêm ở dấu chấm phẩy."""
     ket_qua = []
     for cau in cac_cau:
         manh = [m.strip() for m in MAU_TACH_CAU.split(cau["sach"]) if m and m.strip()]
-        for k, m in enumerate(manh):
+        manh_moi = []
+        for m in manh:
+            if len(m.split()) > TOI_DA_TU_CAU and ";" in m:
+                manh_moi.extend(p.strip() for p in m.split(";") if p.strip())
+            else:
+                manh_moi.append(m)
+        for k, m in enumerate(manh_moi):
             moi = dict(cau)
             moi["sach"] = m
             moi["start"] = cau["start"] + k * 1e-3
@@ -170,16 +188,21 @@ def tom_tat(cac_cau, cau_da_co=()):
     so_cau = min(SO_CAU_TOI_DA, max(SO_CAU_TOI_THIEU, int(round(len(ung_vien) * TY_LE_TOM_TAT))))
     so_cau = min(so_cau, len(ung_vien))
 
-    # Chọn lần lượt câu điểm cao nhưng không giống các câu đã chọn (MMR)
+    # Chọn lần lượt câu điểm cao nhưng không giống các câu đã chọn (MMR), dừng khi đủ số từ
     da_chon = []
+    tong_tu = 0
     con_lai = list(range(len(ung_vien)))
     while con_lai and len(da_chon) < so_cau:
         def gia_tri(i):
             trung = max((similarity[i, j] for j in da_chon), default=0.0)
             return scores[i] - HE_SO_TRUNG_LAP * trung
         tot_nhat = max(con_lai, key=gia_tri)
-        da_chon.append(tot_nhat)
         con_lai.remove(tot_nhat)
+        so_tu = min(len(ung_vien[tot_nhat]["sach"].split()), TOI_DA_TU_CAU)
+        if da_chon and tong_tu + so_tu > TOI_DA_TU_TOM_TAT:
+            continue
+        da_chon.append(tot_nhat)
+        tong_tu += so_tu
 
     selected = sorted(da_chon, key=lambda idx: ung_vien[idx]["start"])
 
