@@ -18,6 +18,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 # Hằng số của riêng tom_tat.py (cố ý không đụng tu_dien.py để dễ hoàn tác)
 TY_LE_TOM_TAT = 0.4        # số câu chọn ~ 40% số câu ứng viên
 SO_CAU_TOI_THIEU = 4
+SO_CAU_TOI_THIEU_SAU_LOC = 3   # loại câu trùng Quyết định xong phải còn ít nhất ngần này câu
 SO_CAU_TOI_DA = 7
 HE_SO_TRUNG_LAP = 0.5      # MMR: càng cao càng tránh chọn câu giống câu đã chọn
 DIEM_CAU_MO_DAU = 0.3      # câu ứng viên đầu tiên thường nêu mục đích buổi họp
@@ -185,7 +186,7 @@ def tom_tat(cac_cau, cau_da_co=()):
             ung_vien = con_lai
     if cau_da_co:
         con_lai = [c for c in ung_vien if not trung_muc_da_co(c["sach"], cau_da_co)]
-        if len(con_lai) >= SO_CAU_TOI_THIEU:
+        if len(con_lai) >= SO_CAU_TOI_THIEU_SAU_LOC:
             ung_vien = con_lai
     if len(ung_vien) <= SO_CAU_TOI_THIEU:
         return " ".join(rut_gon(cau["sach"]) for cau in ung_vien)
