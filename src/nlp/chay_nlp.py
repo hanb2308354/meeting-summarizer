@@ -65,7 +65,7 @@ def chay_nlp(duong_dan):
     bai_doc = doc_transcript(duong_dan)
     du_lieu = tien_xu_ly(bai_doc)
     trich = trich_xuat(du_lieu)
-    tong_ket = tom_tat(du_lieu)
+    tong_ket = tom_tat(du_lieu, [muc["text"] for muc in trich["decisions"]])
 
     ket_qua = {
         "source": Path(duong_dan).name,

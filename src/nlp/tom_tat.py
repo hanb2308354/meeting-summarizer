@@ -10,6 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from doc_transcript import doc_transcript
 from tien_xu_ly import tien_xu_ly
+from trich_quyet_dinh import MAU_MUC_DICH_TRUOC, MAU_PHU_DINH_TRUOC
 from tu_dien import DIEM_BO_SUNG
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -26,6 +27,7 @@ PHAT_LICH_HOP = 0.5        # câu nói về buổi họp sau: đã có ở mục
 PHAT_DA_CO = 0.3           # câu trùng với mục Quyết định/Việc (nếu truyền vào)
 TOI_DA_TU_CAU = 40         # câu dài hơn thì tách ở dấu ; hoặc cắt ở dấu , gần ngưỡng nhất
 TOI_DA_TU_TOM_TAT = 150    # tổng số từ tối đa của bản tóm tắt
+TU_KHOA_QUYET_DINH = ("chốt", "thống nhất", "quyết định", "đồng ý")
 MO_DAU = re.compile(r"^(?:đầu tiên|tiếp theo|thứ\s+\d+|cuối cùng|ngoài ra|bên cạnh đó)\s*(?:là)?\s*[,:]?\s*", re.I)
 VE_THI = re.compile(r"^về\s+(?P<chu_de>[^,]{2,30}?)\s+thì\s+", re.I)
 DUOI_CUT = re.compile(r"\s*,?\s*cuối cùng là\s+\S+(?:\s+\S+){0,2}\s*$", re.I)
@@ -115,6 +117,28 @@ def chon_cau_ung_vien(cac_cau, so_tu_toi_thieu=7):
         ket_qua.append(cau)
     return ket_qua
 
+def tu_khoa_quyet_dinh_that(text, tu_khoa):
+    """Từ khóa quyết định có mặt và không bị phủ định/nêu mục đích đứng trước
+    ('chưa thống nhất', 'để thống nhất cách hiểu' không tính)."""
+    for khop in re.finditer(rf"\b{re.escape(tu_khoa)}\b", text, flags=re.IGNORECASE):
+        truoc = text[:khop.start()]
+        if MAU_PHU_DINH_TRUOC.search(truoc) or MAU_MUC_DICH_TRUOC.search(truoc):
+            continue
+        return True
+    return False
+
+
+def trung_muc_da_co(text, cau_da_co):
+    """Câu nằm trọn trong (hoặc chứa trọn) một mục Quyết định đã trích."""
+    chuan = text.lower().strip(" .,;")
+    if not chuan:
+        return False
+    for da_co in cau_da_co:
+        mau = da_co.lower().strip(" .,;")
+        if mau and (chuan in mau or (len(mau.split()) >= 4 and mau in chuan)):
+            return True
+    return False
+
 
 def phat_diem_bo_sung(cau):
     """Cộng điểm cho câu có yếu tố nội dung quan trọng của cuộc họp."""
@@ -122,13 +146,14 @@ def phat_diem_bo_sung(cau):
     diem = 0.0
     for tu_khoa, gia_tri in DIEM_BO_SUNG.items():
         if tu_khoa in text:
+            if tu_khoa in TU_KHOA_QUYET_DINH and not tu_khoa_quyet_dinh_that(text, tu_khoa):
+                continue
             diem += gia_tri
     if re.search(r"\d+%|\d+\s+triệu|\d+\s+tỷ|\d+\s+đơn|\d+\s+giờ", cau["sach"], flags=re.IGNORECASE):
         diem += 0.15
     if any(tu in text for tu in TU_NOI_DUNG):
         diem += 0.2
     return diem
-
 
 def diem_phat(cau, cau_da_co):
     """Trừ điểm câu đã có chỗ riêng ở các mục khác của bản tóm tắt."""
@@ -156,6 +181,10 @@ def tom_tat(cac_cau, cau_da_co=()):
     for mau in (MAU_LICH_HOP, MAU_GIAO_VIEC):
         con_lai = [c for c in ung_vien
                    if not mau.search(c["sach"]) or MAU_GIU_LAI.search(c["sach"])]
+        if len(con_lai) >= SO_CAU_TOI_THIEU:
+            ung_vien = con_lai
+    if cau_da_co:
+        con_lai = [c for c in ung_vien if not trung_muc_da_co(c["sach"], cau_da_co)]
         if len(con_lai) >= SO_CAU_TOI_THIEU:
             ung_vien = con_lai
     if len(ung_vien) <= SO_CAU_TOI_THIEU:

@@ -141,7 +141,7 @@ def chay_loi(danh_sach_cau):
     """Chạy lõi pipeline như chay_nlp nhưng tách phần ghi, không đụng outputs/."""
     du_lieu = tien_xu_ly(danh_sach_cau)
     trich = trich_xuat(du_lieu)
-    tong_ket = tom_tat(du_lieu)
+    tong_ket = tom_tat(du_lieu, [muc["text"] for muc in trich["decisions"]])
     return {
         "summary": tong_ket,
         "decisions": trich["decisions"],
