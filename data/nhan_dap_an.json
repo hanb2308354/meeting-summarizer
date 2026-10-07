@@ -1,0 +1,680 @@
+{
+  "thu_nghiem.json": {
+    "tap": "tap_phat_trien",
+    "viec_bat_buoc": [
+      {
+        "chu": "Tuấn",
+        "tu_khoa": [
+          "trang chủ"
+        ],
+        "han": "thứ 4 tuần sau"
+      },
+      {
+        "chu": "Ngọc",
+        "tu_khoa": [
+          "lỗi đăng ký"
+        ],
+        "han": "ngày 20 tháng 10"
+      },
+      {
+        "chu": "Mọi người",
+        "tu_khoa": [],
+        "han": null
+      }
+    ],
+    "viec_tuy_chon": [
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "link"
+        ]
+      }
+    ],
+    "viec_cam": [],
+    "quyet_dinh": [],
+    "quyet_dinh_tuy_chon": [],
+    "lich_hop": {
+      "thoi_gian_chua": "chủ nhật"
+    }
+  },
+  "thu_nghiem1.json": {
+    "tap": "tap_phat_trien",
+    "viec_bat_buoc": [
+      {
+        "chu": "Khoa",
+        "tu_khoa": [
+          "database"
+        ],
+        "han": "thứ 3 tuần sau"
+      },
+      {
+        "chu": "Vi",
+        "tu_khoa": [
+          "xóa sách"
+        ],
+        "han": "ngày 25 tháng 10"
+      },
+      {
+        "chu": "Phúc",
+        "tu_khoa": [
+          "trang tìm kiếm"
+        ],
+        "han": "chủ nhật"
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "bản draft"
+        ],
+        "han": "thứ 6"
+      }
+    ],
+    "viec_tuy_chon": [
+      {
+        "chu": "Vi",
+        "tu_khoa": [
+          "document"
+        ]
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "test chung"
+        ]
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "chương 1"
+        ]
+      }
+    ],
+    "viec_cam": [
+      {
+        "chu": "Khoa",
+        "tu_khoa": [
+          "thiết kế"
+        ]
+      }
+    ],
+    "quyet_dinh": [
+      {
+        "tu_khoa": [
+          "react"
+        ]
+      }
+    ],
+    "quyet_dinh_tuy_chon": [],
+    "lich_hop": {
+      "thoi_gian_chua": "thứ 4",
+      "noi_bang": "online trên Google Meet"
+    }
+  },
+  "thu_nghiem2.json": {
+    "tap": "tap_phat_trien",
+    "viec_bat_buoc": [
+      {
+        "chu": "Hạnh",
+        "tu_khoa": [
+          "campaign"
+        ],
+        "han": null
+      },
+      {
+        "chu": "Hạnh",
+        "tu_khoa": [
+          "kế hoạch"
+        ],
+        "han": "thứ 4 tuần này"
+      },
+      {
+        "chu": "Dũng",
+        "tu_khoa": [
+          "báo giá"
+        ],
+        "han": "ngày 10 tháng 10"
+      },
+      {
+        "chu": "Thảo",
+        "tu_khoa": [],
+        "han": "thứ 6"
+      }
+    ],
+    "viec_tuy_chon": [],
+    "viec_cam": [
+      {
+        "chu": "Minh",
+        "tu_khoa": []
+      },
+      {
+        "chu": null,
+        "tu_khoa": [
+          "giảm giá 20%"
+        ]
+      }
+    ],
+    "quyet_dinh": [
+      {
+        "tu_khoa": [
+          "10%"
+        ]
+      },
+      {
+        "tu_khoa": [
+          "kpi"
+        ]
+      }
+    ],
+    "quyet_dinh_tuy_chon": [],
+    "lich_hop": {
+      "thoi_gian_chua": "thứ 2",
+      "noi_bang": "phòng họp tầng 3"
+    }
+  },
+  "phat_trien.json": {
+    "tap": "tap_phat_trien",
+    "viec_bat_buoc": [
+      {
+        "chu": "Lam",
+        "tu_khoa": [
+          "ánh xạ"
+        ],
+        "han": "thứ 5 tuần sau"
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "checklist"
+        ],
+        "han": "ngày 18 tháng 11"
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "bản tổng hợp"
+        ],
+        "han": "thứ 6"
+      },
+      {
+        "chu": "Bảo",
+        "tu_khoa": [
+          "trích dẫn"
+        ],
+        "han": "chủ nhật"
+      },
+      {
+        "chu": "Mai",
+        "tu_khoa": [
+          "phụ lục"
+        ],
+        "han": "thứ 4 tuần sau"
+      }
+    ],
+    "viec_tuy_chon": [],
+    "viec_cam": [],
+    "quyet_dinh": [],
+    "quyet_dinh_tuy_chon": [],
+    "lich_hop": {
+      "thoi_gian_chua": null,
+      "noi_bang": null
+    }
+  },
+  "thu_nghiem3.json": {
+    "tap": "tap_phat_trien",
+    "viec_bat_buoc": [
+      {
+        "chu": "Minh",
+        "tu_khoa": [
+          "api"
+        ],
+        "han": "thứ 3 tuần sau",
+        "han_bi_thay": "thứ 6 tuần này"
+      },
+      {
+        "chu": "Minh",
+        "tu_khoa": [
+          "export"
+        ],
+        "han": null
+      },
+      {
+        "chu": "Lan",
+        "tu_khoa": [
+          "dashboard"
+        ],
+        "han": "chủ nhật tuần này"
+      },
+      {
+        "chu": "Khoa",
+        "tu_khoa": [
+          "query"
+        ],
+        "han": "ngày 25 tháng 10"
+      },
+      {
+        "chu": "Nam",
+        "tu_khoa": [
+          "unit test"
+        ],
+        "han": "ngày 5 tháng 11"
+      },
+      {
+        "chu": "Mọi người",
+        "tu_khoa": [
+          "jira"
+        ],
+        "han": null
+      }
+    ],
+    "viec_tuy_chon": [],
+    "viec_cam": [
+      {
+        "chu": "Tuấn",
+        "tu_khoa": []
+      },
+      {
+        "chu": "Nam",
+        "tu_khoa": [
+          "docker"
+        ]
+      },
+      {
+        "chu": "Nam",
+        "tu_khoa": [
+          "server"
+        ]
+      },
+      {
+        "chu": "Nam Hà",
+        "tu_khoa": []
+      },
+      {
+        "chu": "Hà",
+        "tu_khoa": []
+      }
+    ],
+    "quyet_dinh": [
+      {
+        "tu_khoa": [
+          "react"
+        ]
+      },
+      {
+        "tu_khoa": [
+          "xác thực"
+        ]
+      }
+    ],
+    "quyet_dinh_tuy_chon": [],
+    "lich_hop": {
+      "thoi_gian_chua": null,
+      "noi_bang": null
+    }
+  },
+  "thu_nghiem4.json": {
+    "tap": "tap_phat_trien",
+    "viec_bat_buoc": [
+      {
+        "chu": "Hạnh",
+        "tu_khoa": [
+          "quảng cáo"
+        ],
+        "han": "thứ 5 tuần này"
+      },
+      {
+        "chu": "Hạnh",
+        "tu_khoa": [
+          "dự trù"
+        ],
+        "han": "ngày 20 tháng 11"
+      },
+      {
+        "chu": "Thảo",
+        "tu_khoa": [
+          "báo giá"
+        ],
+        "han": "thứ 6 tuần này",
+        "han_bi_thay": "thứ 3 tuần sau"
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "crm"
+        ],
+        "han": "ngày 15 tháng 12"
+      }
+    ],
+    "viec_tuy_chon": [
+      {
+        "chu": "Mọi người",
+        "tu_khoa": [
+          "báo cáo"
+        ]
+      }
+    ],
+    "viec_cam": [
+      {
+        "chu": "Dũng",
+        "tu_khoa": []
+      },
+      {
+        "chu": "Minh",
+        "tu_khoa": []
+      },
+      {
+        "chu": "Minh Phát",
+        "tu_khoa": []
+      },
+      {
+        "chu": "Phát",
+        "tu_khoa": []
+      }
+    ],
+    "quyet_dinh": [
+      {
+        "tu_khoa": [
+          "100 triệu"
+        ]
+      },
+      {
+        "tu_khoa": [
+          "15%"
+        ]
+      },
+      {
+        "tu_khoa": [
+          "kpi"
+        ]
+      }
+    ],
+    "quyet_dinh_tuy_chon": [],
+    "lich_hop": {
+      "thoi_gian_chua": "thứ 2 tuần sau",
+      "noi_bang": "phòng họp 402"
+    }
+  },
+  "thu_nghiem5.json": {
+    "tap": "tap_phat_trien",
+    "viec_bat_buoc": [
+      {
+        "chu": "Long",
+        "tu_khoa": [
+          "trang chủ"
+        ],
+        "han": "thứ 5 tuần này"
+      },
+      {
+        "chu": "Nam",
+        "tu_khoa": [
+          "api"
+        ],
+        "han": "20 tháng 11"
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "database"
+        ],
+        "han": "ngày mai"
+      }
+    ],
+    "viec_tuy_chon": [
+      {
+        "chu": "Nam",
+        "tu_khoa": [
+          "document"
+        ]
+      }
+    ],
+    "viec_cam": [
+      {
+        "chu": "Khi",
+        "tu_khoa": []
+      },
+      {
+        "chu": "Thì",
+        "tu_khoa": []
+      },
+      {
+        "chu": "Anh",
+        "tu_khoa": []
+      }
+    ],
+    "quyet_dinh": [
+      {
+        "tu_khoa": [
+          "sđt"
+        ]
+      }
+    ],
+    "quyet_dinh_tuy_chon": [
+      {
+        "tu_khoa": [
+          "view"
+        ]
+      }
+    ],
+    "lich_hop": {
+      "thoi_gian_chua": "thứ 2 tuần sau",
+      "noi_bang": "phòng họp lớn"
+    }
+  },
+  "giu_rieng_01.json": {
+    "tap": "tap_phat_trien_2",
+    "viec_bat_buoc": [
+      {
+        "chu": "Thư",
+        "tu_khoa": [
+          "phản hồi dùng thử"
+        ],
+        "han": "thứ Năm"
+      },
+      {
+        "chu": "Đạt",
+        "tu_khoa": [
+          "dữ liệu mẫu"
+        ],
+        "han": "thứ Tư"
+      },
+      {
+        "chu": "Nhiên",
+        "tu_khoa": [
+          "màn Figma"
+        ],
+        "han": "thứ Sáu"
+      },
+      {
+        "chu": "Đặng Mỹ Duyên",
+        "tu_khoa": [
+          "trích dẫn"
+        ],
+        "han": "thứ Năm"
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "báo cáo tiến độ"
+        ],
+        "han": "thứ Năm"
+      }
+    ],
+    "viec_tuy_chon": [
+      {
+        "chu": "Thư",
+        "tu_khoa": [
+          "bản tổng hợp"
+        ]
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "trả bút"
+        ]
+      }
+    ],
+    "viec_cam": [
+      {
+        "chu": "Bích Trâm",
+        "tu_khoa": [
+          "thư mời"
+        ]
+      },
+      {
+        "chu": null,
+        "tu_khoa": [
+          "nhận diện cảm xúc"
+        ]
+      },
+      {
+        "chu": "Tuấn",
+        "tu_khoa": [
+          "máy chiếu"
+        ]
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "màu sắc"
+        ]
+      },
+      {
+        "chu": "Thịnh",
+        "tu_khoa": []
+      },
+      {
+        "chu": null,
+        "tu_khoa": [
+          "dây nối dài"
+        ]
+      }
+    ],
+    "quyet_dinh": [
+      {
+        "tu_khoa": [
+          "máy cục bộ"
+        ]
+      }
+    ],
+    "quyet_dinh_tuy_chon": [],
+    "lich_hop": {
+      "thoi_gian_chua": "15 giờ 30",
+      "noi_bang": "phòng B.204"
+    }
+  },
+  "giu_rieng_02.json": {
+    "tap": "tap_phat_trien_2",
+    "viec_bat_buoc": [
+      {
+        "chu": "Ngân",
+        "tu_khoa": [
+          "phiếu chênh lệch"
+        ],
+        "han": "thứ Ba"
+      },
+      {
+        "chu": "Bách",
+        "tu_khoa": [
+          "lịch ca tuần tới"
+        ],
+        "han": "thứ Năm",
+        "han_bi_thay": "thứ Sáu"
+      },
+      {
+        "chu": "Mỹ Linh",
+        "tu_khoa": [
+          "tem giá khuyến mại"
+        ],
+        "han": "thứ Tư"
+      },
+      {
+        "chu": "Tín",
+        "tu_khoa": [
+          "phiếu nhận hàng"
+        ],
+        "han": "thứ Năm"
+      },
+      {
+        "chu": "Hiếu",
+        "tu_khoa": [
+          "báo cáo hao hụt"
+        ],
+        "han": "thứ Sáu"
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "biên lợi nhuận tuần"
+        ],
+        "han": "thứ Năm"
+      },
+      {
+        "chu": "Mọi người",
+        "tu_khoa": [
+          "sổ bàn giao cuối ca"
+        ],
+        "han": "thứ Bảy"
+      }
+    ],
+    "viec_tuy_chon": [
+      {
+        "chu": "Mỹ Linh",
+        "tu_khoa": [
+          "đặt lại bảng"
+        ]
+      },
+      {
+        "chu": "Mọi người",
+        "tu_khoa": [
+          "kiểm quầy"
+        ]
+      },
+      {
+        "chu": "Người chủ trì",
+        "tu_khoa": [
+          "phần tổng hợp tuần"
+        ]
+      },
+      {
+        "chu": "Tín",
+        "tu_khoa": [
+          "bản cũ"
+        ]
+      }
+    ],
+    "viec_cam": [
+      {
+        "chu": "Ngân",
+        "tu_khoa": [
+          "dọn đầu kệ"
+        ]
+      },
+      {
+        "chu": null,
+        "tu_khoa": [
+          "combo bữa trưa"
+        ]
+      },
+      {
+        "chu": "Oanh",
+        "tu_khoa": []
+      }
+    ],
+    "quyet_dinh": [
+      {
+        "tu_khoa": [
+          "kiểm quầy"
+        ]
+      },
+      {
+        "tu_khoa": [
+          "chương trình giảm sâu"
+        ]
+      }
+    ],
+    "quyet_dinh_tuy_chon": [],
+    "lich_hop": {
+      "thoi_gian_chua": "thứ Ba 9 giờ 30",
+      "noi_bang": "phòng họp tầng hai"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+ 0. [xã giao] mình bắt đầu meeting.
+ 1. Tuần trước thầy có feedback là phần giao diện còn dối, nên tuần này nhóm mình phải update lại, phần front-end thì giao cho bạn Tuấn phụ trách, làm lại trang chủ với trang đăng nhập.
+ 2. Deadline là thứ 4 tuần sau, phần back-end, khi bạn Ngọc sẽ fix lỗi đăng ký tài khoản, hạn chót là ngày 20 tháng 10, còn file báo cáo thì mọi người upload lên Google Drive.
+ 3. Mình sẽ gửi link trong group Messenger, họp tiếp theo là tối chủ nhật lúc 9h.
+ 4. [xã giao] Vậy thôi, cảm ơn mọi người.

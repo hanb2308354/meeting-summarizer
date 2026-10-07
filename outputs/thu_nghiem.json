@@ -1,0 +1,36 @@
+{
+  "source": "thu_nghiem.json",
+  "summary": "Tuần trước thầy có feedback là phần giao diện còn dối, nên tuần này nhóm mình phải update lại, phần front-end thì giao cho bạn Tuấn phụ trách, làm lại trang chủ với trang đăng nhập. Deadline là thứ 4 tuần sau, phần back-end, khi bạn Ngọc sẽ fix lỗi đăng ký tài khoản, hạn chót là ngày 20 tháng 10, còn file báo cáo thì mọi người upload lên Google Drive.",
+  "decisions": [],
+  "tasks": [
+    {
+      "task": "update lại",
+      "owner": "Người chủ trì",
+      "deadline": null,
+      "start": 2.3
+    },
+    {
+      "task": "lại trang chủ với trang đăng nhập.",
+      "owner": "Tuấn",
+      "deadline": "thứ 4 tuần sau",
+      "start": 2.3
+    },
+    {
+      "task": "fix lỗi đăng ký tài khoản",
+      "owner": "Ngọc",
+      "deadline": "ngày 20 tháng 10",
+      "start": 10.46
+    },
+    {
+      "task": "upload lên Google Drive.",
+      "owner": "Mọi người",
+      "deadline": null,
+      "start": 10.46
+    }
+  ],
+  "next_meeting": {
+    "time": "tối chủ nhật lúc 9h",
+    "place": null,
+    "start": 19.22
+  }
+}

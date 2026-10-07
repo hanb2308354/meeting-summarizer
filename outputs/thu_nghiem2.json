@@ -1,0 +1,41 @@
+{
+  "source": "thu_nghiem2.json",
+  "summary": "Đầu tiên là báo cáo doanh số, tháng 9 vừa rồi, doanh thu của công ty đạt 1 tỷ 200 triệu, tăng 15% so với tháng 8, nhưng vẫn chưa đạt target là 1 tỷ rưỡi. Về giá bán thì lúc đầu mình định giảm giá 20% cho đơn hàng lớn, nhưng tính lại thì lợi nhuận quá thấp, nên ban giám đốc đã chốt là chỉ giảm 10%, kèm miễn phí vận chuyển, cuối cùng là KPI. Từ tháng này, mỗi nhân viên sales phải đạt tối thiểu 30 đơn hàng mỗi tháng.",
+  "decisions": [
+    {
+      "text": "Về giá bán thì lúc đầu mình định giảm giá 20% cho đơn hàng lớn, nhưng tính lại thì lợi nhuận quá thấp, nên ban giám đốc đã chốt là chỉ giảm 10%, kèm miễn phí vận chuyển, cuối cùng là KPI., Từ tháng này, mỗi nhân viên sales phải đạt tối thiểu 30 đơn hàng mỗi tháng.",
+      "start": 39.12
+    }
+  ],
+  "tasks": [
+    {
+      "task": "Facebook và TikTok",
+      "owner": "Hạnh",
+      "deadline": null,
+      "start": 18.5
+    },
+    {
+      "task": "gửi kế hoạch chi tiết cho thứ 4 tuần này.",
+      "owner": "Hạnh",
+      "deadline": "thứ 4 tuần này",
+      "start": 24.62
+    },
+    {
+      "task": "gửi báo giá cho họ chậm nhất là ngày 10 tháng 10.",
+      "owner": "Dũng",
+      "deadline": "ngày 10 tháng 10",
+      "start": 34.52
+    },
+    {
+      "task": "gửi email cho toàn bộ nhân viên trước thứ 6",
+      "owner": "Thảo",
+      "deadline": "thứ 6",
+      "start": 53.24
+    }
+  ],
+  "next_meeting": {
+    "time": "9 giờ sáng thứ 2 tuần sau",
+    "place": "tại phòng họp tầng 3",
+    "start": 59.28
+  }
+}

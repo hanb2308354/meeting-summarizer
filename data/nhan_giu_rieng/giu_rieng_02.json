@@ -1,0 +1,118 @@
+{
+ "giu_rieng_02.json": {
+  "tap": "tap_phat_trien_2",
+  "viec_bat_buoc": [
+   {
+    "chu": "Ngân",
+    "tu_khoa": [
+     "phiếu chênh lệch"
+    ],
+    "han": "thứ Ba"
+   },
+   {
+    "chu": "Bách",
+    "tu_khoa": [
+     "lịch ca tuần tới"
+    ],
+    "han": "thứ Năm",
+    "han_bi_thay": "thứ Sáu"
+   },
+   {
+    "chu": "Mỹ Linh",
+    "tu_khoa": [
+     "tem giá khuyến mại"
+    ],
+    "han": "thứ Tư"
+   },
+   {
+    "chu": "Tín",
+    "tu_khoa": [
+     "phiếu nhận hàng"
+    ],
+    "han": "thứ Năm"
+   },
+   {
+    "chu": "Hiếu",
+    "tu_khoa": [
+     "báo cáo hao hụt"
+    ],
+    "han": "thứ Sáu"
+   },
+   {
+    "chu": "Người chủ trì",
+    "tu_khoa": [
+     "biên lợi nhuận tuần"
+    ],
+    "han": "thứ Năm"
+   },
+   {
+    "chu": "Mọi người",
+    "tu_khoa": [
+     "sổ bàn giao cuối ca"
+    ],
+    "han": "thứ Bảy"
+   }
+  ],
+  "viec_tuy_chon": [
+   {
+    "chu": "Mỹ Linh",
+    "tu_khoa": [
+     "đặt lại bảng"
+    ]
+   },
+   {
+    "chu": "Mọi người",
+    "tu_khoa": [
+     "kiểm quầy"
+    ]
+   },
+   {
+    "chu": "Người chủ trì",
+    "tu_khoa": [
+     "phần tổng hợp tuần"
+    ]
+   },
+   {
+    "chu": "Tín",
+    "tu_khoa": [
+     "bản cũ"
+    ]
+   }
+  ],
+  "viec_cam": [
+   {
+    "chu": "Ngân",
+    "tu_khoa": [
+     "dọn đầu kệ"
+    ]
+   },
+   {
+    "chu": null,
+    "tu_khoa": [
+     "combo bữa trưa"
+    ]
+   },
+   {
+    "chu": "Oanh",
+    "tu_khoa": []
+   }
+  ],
+  "quyet_dinh": [
+   {
+    "tu_khoa": [
+     "kiểm quầy"
+    ]
+   },
+   {
+    "tu_khoa": [
+     "chương trình giảm sâu"
+    ]
+   }
+  ],
+  "quyet_dinh_tuy_chon": [],
+  "lich_hop": {
+   "thoi_gian_chua": "thứ Ba 9 giờ 30",
+   "noi_bang": "phòng họp tầng hai"
+  }
+ }
+}
