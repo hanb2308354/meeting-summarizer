@@ -1,0 +1,342 @@
+[
+  {
+    "stt": 0,
+    "speaker": "SPEAKER_00",
+    "start": 0.0,
+    "end": 3.2,
+    "goc": "Ok mọi người vào đông đủ rồi thì mình bắt đầu cuộc họp spring 4 nha.",
+    "sach": "mọi người vào đông đủ rồi thì mình bắt đầu cuộc họp Sprint 4.",
+    "tach_tu": "mọi người vào đông_đủ rồi thì mình bắt_đầu cuộc_họp Sprint 4 .",
+    "xa_giao": true
+  },
+  {
+    "stt": 1,
+    "speaker": "SPEAKER_00",
+    "start": 3.8,
+    "end": 8.5,
+    "goc": "Hôm nay họp đường dài chút để rà soát lại toàn bộ hệ thống micro service trước khi release.",
+    "sach": "Hôm nay họp đường dài chút để rà soát lại toàn bộ hệ thống micro service trước khi release.",
+    "tach_tu": "Hôm_nay họp đường dài chút để rà_soát lại toàn_bộ hệ_thống micro service trước khi release .",
+    "xa_giao": false
+  },
+  {
+    "stt": 2,
+    "speaker": "SPEAKER_00",
+    "start": 9.0,
+    "end": 11.2,
+    "goc": "Đầu tiên là về phần hạ tầng server.",
+    "sach": "Đầu tiên là về phần hạ tầng server.",
+    "tach_tu": "Đầu_tiên là về phần hạ_tầng server .",
+    "xa_giao": false
+  },
+  {
+    "stt": 3,
+    "speaker": "SPEAKER_00",
+    "start": 12.0,
+    "end": 16.5,
+    "goc": "Tuần trước bạn nam đã dựng xong server docker và cấu hình ci cd rồi nhé.",
+    "sach": "Tuần trước bạn nam đã dựng xong server docker và cấu hình ci cd rồi.",
+    "tach_tu": "Tuần trước bạn nam đã dựng xong server docker và cấu_hình ci cd rồi .",
+    "xa_giao": false
+  },
+  {
+    "stt": 4,
+    "speaker": "SPEAKER_00",
+    "start": 17.1,
+    "end": 19.8,
+    "goc": "Phần đó chạy ổn định rồi nên không cần làm lại nữa.",
+    "sach": "Phần đó chạy ổn định rồi nên không cần làm lại nữa.",
+    "tach_tu": "Phần đó chạy ổn_định rồi nên không cần làm lại nữa .",
+    "xa_giao": false
+  },
+  {
+    "stt": 5,
+    "speaker": "SPEAKER_00",
+    "start": 20.5,
+    "end": 24.2,
+    "goc": "Tiếp theo là phần refactor lại module thanh toán.",
+    "sach": "Tiếp theo là phần refactor lại module thanh toán.",
+    "tach_tu": "Tiếp_theo là phần refactor lại module thanh_toán .",
+    "xa_giao": false
+  },
+  {
+    "stt": 6,
+    "speaker": "SPEAKER_00",
+    "start": 25.0,
+    "end": 28.5,
+    "goc": "Phần này giao cho bạn minh làm lại các api chuyển khoản nha.",
+    "sach": "Phần này giao cho bạn minh làm lại các API chuyển khoản.",
+    "tach_tu": "Phần này giao cho bạn minh làm lại các API chuyển_khoản .",
+    "xa_giao": false
+  },
+  {
+    "stt": 7,
+    "speaker": "SPEAKER_00",
+    "start": 29.0,
+    "end": 31.8,
+    "goc": "Hạn chót ban đầu tính là thứ 6 tuần này.",
+    "sach": "Hạn chót ban đầu tính là thứ 6 tuần này.",
+    "tach_tu": "Hạn_chót ban_đầu tính là thứ 6 tuần này .",
+    "xa_giao": false
+  },
+  {
+    "stt": 8,
+    "speaker": "SPEAKER_00",
+    "start": 32.2,
+    "end": 35.0,
+    "goc": "Minh nhớ export file post man cho team test dùng luôn.",
+    "sach": "Minh nhớ export file post man cho team test dùng luôn.",
+    "tach_tu": "Minh nhớ export file post man cho team test dùng luôn .",
+    "xa_giao": false
+  },
+  {
+    "stt": 9,
+    "speaker": "SPEAKER_00",
+    "start": 35.8,
+    "end": 38.0,
+    "goc": "Thứ 2 là phần giao diện quản trị.",
+    "sach": "Thứ 2 là phần giao diện quản trị.",
+    "tach_tu": "Thứ 2 là phần giao_diện quản_trị .",
+    "xa_giao": false
+  },
+  {
+    "stt": 10,
+    "speaker": "SPEAKER_00",
+    "start": 38.5,
+    "end": 42.1,
+    "goc": "Team mình chốt là dùng react chứ không dùng view nữa nha mọi người.",
+    "sach": "Team mình chốt là dùng React chứ không dùng Vue nữa mọi người.",
+    "tach_tu": "Team mình chốt là dùng React chứ không dùng Vue nữa mọi người .",
+    "xa_giao": false
+  },
+  {
+    "stt": 11,
+    "speaker": "SPEAKER_00",
+    "start": 43.0,
+    "end": 46.5,
+    "goc": "Phần này bạn lan phụ trách làm trang dashboard thống kê doanh thu.",
+    "sach": "Phần này bạn lan phụ trách làm trang dashboard thống kê doanh thu.",
+    "tach_tu": "Phần này bạn lan phụ_trách làm trang dashboard thống_kê doanh_thu .",
+    "xa_giao": false
+  },
+  {
+    "stt": 12,
+    "speaker": "SPEAKER_00",
+    "start": 47.0,
+    "end": 49.2,
+    "goc": "Lan cố gắng hoàn thành trước chủ nhật tuần này.",
+    "sach": "Lan cố gắng hoàn thành trước chủ nhật tuần này.",
+    "tach_tu": "Lan cố_gắng hoàn_thành trước chủ_nhật tuần này .",
+    "xa_giao": false
+  },
+  {
+    "stt": 13,
+    "speaker": "SPEAKER_00",
+    "start": 50.0,
+    "end": 53.5,
+    "goc": "À về đối tác tích hợp thì tuần này mình làm việc với công ty nam hà.",
+    "sach": "về đối tác tích hợp thì tuần này mình làm việc với công ty nam hà.",
+    "tach_tu": "về đối_tác tích_hợp thì tuần này mình làm_việc với công_ty nam hà .",
+    "xa_giao": false
+  },
+  {
+    "stt": 14,
+    "speaker": "SPEAKER_00",
+    "start": 54.0,
+    "end": 57.2,
+    "goc": "Mọi người lưu ý công ty nam hà là bên dịch vụ bên ngoài nha.",
+    "sach": "Mọi người lưu ý công ty nam hà là bên dịch vụ bên ngoài.",
+    "tach_tu": "Mọi người lưu_ý công_ty nam hà là bên dịch_vụ bên ngoài .",
+    "xa_giao": false
+  },
+  {
+    "stt": 15,
+    "speaker": "SPEAKER_00",
+    "start": 120.0,
+    "end": 124.5,
+    "goc": "Giờ mình bàn sâu hơn về tiến độ kết nối API với đối tác.",
+    "sach": "Giờ mình bàn sâu hơn về tiến độ kết nối API với đối tác.",
+    "tach_tu": "Giờ mình bàn sâu hơn về tiến_độ kết_nối API với đối_tác .",
+    "xa_giao": false
+  },
+  {
+    "stt": 16,
+    "speaker": "SPEAKER_00",
+    "start": 180.0,
+    "end": 184.2,
+    "goc": "Bên phía database thì bảng nhật ký giao dịch vẫn còn bị chậm.",
+    "sach": "Bên phía database thì bảng nhật ký giao dịch vẫn còn bị chậm.",
+    "tach_tu": "Bên phía database thì bảng nhật_ký giao_dịch vẫn còn bị chậm .",
+    "xa_giao": false
+  },
+  {
+    "stt": 17,
+    "speaker": "SPEAKER_00",
+    "start": 185.0,
+    "end": 188.8,
+    "goc": "Nên bạn khoa sẽ optimize lại các câu lệnh query và đánh index.",
+    "sach": "Nên bạn khoa sẽ optimize lại các câu lệnh query và đánh index.",
+    "tach_tu": "Nên bạn khoa sẽ optimize lại các câu_lệnh query và đánh index .",
+    "xa_giao": false
+  },
+  {
+    "stt": 18,
+    "speaker": "SPEAKER_00",
+    "start": 189.2,
+    "end": 191.5,
+    "goc": "Deadline cho Khoa là ngày 25 tháng 10.",
+    "sach": "Deadline cho Khoa là ngày 25 tháng 10.",
+    "tach_tu": "Deadline cho Khoa là ngày 25 tháng 10 .",
+    "xa_giao": false
+  },
+  {
+    "stt": 19,
+    "speaker": "SPEAKER_00",
+    "start": 300.0,
+    "end": 304.0,
+    "goc": "Ờm mọi người có ý kiến gì về phần bảo mật OAuth2 không.",
+    "sach": "mọi người có ý kiến gì về phần bảo mật OAuth2 không.",
+    "tach_tu": "mọi người có ý_kiến gì về phần bảo_mật OAuth2 không .",
+    "xa_giao": false
+  },
+  {
+    "stt": 20,
+    "speaker": "SPEAKER_00",
+    "start": 450.0,
+    "end": 453.5,
+    "goc": "Thống nhất là sẽ bắt buộc xác thực 2 yếu tố cho tài khoản admin.",
+    "sach": "Thống nhất là sẽ bắt buộc xác thực 2 yếu tố cho tài khoản admin.",
+    "tach_tu": "Thống_nhất là sẽ bắt_buộc xác_thực 2 yếu_tố cho tài_khoản admin .",
+    "xa_giao": false
+  },
+  {
+    "stt": 21,
+    "speaker": "SPEAKER_00",
+    "start": 600.0,
+    "end": 604.2,
+    "goc": "Còn vấn đề kiểm thử tự động thì ban đầu định giao bạn tuấn viết unit test cho module người dùng.",
+    "sach": "Còn vấn đề kiểm thử tự động thì ban đầu định giao bạn tuấn viết unit test cho module người dùng.",
+    "tach_tu": "Còn vấn_đề kiểm_thử tự_động thì ban_đầu định giao bạn tuấn viết unit test cho module người dùng .",
+    "xa_giao": false
+  },
+  {
+    "stt": 22,
+    "speaker": "SPEAKER_00",
+    "start": 605.0,
+    "end": 607.8,
+    "goc": "Hạn cũ của Tuấn tính là ngày 28 tháng 10.",
+    "sach": "Hạn cũ của Tuấn tính là ngày 28 tháng 10.",
+    "tach_tu": "Hạn cũ của Tuấn tính là ngày 28 tháng 10 .",
+    "xa_giao": false
+  },
+  {
+    "stt": 23,
+    "speaker": "SPEAKER_00",
+    "start": 900.0,
+    "end": 903.8,
+    "goc": "Nhưng mà Tuấn đang kẹt bên dự án cũ chưa xong.",
+    "sach": "Nhưng mà Tuấn đang kẹt bên dự án cũ chưa xong.",
+    "tach_tu": "Nhưng mà Tuấn đang kẹt bên dự_án cũ chưa xong .",
+    "xa_giao": false
+  },
+  {
+    "stt": 24,
+    "speaker": "SPEAKER_00",
+    "start": 904.5,
+    "end": 908.0,
+    "goc": "Nên chốt lại việc viết unit test module người dùng và cả phần auth sẽ chuyển sang cho bạn nam làm nha.",
+    "sach": "Nên chốt lại việc viết unit test module người dùng và cả phần auth sẽ chuyển sang cho bạn nam làm.",
+    "tach_tu": "Nên chốt lại việc viết unit test module người dùng và cả phần auth sẽ chuyển sang cho bạn nam làm .",
+    "xa_giao": false
+  },
+  {
+    "stt": 25,
+    "speaker": "SPEAKER_00",
+    "start": 908.5,
+    "end": 911.0,
+    "goc": "Hạn chót mới cho Nam là ngày 5 tháng 11.",
+    "sach": "Hạn chót mới cho Nam là ngày 5 tháng 11.",
+    "tach_tu": "Hạn_chót mới cho Nam là ngày 5 tháng 11 .",
+    "xa_giao": false
+  },
+  {
+    "stt": 26,
+    "speaker": "SPEAKER_00",
+    "start": 1200.0,
+    "end": 1204.5,
+    "goc": "À quay lại việc của Minh, lúc nãy Minh có nhắn bảo module thanh toán hơi phức tạp.",
+    "sach": "quay lại việc của Minh, lúc nãy Minh có nhắn bảo module thanh toán hơi phức tạp.",
+    "tach_tu": "quay lại việc của Minh , lúc nãy Minh có nhắn bảo module thanh_toán hơi phức_tạp .",
+    "xa_giao": false
+  },
+  {
+    "stt": 27,
+    "speaker": "SPEAKER_00",
+    "start": 1205.2,
+    "end": 1209.0,
+    "goc": "Như vậy gia hạn cho Minh làm lại các api thanh toán đến thứ 3 tuần sau nha.",
+    "sach": "Như vậy gia hạn cho Minh làm lại các API thanh toán đến thứ 3 tuần sau.",
+    "tach_tu": "Như_vậy gia_hạn cho Minh làm lại các API thanh_toán đến thứ 3 tuần sau .",
+    "xa_giao": false
+  },
+  {
+    "stt": 28,
+    "speaker": "SPEAKER_00",
+    "start": 1210.0,
+    "end": 1212.5,
+    "goc": "Không cần nộp vào thứ 6 tuần này nữa.",
+    "sach": "Không cần nộp vào thứ 6 tuần này nữa.",
+    "tach_tu": "Không cần nộp vào thứ 6 tuần này nữa .",
+    "xa_giao": false
+  },
+  {
+    "stt": 29,
+    "speaker": "SPEAKER_00",
+    "start": 1500.0,
+    "end": 1503.5,
+    "goc": "Mọi người nhớ cập nhật tiến độ lên Jira hằng ngày.",
+    "sach": "Mọi người nhớ cập nhật tiến độ lên Jira hằng ngày.",
+    "tach_tu": "Mọi người nhớ cập_nhật tiến_độ lên Jira hằng ngày .",
+    "xa_giao": false
+  },
+  {
+    "stt": 30,
+    "speaker": "SPEAKER_00",
+    "start": 1800.0,
+    "end": 1804.0,
+    "goc": "Tóm lại là Khoa sửa database, Minh làm api thanh toán, Lan làm giao diện, Nam viết unit test.",
+    "sach": "Tóm lại là Khoa sửa database, Minh làm API thanh toán, Lan làm giao diện, Nam viết unit test.",
+    "tach_tu": "Tóm lại là Khoa sửa database , Minh làm API thanh_toán , Lan làm giao_diện , Nam viết unit test .",
+    "xa_giao": false
+  },
+  {
+    "stt": 31,
+    "speaker": "SPEAKER_00",
+    "start": 2050.0,
+    "end": 2054.0,
+    "goc": "Dự kiến ban đầu là họp 10 giờ sáng thứ 4 tuần sau.",
+    "sach": "Dự kiến ban đầu là họp 10 giờ sáng thứ 4 tuần sau.",
+    "tach_tu": "Dự_kiến ban_đầu là họp 10 giờ sáng thứ 4 tuần sau .",
+    "xa_giao": false
+  },
+  {
+    "stt": 32,
+    "speaker": "SPEAKER_00",
+    "start": 2054.5,
+    "end": 2057.2,
+    "goc": "Nhưng thôi tuần sau sếp đi công tác nên lịch họp tiếp theo anh sẽ thông báo lại sau trên group nha.",
+    "sach": "Nhưng thôi tuần sau sếp đi công tác nên lịch họp tiếp theo anh sẽ thông báo lại sau trên group.",
+    "tach_tu": "Nhưng thôi tuần sau sếp đi công_tác nên lịch họp tiếp_theo anh sẽ thông_báo lại sau trên group .",
+    "xa_giao": false
+  },
+  {
+    "stt": 33,
+    "speaker": "SPEAKER_00",
+    "start": 2058.0,
+    "end": 2060.0,
+    "goc": "Cảm ơn mọi người nhiều.",
+    "sach": "Cảm ơn mọi người nhiều.",
+    "tach_tu": "Cảm_ơn mọi người nhiều .",
+    "xa_giao": true
+  }
+]

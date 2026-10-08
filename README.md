@@ -130,7 +130,48 @@ python src/nlp/kiem_cau.py
 | File                    | Vai trò                                                      |
 | ----------------------- | ------------------------------------------------------------ |
 | `chuyen_giong_noi.py`   | **Code chính**: file ghi âm → JSON                           |
+| `danh_gia_wer.py`       | Đo tỷ lệ lỗi từ (WER) so với văn bản gốc trong `data/dap_an/` |
+| `kiem_thu_asr.py`       | 21 ca kiểm thử tự động (không cần tải model)                 |
 | `thu_faster_whisper.py` | Chỉ dùng để thử nghiệm chọn model, không dùng trong hệ thống |
+
+Lần đầu chạy cần **internet** để tải model `medium` (khoảng 1,5 GB); các lần sau dùng bản đã lưu trên máy.
+
+```powershell
+python src/asr/chuyen_giong_noi.py data/audio/ten_file.mp3      # một file
+python src/asr/chuyen_giong_noi.py data/audio/                  # cả thư mục
+python src/asr/danh_gia_wer.py thu_nghiem hop_01 hop_02         # đo WER, nhiều file thì ra WER gộp
+python src/asr/kiem_thu_asr.py                                  # kiểm thử
+```
+
+## Văn bản sạch: src/tien_xu_ly (Hân)
+
+Làm sạch transcript do ASR xuất ra: sửa chữ máy nghe nhầm (vd "bích link" → deadline), bỏ từ đệm (ừm, à, nhé...), dọn dấu câu, tách từ bằng PyVi, đánh dấu câu chào hỏi/cảm ơn. Giữ nguyên từ tiếng Anh, không dịch.
+
+```powershell
+python src/tien_xu_ly/tien_xu_ly.py data/transcripts/ten_file.json   # một file
+python src/tien_xu_ly/tien_xu_ly.py data/transcripts/                # cả thư mục
+python src/tien_xu_ly/kiem_thu_tien_xu_ly.py                         # kiểm thử
+```
+
+Kết quả nằm trong `data/processed/<tên>.json`, mỗi câu gồm:
+
+| Trường    | Ý nghĩa                                                                  |
+| --------- | ------------------------------------------------------------------------ |
+| `stt`     | Số thứ tự câu, đánh liên tục (câu chỉ có từ đệm như "Ừm." đã bị bỏ)      |
+| `speaker`, `start`, `end` | Giữ nguyên từ transcript                                  |
+| `goc`     | Nguyên văn ASR                                                           |
+| `sach`    | Đã sửa lỗi nghe nhầm, bỏ từ đệm, dọn dấu câu                             |
+| `tach_tu` | Bản `sach` đã tách từ bằng PyVi (vd `hạn_chót`, `phụ_trách`)             |
+| `xa_giao` | `true` nếu là câu chào hỏi, cảm ơn, hỏi ý kiến                           |
+
+Format này giống hệt đầu ra hàm `tien_xu_ly()` hiện có trong `src/nlp`, nên phần NLP có thể đọc thẳng file này khi muốn.
+
+| File                     | Vai trò                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `tien_xu_ly.py`          | **Code chính**: transcript → văn bản sạch (`data/processed/`)                 |
+| `doc_transcript.py`      | Đọc và kiểm tra file transcript JSON                                          |
+| `tu_dien_tien_xu_ly.py`  | Bảng sửa lỗi nghe nhầm, từ đệm, mẫu câu xã giao, cụm từ cần nối khi tách từ   |
+| `kiem_thu_tien_xu_ly.py` | Kiểm thử: 37 câu làm sạch, 39 câu đúng không được đổi, tách từ, đọc/ghi file  |
 
 ## Các file trong src/nlp
 

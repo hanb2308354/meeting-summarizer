@@ -1,0 +1,272 @@
+[
+  {
+    "stt": 0,
+    "speaker": "SPEAKER_00",
+    "start": 0.0,
+    "end": 2.8,
+    "goc": "Alo mọi người nghe rõ không, mình bắt đầu buổi họp tổng kết chiến dịch quý 4 nha.",
+    "sach": "Alo mọi người nghe rõ không, mình bắt đầu buổi họp tổng kết chiến dịch quý 4.",
+    "tach_tu": "Alo mọi người nghe rõ không , mình bắt_đầu buổi họp tổng_kết chiến_dịch quý 4 .",
+    "xa_giao": false
+  },
+  {
+    "stt": 1,
+    "speaker": "SPEAKER_00",
+    "start": 3.2,
+    "end": 7.0,
+    "goc": "Hôm nay nội dung hơi dài nên mình sẽ đi qua từng kênh bán hàng một.",
+    "sach": "Hôm nay nội dung hơi dài nên mình sẽ đi qua từng kênh bán hàng một.",
+    "tach_tu": "Hôm_nay nội_dung hơi dài nên mình sẽ đi qua từng kênh bán hàng một .",
+    "xa_giao": false
+  },
+  {
+    "stt": 2,
+    "speaker": "SPEAKER_00",
+    "start": 7.5,
+    "end": 10.0,
+    "goc": "Đầu tiên là kênh sàn thương mại điện tử.",
+    "sach": "Đầu tiên là kênh sàn thương mại điện tử.",
+    "tach_tu": "Đầu_tiên là kênh sàn thương_mại điện_tử .",
+    "xa_giao": false
+  },
+  {
+    "stt": 3,
+    "speaker": "SPEAKER_00",
+    "start": 10.8,
+    "end": 14.5,
+    "goc": "Tuần vừa rồi doanh số trên shopping và lazada tăng trưởng khá tốt.",
+    "sach": "Tuần vừa rồi doanh số trên Shopee và Lazada tăng trưởng khá tốt.",
+    "tach_tu": "Tuần vừa_rồi doanh_số trên Shopee và Lazada tăng_trưởng khá tốt .",
+    "xa_giao": false
+  },
+  {
+    "stt": 4,
+    "speaker": "SPEAKER_00",
+    "start": 15.0,
+    "end": 18.2,
+    "goc": "Tháng trước bạn dũng đã hoàn thành xong báo cáo chi phí vận hành rồi.",
+    "sach": "Tháng trước bạn dũng đã hoàn thành xong báo cáo chi phí vận hành rồi.",
+    "tach_tu": "Tháng trước bạn dũng đã hoàn_thành xong báo_cáo chi_phí vận_hành rồi .",
+    "xa_giao": false
+  },
+  {
+    "stt": 5,
+    "speaker": "SPEAKER_00",
+    "start": 19.0,
+    "end": 22.8,
+    "goc": "Nên tháng này chốt là tăng ngân sách quảng cáo face book và tik tok lên 100 triệu.",
+    "sach": "Nên tháng này chốt là tăng ngân sách quảng cáo face book và tik tok lên 100 triệu.",
+    "tach_tu": "Nên tháng này chốt là tăng ngân_sách quảng_cáo face book và tik tok lên 100 triệu .",
+    "xa_giao": false
+  },
+  {
+    "stt": 6,
+    "speaker": "SPEAKER_00",
+    "start": 23.5,
+    "end": 27.0,
+    "goc": "Phần chiến dịch quảng cáo này giao cho bạn hạnh phụ trách triển khai.",
+    "sach": "Phần chiến dịch quảng cáo này giao cho bạn hạnh phụ trách triển khai.",
+    "tach_tu": "Phần chiến_dịch quảng_cáo này giao cho bạn hạnh phụ_trách triển_khai .",
+    "xa_giao": false
+  },
+  {
+    "stt": 7,
+    "speaker": "SPEAKER_00",
+    "start": 27.5,
+    "end": 29.8,
+    "goc": "Hạn chót là trước thứ 5 tuần này.",
+    "sach": "Hạn chót là trước thứ 5 tuần này.",
+    "tach_tu": "Hạn_chót là trước thứ 5 tuần này .",
+    "xa_giao": false
+  },
+  {
+    "stt": 8,
+    "speaker": "SPEAKER_00",
+    "start": 30.5,
+    "end": 34.0,
+    "goc": "Hạnh nhớ gửi luôn bản dự trù chi phí chi tiết cho người chủ trì nhé.",
+    "sach": "Hạnh nhớ gửi luôn bản dự trù chi phí chi tiết cho người chủ trì.",
+    "tach_tu": "Hạnh nhớ gửi luôn bản dự_trù chi_phí chi_tiết cho người chủ_trì .",
+    "xa_giao": false
+  },
+  {
+    "stt": 9,
+    "speaker": "SPEAKER_00",
+    "start": 34.5,
+    "end": 36.8,
+    "goc": "Deadline gửi bản dự trù này là ngày 20 tháng 11.",
+    "sach": "Deadline gửi bản dự trù này là ngày 20 tháng 11.",
+    "tach_tu": "Deadline gửi bản dự_trù này là ngày 20 tháng 11 .",
+    "xa_giao": false
+  },
+  {
+    "stt": 10,
+    "speaker": "SPEAKER_00",
+    "start": 37.5,
+    "end": 40.0,
+    "goc": "Thứ 2 là về mảng khách hàng doanh nghiệp.",
+    "sach": "Thứ 2 là về mảng khách hàng doanh nghiệp.",
+    "tach_tu": "Thứ 2 là về mảng khách_hàng doanh_nghiệp .",
+    "xa_giao": false
+  },
+  {
+    "stt": 11,
+    "speaker": "SPEAKER_00",
+    "start": 40.8,
+    "end": 44.5,
+    "goc": "Ban đầu tính giao bạn dũng sẽ gửi bản báo giá dịch vụ mới cho công ty minh phát.",
+    "sach": "Ban đầu tính giao bạn dũng sẽ gửi bản báo giá dịch vụ mới cho công ty minh phát.",
+    "tach_tu": "Ban_đầu tính_giao bạn dũng sẽ gửi bản báo_giá dịch_vụ mới cho công_ty minh phát .",
+    "xa_giao": false
+  },
+  {
+    "stt": 12,
+    "speaker": "SPEAKER_00",
+    "start": 45.0,
+    "end": 47.5,
+    "goc": "Hạn chót dự kiến cho Dũng là thứ 3 tuần sau.",
+    "sach": "Hạn chót dự kiến cho Dũng là thứ 3 tuần sau.",
+    "tach_tu": "Hạn_chót dự_kiến cho Dũng là thứ 3 tuần sau .",
+    "xa_giao": false
+  },
+  {
+    "stt": 13,
+    "speaker": "SPEAKER_00",
+    "start": 150.0,
+    "end": 154.2,
+    "goc": "Lưu ý là công ty minh phát là khách hàng lớn nên cần làm chỉn chu.",
+    "sach": "Lưu ý là công ty minh phát là khách hàng lớn nên cần làm chỉn chu.",
+    "tach_tu": "Lưu_ý là công_ty minh phát là khách_hàng lớn nên cần làm chỉn_chu .",
+    "xa_giao": false
+  },
+  {
+    "stt": 14,
+    "speaker": "SPEAKER_00",
+    "start": 300.0,
+    "end": 304.5,
+    "goc": "Chúng ta chuyển sang phần chính sách khuyến mãi cuối năm.",
+    "sach": "Chúng ta chuyển sang phần chính sách khuyến mãi cuối năm.",
+    "tach_tu": "Chúng_ta chuyển sang phần chính_sách khuyến_mãi cuối năm .",
+    "xa_giao": false
+  },
+  {
+    "stt": 15,
+    "speaker": "SPEAKER_00",
+    "start": 450.0,
+    "end": 454.0,
+    "goc": "Thống nhất quyết định giảm 15% cho tất cả đơn hàng từ 2 triệu trở lên.",
+    "sach": "Thống nhất quyết định giảm 15% cho tất cả đơn hàng từ 2 triệu trở lên.",
+    "tach_tu": "Thống_nhất quyết_định giảm 15 % cho tất_cả đơn hàng từ 2 triệu trở lên .",
+    "xa_giao": false
+  },
+  {
+    "stt": 16,
+    "speaker": "SPEAKER_00",
+    "start": 454.8,
+    "end": 458.2,
+    "goc": "Kèm theo miễn phí vận chuyển toàn quốc cho khách mua lần đầu.",
+    "sach": "Kèm theo miễn phí vận chuyển toàn quốc cho khách mua lần đầu.",
+    "tach_tu": "Kèm theo miễn_phí vận_chuyển toàn_quốc cho khách mua lần đầu .",
+    "xa_giao": false
+  },
+  {
+    "stt": 17,
+    "speaker": "SPEAKER_00",
+    "start": 600.0,
+    "end": 603.8,
+    "goc": "Về phần chỉ tiêu kinh doanh cho nhân viên.",
+    "sach": "Về phần chỉ tiêu kinh doanh cho nhân viên.",
+    "tach_tu": "Về phần chỉ_tiêu kinh_doanh cho nhân_viên .",
+    "xa_giao": false
+  },
+  {
+    "stt": 18,
+    "speaker": "SPEAKER_00",
+    "start": 750.0,
+    "end": 754.2,
+    "goc": "Quyết định áp đặt KPI tối thiểu 50 đơn hàng mỗi tháng cho mỗi sale.",
+    "sach": "Quyết định áp đặt KPI tối thiểu 50 đơn hàng mỗi tháng cho mỗi sale.",
+    "tach_tu": "Quyết_định áp_đặt KPI tối_thiểu 50 đơn hàng mỗi tháng cho mỗi sale .",
+    "xa_giao": false
+  },
+  {
+    "stt": 19,
+    "speaker": "SPEAKER_00",
+    "start": 900.0,
+    "end": 904.0,
+    "goc": "À sếp vừa báo Dũng phải đi gặp khách hàng gấp cả tuần sau.",
+    "sach": "sếp vừa báo Dũng phải đi gặp khách hàng gấp cả tuần sau.",
+    "tach_tu": "sếp vừa báo Dũng phải đi gặp khách_hàng gấp cả tuần sau .",
+    "xa_giao": false
+  },
+  {
+    "stt": 20,
+    "speaker": "SPEAKER_00",
+    "start": 904.5,
+    "end": 908.0,
+    "goc": "Nên việc gửi bản báo giá cho công ty minh phát chuyển sang cho bạn thảo làm nhé.",
+    "sach": "Nên việc gửi bản báo giá cho công ty minh phát chuyển sang cho bạn thảo làm.",
+    "tach_tu": "Nên việc gửi bản báo_giá cho công_ty minh phát chuyển sang cho bạn thảo làm .",
+    "xa_giao": false
+  },
+  {
+    "stt": 21,
+    "speaker": "SPEAKER_00",
+    "start": 908.5,
+    "end": 912.0,
+    "goc": "Thảo làm gấp và gửi trước thứ 6 tuần này luôn, không để đến thứ 3 tuần sau nữa.",
+    "sach": "Thảo làm gấp và gửi trước thứ 6 tuần này luôn, không để đến thứ 3 tuần sau nữa.",
+    "tach_tu": "Thảo làm gấp và gửi trước thứ 6 tuần này luôn , không để đến thứ 3 tuần sau nữa .",
+    "xa_giao": false
+  },
+  {
+    "stt": 22,
+    "speaker": "SPEAKER_00",
+    "start": 1200.0,
+    "end": 1204.2,
+    "goc": "Còn về lọc danh sách khách hàng CRM thì để mình tự làm trước ngày 15 tháng 12.",
+    "sach": "Còn về lọc danh sách khách hàng CRM thì để mình tự làm trước ngày 15 tháng 12.",
+    "tach_tu": "Còn về lọc danh_sách khách_hàng CRM thì để mình tự làm trước ngày 15 tháng 12 .",
+    "xa_giao": false
+  },
+  {
+    "stt": 23,
+    "speaker": "SPEAKER_00",
+    "start": 1800.0,
+    "end": 1804.0,
+    "goc": "Ok chốt lại phân công: Hạnh chạy ads và gửi bản dự trù chi phí, Thảo gửi báo giá cho Minh Phát.",
+    "sach": "chốt lại phân công: Hạnh chạy ads và gửi bản dự trù chi phí, Thảo gửi báo giá cho Minh Phát.",
+    "tach_tu": "chốt lại phân_công : Hạnh chạy ads và gửi bản dự_trù chi_phí , Thảo gửi báo_giá cho Minh_Phát .",
+    "xa_giao": false
+  },
+  {
+    "stt": 24,
+    "speaker": "SPEAKER_00",
+    "start": 2350.0,
+    "end": 2354.0,
+    "goc": "Lịch họp lần tới chốt là 9 giờ sáng thứ 2 tuần sau ở phòng họp 402 nha.",
+    "sach": "Lịch họp lần tới chốt là 9 giờ sáng thứ 2 tuần sau ở phòng họp 402.",
+    "tach_tu": "Lịch họp lần tới chốt là 9 giờ sáng thứ 2 tuần sau ở phòng_họp 402 .",
+    "xa_giao": false
+  },
+  {
+    "stt": 25,
+    "speaker": "SPEAKER_00",
+    "start": 2354.8,
+    "end": 2357.5,
+    "goc": "Mọi người nhớ chuẩn bị báo cáo đầy đủ trước khi họp.",
+    "sach": "Mọi người nhớ chuẩn bị báo cáo đầy đủ trước khi họp.",
+    "tach_tu": "Mọi người nhớ chuẩn_bị báo_cáo đầy_đủ trước khi họp .",
+    "xa_giao": false
+  },
+  {
+    "stt": 26,
+    "speaker": "SPEAKER_00",
+    "start": 2358.0,
+    "end": 2360.0,
+    "goc": "Cảm ơn mọi người đã tham gia.",
+    "sach": "Cảm ơn mọi người đã tham gia.",
+    "tach_tu": "Cảm_ơn mọi người đã tham_gia .",
+    "xa_giao": true
+  }
+]
