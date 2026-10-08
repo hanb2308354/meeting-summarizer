@@ -1,5 +1,6 @@
 # Bảng cấu hình của phần TIỀN XỬ LÝ VĂN BẢN (Hân phụ trách)
-# Chuyển nguyên văn từ src/nlp/tu_dien.py sang. Chỉ chứa hằng số, không import gì.
+# Ban đầu chuyển từ src/nlp/tu_dien.py sang, sau đó đã sửa thêm (các hằng số cùng tên
+# còn trong src/nlp/tu_dien.py là bản cũ, không còn dùng). Chỉ chứa hằng số, không import gì.
 
 # Lỗi Whisper hay nhận sai (mẫu -> sửa lại). Thêm dần khi gặp lỗi mới.
 #

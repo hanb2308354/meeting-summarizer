@@ -18,7 +18,9 @@
 File ghi âm (.mp3)
    → [src/asr] faster-whisper: chuyển giọng nói thành văn bản
    → File JSON trong data/transcripts/
-   → [src/nlp] Regex → PyVi → TextRank → Trích xuất
+   → [src/tien_xu_ly] sửa lỗi nghe nhầm, bỏ từ đệm, đánh dấu câu xã giao, tách từ PyVi
+       (phần NLP gọi thẳng hàm tien_xu_ly(); data/processed/ chỉ là bản lưu để xem)
+   → [src/nlp] TextRank → Trích xuất
    → Bản tóm tắt + danh sách việc cần làm
 ```
 
@@ -28,9 +30,11 @@ File ghi âm (.mp3)
 | ----------------------- | --------------------------------------------------------------------------------- |
 | `data/audio/`           | File ghi âm (không đưa lên GitHub vì nặng)                                        |
 | `data/transcripts/`     | File JSON do phần ASR xuất ra, là **đầu vào của phần NLP**                        |
+| `data/processed/`       | Văn bản sạch do `src/tien_xu_ly` ghi ra, chỉ để xem/kiểm tra (NLP không đọc thư mục này) |
 | `data/dap_an/`          | Văn bản gốc của từng file ghi âm, dùng để đánh giá                                |
 | `data/nhan_dap_an.json` | Đáp án mẫu (người, việc, hạn, quyết định, lịch họp) để đo độ chính xác trích xuất |
 | `src/asr/`              | Code nhận dạng giọng nói                                                          |
+| `src/tien_xu_ly/`       | Code làm sạch văn bản (transcript → văn bản sạch)                                 |
 | `src/nlp/`              | Code xử lý văn bản                                                                |
 | `outputs/`              | Kết quả cuối cùng (`.json` và `.md` cho từng transcript)                          |
 
@@ -131,7 +135,7 @@ python src/nlp/kiem_cau.py
 | ----------------------- | ------------------------------------------------------------ |
 | `chuyen_giong_noi.py`   | **Code chính**: file ghi âm → JSON                           |
 | `danh_gia_wer.py`       | Đo tỷ lệ lỗi từ (WER) so với văn bản gốc trong `data/dap_an/` |
-| `kiem_thu_asr.py`       | 21 ca kiểm thử tự động (không cần tải model)                 |
+| `kiem_thu_asr.py`       | 26 ca kiểm thử tự động (không cần tải model)                 |
 | `thu_faster_whisper.py` | Chỉ dùng để thử nghiệm chọn model, không dùng trong hệ thống |
 
 Lần đầu chạy cần **internet** để tải model `medium` (khoảng 1,5 GB); các lần sau dùng bản đã lưu trên máy.
@@ -142,6 +146,19 @@ python src/asr/chuyen_giong_noi.py data/audio/                  # cả thư mụ
 python src/asr/danh_gia_wer.py thu_nghiem hop_01 hop_02         # đo WER, nhiều file thì ra WER gộp
 python src/asr/kiem_thu_asr.py                                  # kiểm thử
 ```
+
+**Tiền xử lý âm thanh đang BẬT mặc định** (lọc tiếng ù dưới 90 Hz + chuẩn hóa âm lượng); giảm tạp âm (`--loc-nhieu`) thì TẮT mặc định. Hai lựa chọn này mới chỉ kiểm tra trên âm thanh tổng hợp, **chưa có số đo WER trên bản ghi thật**. Cách so sánh trên một file có đáp án trong `data/dap_an/`:
+
+```powershell
+python src/asr/chuyen_giong_noi.py data/audio/hop_01.mp3 --khong-tien-xu-ly   # tắt tiền xử lý
+python src/asr/danh_gia_wer.py hop_01                                         # ghi lại WER
+python src/asr/chuyen_giong_noi.py data/audio/hop_01.mp3                      # mặc định
+python src/asr/danh_gia_wer.py hop_01
+python src/asr/chuyen_giong_noi.py data/audio/hop_01.mp3 --loc-nhieu          # thêm giảm tạp âm
+python src/asr/danh_gia_wer.py hop_01
+```
+
+Mỗi lần chạy ghi đè `data/transcripts/hop_01.json`, nên đo WER ngay sau từng lần. Các dòng `[LOẠI - ...]` in ra khi chạy là đoạn bị bỏ vì nghi Whisper "bịa chữ"; nên đọc lại để đếm câu thật bị loại oan.
 
 ## Văn bản sạch: src/tien_xu_ly (Hân)
 
@@ -164,14 +181,17 @@ Kết quả nằm trong `data/processed/<tên>.json`, mỗi câu gồm:
 | `tach_tu` | Bản `sach` đã tách từ bằng PyVi (vd `hạn_chót`, `phụ_trách`)             |
 | `xa_giao` | `true` nếu là câu chào hỏi, cảm ơn, hỏi ý kiến                           |
 
-Format này giống hệt đầu ra hàm `tien_xu_ly()` mà phần NLP đang gọi. `src/nlp/tien_xu_ly.py` giờ chỉ là cầu nối sang `src/tien_xu_ly`, nên mọi chỗ gọi `from tien_xu_ly import tien_xu_ly` trong `src/nlp` vẫn chạy như cũ. Sửa cách làm sạch văn bản thì sửa ở `src/tien_xu_ly`.
+Format này giống hệt đầu ra hàm `tien_xu_ly()`. Phần NLP **không đọc** `data/processed/`: nó gọi thẳng `tien_xu_ly()` trên `data/transcripts/` qua cầu nối `src/nlp/tien_xu_ly.py` (chỉ thêm `src/tien_xu_ly` vào `sys.path` rồi `from lam_sach import tien_xu_ly`), nên mọi chỗ gọi `from tien_xu_ly import tien_xu_ly` trong `src/nlp` vẫn chạy như cũ. `data/processed/` chỉ để xem; sửa từ điển xong nhớ chạy lại lệnh trên, nếu quên thì kiểm thử sẽ báo file đã cũ. Sửa cách làm sạch văn bản thì sửa ở `src/tien_xu_ly`.
 
 | File                     | Vai trò                                                                       |
 | ------------------------ | ----------------------------------------------------------------------------- |
-| `tien_xu_ly.py`          | **Code chính**: transcript → văn bản sạch (`data/processed/`)                 |
-| `doc_transcript.py`      | Đọc và kiểm tra file transcript JSON                                          |
+| `lam_sach.py`            | **Code chính**: hàm `tien_xu_ly()` (không đọc/ghi file), phần NLP gọi hàm này |
+| `tien_xu_ly.py`          | Chạy từ dòng lệnh: transcript → `data/processed/<tên>.json`                   |
+| `doc_transcript.py`      | Đọc và kiểm tra file transcript JSON (đọc được file có BOM)                   |
 | `tu_dien_tien_xu_ly.py`  | Bảng sửa lỗi nghe nhầm, từ đệm, mẫu câu xã giao, cụm từ cần nối khi tách từ   |
-| `kiem_thu_tien_xu_ly.py` | Kiểm thử: 37 câu làm sạch, 39 câu đúng không được đổi, tách từ, đọc/ghi file  |
+| `kiem_thu_tien_xu_ly.py` | Kiểm thử: 55 câu làm sạch, 51 câu đúng không được đổi, tách từ, đọc/ghi file, cầu nối (chạy từ 3 thư mục), `data/processed` khớp với code |
+
+Bảng sửa lỗi nghe nhầm hiện được viết theo các lỗi gặp khi chạy thử, chưa thống kê trên nhiều bản ghi thật; luật nào có thể đụng tên người hoặc từ có thật thì chỉ áp dụng khi có ngữ cảnh (xem ghi chú trong `tu_dien_tien_xu_ly.py`).
 
 ## Các file trong src/nlp
 
@@ -179,7 +199,7 @@ Format này giống hệt đầu ra hàm `tien_xu_ly()` mà phần NLP đang g�
 | ---------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
 | Chuẩn hóa  | `doc_transcript.py`                              | Đọc và kiểm tra file transcript JSON                                      |
 | Chuẩn hóa  | `tien_xu_ly.py`                                  | Cầu nối: gọi phần tiền xử lý trong `src/tien_xu_ly` (Hân), giữ nguyên cách gọi cũ |
-| Chuẩn hóa  | `tu_dien.py`                                     | Hằng số dùng chung (động từ, mẫu câu, từ điển lỗi nhận dạng)              |
+| Chuẩn hóa  | `tu_dien.py`                                     | Hằng số dùng chung (động từ, mẫu câu). `SUA_LOI`, `TU_DEM`, `MAU_XA_GIAO`, `SO_TU_TOI_DA_XA_GIAO` trong file là bản cũ, không còn dùng; bảng đang dùng nằm ở `src/tien_xu_ly/tu_dien_tien_xu_ly.py` |
 | Tóm tắt    | `tom_tat.py`                                     | Tách câu, TextRank có điểm cộng/phạt, chọn câu kiểu MMR, rút gọn          |
 | Trích xuất | `nhan_dien_ten.py`                               | Nhận diện tên người phụ trách                                             |
 | Trích xuất | `nhan_dien_han.py`                               | Tìm hạn chót trong câu                                                    |
