@@ -10,6 +10,7 @@ import io
 import json
 import sys
 import tempfile
+import unicodedata
 import wave
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from faster_whisper.transcribe import Segment, Word
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import chuyen_giong_noi as asr  # noqa: E402
+import danh_gia_wer  # noqa: E402
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -220,6 +222,18 @@ def giu_cau_hop_marketing_that():
         return f"loại nhầm {so_loai} câu họp thật"
 
 
+@ca
+def giu_cau_liet_ke_tu_khoa_khi_model_tu_tin():
+    # Người họp liệt kê thật, model nói rõ -> giữ; cùng câu đó mà model không chắc -> loại
+    for cau_that in ("Frontend, backend, database, API.", "Update, fix, test, demo."):
+        cau, so_loai = chay_nhan_dang([doan(chuoi_tu(0, cau_that))])
+        if so_loai or cau != [cau_that]:
+            return f"loại nhầm câu liệt kê thật {cau_that!r}"
+        _, so_loai = chay_nhan_dang([doan(chuoi_tu(0, cau_that), do_tin_cay=-1.5)])
+        if so_loai != 1:
+            return f"không loại {cau_that!r} khi model không chắc"
+
+
 # ----------------------------------------------------------------------
 # 4. Tách câu
 # ----------------------------------------------------------------------
@@ -251,6 +265,24 @@ def van_tach_cau_sau_v_v_khi_cau_moi_viet_hoa():
     cau = asr.tach_cau(chuoi_tu(0, "Làm báo cáo, slide, v.v. Bạn Lan làm demo."))
     if len(cau) != 2:
         return f"ra {[c['text'] for c in cau]}"
+
+
+@ca
+def khong_cat_o_dau_ba_cham_khi_dang_ngap_ngung():
+    cau = [c["text"] for c in asr.tach_cau(chuoi_tu(0, "Thì... mình nghĩ là xong rồi."))]
+    if len(cau) != 1:
+        return f"bị cắt thành {cau}"
+    cau = [c["text"] for c in asr.tach_cau(chuoi_tu(0, "Vậy thôi… Bạn Lan làm slide."))]
+    if len(cau) != 2:
+        return f"không tách khi câu sau viết hoa: {cau}"
+
+
+@ca
+def end_khong_nho_hon_start():
+    # Mốc thời gian theo từ bị lệch: từ cuối kết thúc trước khi từ đầu bắt đầu
+    cau = asr.tach_cau([Word(start=5.0, end=4.9, word=" Ok.", probability=0.9)])
+    if cau[0]["end"] < cau[0]["start"]:
+        return f"start {cau[0]['start']} > end {cau[0]['end']}"
 
 
 @ca
@@ -340,6 +372,29 @@ def thu_muc_bo_qua_file_da_co_va_canh_bao_trung_ten():
 
 
 @ca
+def thu_muc_da_xu_ly_het_thi_ma_thoat_0():
+    # Chạy lại cả thư mục khi mọi file đã có JSON: không phải lỗi, không tải model
+    with tempfile.TemporaryDirectory() as tm:
+        tm = Path(tm)
+        (tm / "audio").mkdir()
+        (tm / "audio" / "cu.mp3").write_bytes(b"x")
+        (tm / "transcripts").mkdir()
+        (tm / "transcripts" / "cu.json").write_text("[]")
+
+        def khong_duoc_tai(*a, **k):
+            raise AssertionError("đã tải model dù không có file cần xử lý")
+        asr.WhisperModel = khong_duoc_tai
+        asr.THU_MUC_KET_QUA = tm / "transcripts"
+        sys.argv = ["chuyen_giong_noi.py", str(tm / "audio")]
+        with contextlib.redirect_stdout(io.StringIO()):
+            try:
+                asr.main()
+            except SystemExit as thoat:
+                if thoat.code:
+                    return f"mã thoát {thoat.code!r} dù không có lỗi"
+
+
+@ca
 def canh_bao_on_khong_bao_oan_khi_noi_lien_tuc():
     lien_tuc = tieng_noi_gia(10, co_lang=False)
     if any("Tạp âm" in c for c in asr.canh_bao_chat_luong(lien_tuc)):
@@ -358,6 +413,26 @@ def khong_ghi_file_khi_khong_nghe_duoc_gi():
         ma = chay_main(tm, [], [str(tm / "on.wav")])
         if ma == 0 or (tm / "transcripts" / "on.json").exists():
             return "vẫn ghi file JSON rỗng"
+
+
+# ----------------------------------------------------------------------
+# 6. Chuẩn hóa văn bản khi đo WER (danh_gia_wer.py)
+# ----------------------------------------------------------------------
+@ca
+def chuan_hoa_wer_cung_cach_doc_thi_giong_nhau():
+    cac_ca = [
+        ("Họp lúc 9h30, thứ 4.", "họp lúc 9 giờ 30 thứ 4"),
+        ("9h", "9 giờ"),
+        ("Tăng 10% doanh số", "tăng 10 phần trăm doanh số"),
+        ("Mất 2-3 ngày", "mất 2 3 ngày"),             # không dính thành "23"
+        ("Phần Front-end và back-end", "phần frontend và backend"),
+        ("Thứ 4 họp nhé", "thứ 4 họp nhé"),           # "4 họp" không bị coi là "4h"
+        (unicodedata.normalize("NFD", "Hạn chót"), "hạn chót"),
+    ]
+    for vao, mong_doi in cac_ca:
+        ra = danh_gia_wer.chuan_hoa(vao)
+        if ra != mong_doi:
+            return f"{vao!r} -> {ra!r}, mong đợi {mong_doi!r}"
 
 
 if __name__ == "__main__":

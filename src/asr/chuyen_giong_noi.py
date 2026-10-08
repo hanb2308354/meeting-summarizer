@@ -89,6 +89,8 @@ NGUONG_NGHI_DO_TIN_CAY = -1.0      # avg_logprob dưới mức này: model khôn
                                    # (-1.0 là ngưỡng "không chắc" của chính Whisper; để cao hơn
                                    #  sẽ loại oan câu thật trong phòng ồn)
 
+SO_CUM_LUON_LOAI = 5               # chuỗi >= 5 từ khóa gợi ý liền nhau: loại dù model tự tin
+
 # Ngưỡng lọc. (Đoạn "không có tiếng nói" faster-whisper đã tự bỏ qua bên trong,
 # với no_speech_prob > 0.6 và avg_logprob <= -1.0, nên ở đây không lọc lại.)
 NGUONG_LAP_LAI = 2.4            # compression_ratio cao -> chữ bị lặp vòng
@@ -332,20 +334,23 @@ def ly_do_loai(doan):
     # 30 giây, dùng nó sẽ loại oan cả những câu thật nằm chung cửa sổ.
     if len(van_ban) > 20 and get_compression_ratio(van_ban) > NGUONG_LAP_LAI:
         return "lặp chữ"
+    model_khong_chac = (doan.no_speech_prob > NGUONG_NGHI_KHONG_CO_TIENG
+                        or doan.avg_logprob < NGUONG_NGHI_DO_TIN_CAY)
     # Câu bịa kiểu YouTube (chỉ xét đoạn ngắn)
     if len(van_ban.split()) <= SO_TU_TOI_DA_CAU_BIA:
         if MAU_CAU_BIA_CHAC.search(van_ban):
             return "câu bịa kiểu YouTube"
-        model_khong_chac = (doan.no_speech_prob > NGUONG_NGHI_KHONG_CO_TIENG
-                            or doan.avg_logprob < NGUONG_NGHI_DO_TIN_CAY)
         if MAU_CAU_BIA_NGHI.search(van_ban) and model_khong_chac:
             return "câu bịa kiểu YouTube"
     # Whisper đọc lại danh sách từ khóa gợi ý (hay gặp ở chỗ ồn hoặc im lặng)
     cum = [c.strip().lower().rstrip(".") for c in van_ban.split(",")]
-    # (chỉ khi là một chuỗi cụm ngắn gần như toàn từ khóa, tránh loại câu thật như
-    #  "Hôm nay mình review, test, demo.")
+    # Chỉ khi là một chuỗi cụm ngắn gần như toàn từ khóa, tránh loại câu thật như
+    # "Hôm nay mình review, test, demo.". Người họp cũng có thể liệt kê thật
+    # ("Frontend, backend, database, API."), nên chuỗi 4 cụm chỉ loại khi model
+    # không chắc; từ SO_CUM_LUON_LOAI cụm trở lên thì gần như chắc là đọc lại gợi ý.
     if (len(cum) >= 4 and all(len(c.split()) <= 2 for c in cum)
-            and sum(c in TAP_TU_GOI_Y for c in cum) / len(cum) >= 0.8):
+            and sum(c in TAP_TU_GOI_Y for c in cum) / len(cum) >= 0.8
+            and (model_khong_chac or len(cum) >= SO_CUM_LUON_LOAI)):
         return "đọc lại từ khóa gợi ý"
     if chuan_hoa_so_sanh(van_ban) == chuan_hoa_so_sanh(CAU_MO_DAU):
         return "đọc lại câu mở đầu"
@@ -405,7 +410,9 @@ def tao_cau(cac_tu):
     return {
         "speaker": "SPEAKER_00",  # Chưa tách người nói, tạm gán một người
         "start": round(float(cac_tu[0].start), 2),
-        "end": round(float(cac_tu[-1].end), 2),
+        # Mốc thời gian theo từ của Whisper đôi khi lệch: end không được nhỏ hơn start
+        # (src/tien_xu_ly/doc_transcript.py báo lỗi cả file nếu start > end)
+        "end": round(max(float(cac_tu[-1].end), float(cac_tu[0].start)), 2),
         "text": ghep_tu(cac_tu),
     }
 
@@ -441,7 +448,10 @@ def tach_cau(cac_tu):
         # ("... v.v. Bạn Lan làm slide." vẫn là 2 câu)
         tu_sau = cac_tu[i + 1].word.strip() if i + 1 < len(cac_tu) else ""
         la_viet_tat = chu.lower() in TU_VIET_TAT and not (tu_sau[:1].isupper() and chu.lower() in ("v.v.", "đ."))
-        if chu.endswith(DAU_KET_CAU) and not la_viet_tat:
+        # "Thì... mình nghĩ là" : dấu ba chấm là ngập ngừng, chỉ hết câu khi từ sau viết hoa
+        # (hoặc là từ cuối cùng). Câu bị nối nhầm vẫn được cắt theo khoảng ngừng ở trên.
+        dang_ngap_ngung = chu.endswith(("...", "…")) and tu_sau and not tu_sau[:1].isupper()
+        if chu.endswith(DAU_KET_CAU + ("…",)) and not la_viet_tat and not dang_ngap_ngung:
             cac_cau_tho.append(cau_hien_tai)
             cau_hien_tai = []
     if cau_hien_tai:
@@ -567,7 +577,11 @@ def main():
             so_loi += 1
             print(f"  ✗ {loi}")
     if not hop_le:
-        sys.exit("Không có file nào cần xử lý.")
+        if so_loi:
+            sys.exit("Không có file nào hợp lệ để xử lý.")
+        # Mọi file đều đã có JSON (hoặc thư mục trống): không phải lỗi, mã thoát 0
+        print("Không có file nào cần xử lý.")
+        return
 
     # hop_01.mp3 và hop_01.wav đều ra hop_01.json -> file sau ghi đè file trước
     ten_da_gap = {}
