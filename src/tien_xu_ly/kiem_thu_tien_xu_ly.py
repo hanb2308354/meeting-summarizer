@@ -1,17 +1,24 @@
-# Kiểm thử tự động cho phần tiền xử lý văn bản (tien_xu_ly.py).
+# Kiểm thử tự động cho phần tiền xử lý văn bản (lam_sach.py, tien_xu_ly.py và cầu nối
+# src/nlp/tien_xu_ly.py).
 # Mỗi ca là một câu thô (như ASR xuất ra) và kết quả mong đợi, gồm cả các lỗi
 # đã từng gặp, để sửa từ điển sau này không làm hỏng lại.
 #
 # Cách dùng:  python src/tien_xu_ly/kiem_thu_tien_xu_ly.py
 # Mã thoát 0 khi tất cả đều ĐẠT.
 import json
+import pickle
+import subprocess
 import sys
 import tempfile
 import unicodedata
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import tien_xu_ly as txl  # noqa: E402
+THU_MUC_NAY = Path(__file__).resolve().parent
+THU_MUC_GOC = THU_MUC_NAY.parents[1]
+sys.path.insert(0, str(THU_MUC_NAY))
+import lam_sach as txl  # noqa: E402
+import tien_xu_ly as cli  # noqa: E402
+from doc_transcript import doc_transcript  # noqa: E402
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -179,16 +186,16 @@ def kiem_unicode_to_hop():
 
 def kiem_doc_ghi_file():
     loi = []
-    goc = txl.THU_MUC_RA
+    goc = cli.THU_MUC_RA
     with tempfile.TemporaryDirectory() as tm:
         tm = Path(tm)
-        txl.THU_MUC_RA = tm / "processed"
+        cli.THU_MUC_RA = tm / "processed"
         try:
             # File có BOM (soạn bằng Notepad) vẫn đọc được
             co_bom = tm / "co_bom.json"
             co_bom.write_text(json.dumps(cau_tho(["Bạn Tuấn làm slide."]), ensure_ascii=False),
                               encoding="utf-8-sig")
-            txl.xu_ly_mot_file(co_bom)
+            cli.xu_ly_mot_file(co_bom)
             du_lieu = json.loads((tm / "processed" / "co_bom.json").read_text(encoding="utf-8"))
             if len(du_lieu) != 1:
                 loi.append("đọc file có BOM sai")
@@ -196,7 +203,7 @@ def kiem_doc_ghi_file():
             rong = tm / "rong.json"
             rong.write_text(json.dumps(cau_tho(["Ừm.", "Ok."])), encoding="utf-8")
             try:
-                txl.xu_ly_mot_file(rong)
+                cli.xu_ly_mot_file(rong)
                 loi.append("không báo lỗi khi bỏ hết câu")
             except ValueError:
                 pass
@@ -211,7 +218,73 @@ def kiem_doc_ghi_file():
             if list((tm / "processed").glob("*.tmp")):
                 loi.append("còn sót file tạm")
         finally:
-            txl.THU_MUC_RA = goc
+            cli.THU_MUC_RA = goc
+    return loi
+
+
+# Đoạn mã chạy như một file trong src/nlp: thư mục src/nlp đứng đầu sys.path
+# (giống khi chạy "python src/nlp/chay_nlp.py"), rồi gọi đúng câu lệnh của Anh.
+MA_GOI_CAU_NOI = """
+import pickle, sys
+sys.path.insert(0, sys.argv[1])
+from tien_xu_ly import tien_xu_ly
+import doc_transcript
+pickle.dumps(tien_xu_ly)
+print(tien_xu_ly.__module__)
+print(sys.modules[tien_xu_ly.__module__].__file__)
+print(doc_transcript.__file__)
+print(tien_xu_ly([{"speaker": "S", "start": 0, "end": 1, "text": "Ờ, bích link thứ 6 nhé."}])[0]["sach"])
+"""
+
+
+def kiem_cau_noi():
+    """Cầu nối src/nlp/tien_xu_ly.py: gọi được từ mọi thư mục, ra đúng hàm của Hân,
+    không thay doc_transcript của phần NLP, và pickle được (multiprocessing trên Windows)."""
+    loi = []
+    thu_muc_nlp = THU_MUC_GOC / "src" / "nlp"
+    for cwd in (THU_MUC_GOC, thu_muc_nlp, Path(THU_MUC_GOC.anchor)):
+        kq = subprocess.run([sys.executable, "-c", MA_GOI_CAU_NOI, str(thu_muc_nlp)],
+                            cwd=cwd, capture_output=True, text=True, encoding="utf-8")
+        if kq.returncode != 0:
+            loi.append(f"chạy từ {cwd}: lỗi {kq.stderr.strip().splitlines()[-1:]}")
+            continue
+        dong = kq.stdout.splitlines()
+        mong_doi = ["lam_sach", str(THU_MUC_NAY / "lam_sach.py"),
+                    str(thu_muc_nlp / "doc_transcript.py"), "deadline thứ 6."]
+        if [d.strip() for d in dong] != mong_doi:
+            loi.append(f"chạy từ {cwd}: ra {dong}, mong đợi {mong_doi}")
+    # Chạy chính file cầu nối từ thư mục khác (đường dẫn tuyệt đối)
+    tep = THU_MUC_GOC / "data" / "transcripts" / "thu_nghiem.json"
+    kq = subprocess.run([sys.executable, str(thu_muc_nlp / "tien_xu_ly.py"), str(tep)],
+                        cwd=THU_MUC_GOC.anchor, capture_output=True, text=True, encoding="utf-8")
+    if kq.returncode != 0 or "0." not in kq.stdout:
+        loi.append(f"python src/nlp/tien_xu_ly.py chạy từ / lỗi: {kq.stderr.strip()[-200:]}")
+    # Trong cùng tiến trình: hàm pickle được (tên module đăng ký đúng trong sys.modules)
+    try:
+        pickle.loads(pickle.dumps(txl.tien_xu_ly))
+    except Exception as e:
+        loi.append(f"không pickle được: {e}")
+    return loi
+
+
+def kiem_data_processed_khop_code():
+    """data/processed/*.json phải giống hệt tien_xu_ly() trên data/transcripts/*.json.
+
+    Phần NLP không đọc data/processed (nó gọi thẳng tien_xu_ly()), nên nếu sửa từ điển
+    mà quên chạy lại thì file trong data/processed sẽ cũ mà không ai biết.
+    """
+    loi = []
+    cac_file = sorted((THU_MUC_GOC / "data" / "transcripts").glob("*.json"))
+    for tep in cac_file:
+        tep_ra = THU_MUC_GOC / "data" / "processed" / tep.name
+        if not tep_ra.exists():
+            loi.append(f"thiếu data/processed/{tep.name}")
+            continue
+        if txl.tien_xu_ly(doc_transcript(tep)) != json.loads(tep_ra.read_text(encoding="utf-8")):
+            loi.append(f"data/processed/{tep.name} đã cũ, chạy lại: "
+                       "python src/tien_xu_ly/tien_xu_ly.py data/transcripts/")
+    if not cac_file:
+        loi.append("không có file nào trong data/transcripts")
     return loi
 
 
@@ -223,6 +296,8 @@ if __name__ == "__main__":
         ("Định dạng đầu ra và stt", kiem_dinh_dang_va_stt),
         ("Unicode tổ hợp (NFD)", kiem_unicode_to_hop),
         ("Đọc/ghi file (BOM, file rỗng, file tạm)", kiem_doc_ghi_file),
+        ("Cầu nối src/nlp/tien_xu_ly.py (3 thư mục chạy, pickle)", kiem_cau_noi),
+        ("data/processed khớp với code hiện tại", kiem_data_processed_khop_code),
     ]
     so_dat = 0
     for ten, ham in cac_nhom:

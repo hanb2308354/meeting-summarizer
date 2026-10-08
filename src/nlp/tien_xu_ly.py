@@ -1,4 +1,4 @@
-# CẦU NỐI sang phần tiền xử lý của Hân (src/tien_xu_ly/tien_xu_ly.py).
+# CẦU NỐI sang phần tiền xử lý của Hân (src/tien_xu_ly/lam_sach.py).
 #
 # Phần tiền xử lý đã chuyển sang Hân phụ trách. File này chỉ giữ lại đúng tên
 # và cách gọi cũ, để mọi chỗ trong src/nlp vẫn viết như trước:
@@ -6,25 +6,23 @@
 #     du_lieu = tien_xu_ly(doc_transcript(duong_dan))
 # Đầu ra giữ nguyên format: stt, speaker, start, end, goc, sach, tach_tu, xa_giao.
 # Muốn sửa cách làm sạch văn bản thì sửa ở src/tien_xu_ly, KHÔNG sửa file này.
-import importlib.util
+#
+# Lưu ý: SUA_LOI, TU_DEM, MAU_XA_GIAO, SO_TU_TOI_DA_XA_GIAO trong src/nlp/tu_dien.py
+# là bản CŨ, không còn file nào dùng. Bảng đang dùng nằm ở
+# src/tien_xu_ly/tu_dien_tien_xu_ly.py.
 import sys
 from pathlib import Path
 
 from doc_transcript import doc_transcript
 
-_THU_MUC_HAN = Path(__file__).resolve().parents[1] / "tien_xu_ly"
-
 # Thư mục của Hân được thêm vào CUỐI sys.path: file nào trùng tên (vd doc_transcript)
-# thì bản trong src/nlp vẫn được ưu tiên, code của phần NLP không bị thay.
-if str(_THU_MUC_HAN) not in sys.path:
-    sys.path.append(str(_THU_MUC_HAN))
+# thì bản trong src/nlp vẫn được ưu tiên. lam_sach.py không import doc_transcript,
+# nên kết quả làm sạch không phụ thuộc ai gọi nó.
+_THU_MUC_HAN = str(Path(__file__).resolve().parents[1] / "tien_xu_ly")
+if _THU_MUC_HAN not in sys.path:
+    sys.path.append(_THU_MUC_HAN)
 
-# Nạp file của Hân dưới tên khác, vì nó trùng tên với chính file này
-_spec = importlib.util.spec_from_file_location("tien_xu_ly_han", _THU_MUC_HAN / "tien_xu_ly.py")
-_tien_xu_ly_han = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_tien_xu_ly_han)
-
-tien_xu_ly = _tien_xu_ly_han.tien_xu_ly
+from lam_sach import tien_xu_ly  # noqa: E402
 
 
 if __name__ == "__main__":
