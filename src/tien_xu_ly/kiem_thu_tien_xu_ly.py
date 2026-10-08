@@ -25,6 +25,8 @@ if hasattr(sys.stdout, "reconfigure"):
 
 # (câu thô, câu sạch mong đợi, có phải câu xã giao không)
 CA_LAM_SACH = [
+    ("Bích Linh là thứ 6 tuần này, nhớ gửi file cho cả nhóm.",
+     "deadline là thứ 6 tuần này, nhớ gửi file cho cả nhóm.", False),
     # --- Sửa lỗi nghe nhầm ---
     ("Bích link là thứ 6 tuần này.", "deadline là thứ 6 tuần này.", False),
     ("Phần phôn thên thì giao cho bạn Tuấn.", "Phần frontend thì giao cho bạn Tuấn.", False),
@@ -95,6 +97,10 @@ CA_LAM_SACH = [
 # Câu ĐÚNG, có tên người, địa danh, cụm từ thường gặp: tiền xử lý KHÔNG được đổi gì.
 # Mỗi khi thêm luật sửa lỗi mới vào tu_dien_tien_xu_ly.py, bộ này phải vẫn ĐẠT.
 CAU_KHONG_DUOC_DOI = [
+    "Bích Linh là thứ hai, Lan là thứ ba.",
+    "Ok lắm, cứ thế làm.",
+    "Ok luôn, Tuấn làm.",
+    "Dùng Spring cuối cùng là Spring Boot.",
     "Chị Bích Linh phụ trách làm slide, hạn chót thứ sáu.",
     "Em Bích Linh gửi báo cáo trước ngày 20.",
     "Bạn Bích Link bên marketing sẽ liên hệ khách hàng.",

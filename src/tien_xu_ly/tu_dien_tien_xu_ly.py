@@ -22,7 +22,10 @@ SUA_LOI = [
     (DANH_XUNG + r"\bbích\s+link\b", "deadline"),
     (r"(?:^|(?<=[.?!]\s))bích\s+linh\b(?=\s+là\s+"
      r"(?:thứ\s+(?:\d|hai|ba|tư|năm|sáu|bảy)|chủ\s+nhật|ngày\s+\d+(?:\s+tháng\s+\d+)?|cuối\s+tuần)"
-     r"(?:\s+(?:tuần|tháng)\s+(?:này|sau|tới))?(?:\s+(?:nhé|nha|nhá))?\s*(?:[.,!?]|$))", "deadline"),
+     r"(?:\s+(?:tuần|tháng)\s+(?:này|sau|tới))?(?:\s+(?:nhé|nha|nhá))?\s*"
+     # Dấu phẩy chỉ tính là hết ý khi sau đó KHÔNG phải câu liệt kê thứ tự
+     # ("Bích Linh là thứ hai, Lan là thứ ba" là xếp thứ tự người, không phải hạn)
+     r"(?:[.!?]|,(?!\s*\S+(?:\s+\S+)?\s+là\s+thứ\b)|$))", "deadline"),
     (r"\bphôn\s+th[eê]n\b|\bfront\s*-\s*end\b", "frontend"),
     (r"\b(phần|bên|team|code)\s+bắt\s+kênh\b", r"\1 backend"),
     (r"\bbackgnd\b|\bback\s*-\s*end\b", "backend"),
@@ -42,7 +45,7 @@ SUA_LOI = [
     # Spring Boot/JPA/Security..., "Spring Festival", "mùa Spring" là từ có thật:
     # chỉ sửa khi sau đó là số hoặc từ hay đi với Sprint ("spring 4", "spring mới",
     # "Spring tiếp theo", "spring planning")
-    (r"\bSpring\b(?=\s*\d|\s+(?:tiếp|mới|này|sau|trước|tới|kế|đầu|cuối|hiện|planning|review|backlog|goal)\b)",
+    (r"\bSpring\b(?=\s*\d|\s+(?:tiếp|mới|này|sau|trước|tới|kế|đầu|hiện|planning|review|backlog|goal)\b)",
      "Sprint"),
     # Không có "kênh": "kênh shopping online" (kênh mua sắm) là cụm có thật
     (r"\b(trên|qua|sàn)\s+shopping\b", r"\1 Shopee"),
@@ -73,7 +76,7 @@ SUA_LOI = [
 # - "ok": chỉ bỏ ở đầu câu, khi là một vế riêng ("..., ok."), hoặc ngay sau mốc giờ
 #   ("lúc 9h ok."). Các trường hợp khác "ok" thường mang nghĩa đồng ý
 #   ("Slide ok.", "Bạn Tuấn ok.") nên giữ lại.
-#   Đầu câu vẫn giữ "Ok là ..." ("Ok là chốt phương án A") và "OK button".
+#   Đầu câu vẫn giữ "Ok là ...", "OK button", "Ok lắm", "Ok luôn"... (ok có nghĩa).
 #   (Không đòi dấu phẩy sau "ok" đầu câu: Whisper hay bỏ dấu phẩy, vd
 #    "ok phần database để mình làm" thì "ok" vẫn là từ đệm.)
 # - "à"/"ok" ngay trước dấu "?" là từ để HỎI, giữ lại: "Thế à?", "Hạn thứ 6, ok?"
@@ -84,7 +87,7 @@ TU_DEM = (
     r"|\b(?-i:nha)\b(?!\s+(?:khoa|sĩ|thuốc|bè))"
     r"|(?:^\s*|(?<=[.?!,;:…—–])\s*)à\b(?!\s+(?:không|quên|mà|đúng))(?!\s*\?)"
     r"|\bà(?=\s*(?:[.!]|$))"
-    r"|^\s*ok\b(?!\s+(?:là|button)\b)(?!\s*\?)"
+    r"|^\s*ok\b(?!\s+(?:là|button|lắm|luôn|chưa|không|hết|rồi|nhất|quá)\b)(?!\s*\?)"
     r"|(?<=[.?!,;:…—–])\s*ok(?=\s*(?:[,.!]|$))"
     # "... lúc 9h ok." / "... 9 giờ ok.": "ok" chốt câu sau mốc giờ, không phải nội dung
     r"|(?:(?<=\dh )|(?<=giờ )|(?<=phút ))ok(?=\s*[.!]?\s*$)"
