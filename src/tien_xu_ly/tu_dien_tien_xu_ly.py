@@ -15,9 +15,13 @@ DANH_XUNG = r"(?<!chị )(?<!em )(?<!bạn )(?<!cô )(?<!anh )(?<!bà )(?<!ông 
 SUA_LOI = [
     # --- Thuật ngữ tiếng Anh bị nghe thành tiếng Việt (gặp khi chạy thử ASR) ---
     # "bích link" không phải tiếng Việt; "Bích Linh" là tên người nên chỉ sửa khi
-    # đang nói về hạn ("Bích Linh là thứ 6")
+    # CẢ câu chỉ nói về hạn: đứng đầu câu, ngay sau là "là <mốc ngày>" rồi hết câu
+    # ("Bích Linh là thứ 6 tuần này."). Giữ tên khi đứng giữa câu ("Lan với Bích Linh
+    # là thứ 6 nộp", "Còn Bích Linh là thứ sáu nộp") hoặc sau mốc ngày còn động từ.
     (DANH_XUNG + r"\bbích\s+link\b", "deadline"),
-    (DANH_XUNG + r"\bbích\s+linh\b(?=\s+là\s+(?:thứ|ngày|chủ\s+nhật|cuối|đầu|trước)(?!\s+\S+\s+(?:trong|của)\b))", "deadline"),
+    (r"(?:^|(?<=[.?!]\s))bích\s+linh\b(?=\s+là\s+"
+     r"(?:thứ\s+(?:\d|hai|ba|tư|năm|sáu|bảy)|chủ\s+nhật|ngày\s+\d+(?:\s+tháng\s+\d+)?|cuối\s+tuần)"
+     r"(?:\s+(?:tuần|tháng)\s+(?:này|sau|tới))?(?:\s+(?:nhé|nha|nhá))?\s*(?:[.,!?]|$))", "deadline"),
     (r"\bphôn\s+th[eê]n\b|\bfront\s*-\s*end\b", "frontend"),
     (r"\b(phần|bên|team|code)\s+bắt\s+kênh\b", r"\1 backend"),
     (r"\bbackgnd\b|\bback\s*-\s*end\b", "backend"),
@@ -34,15 +38,22 @@ SUA_LOI = [
     (r"\bdọng\s+nói\b", "giọng nói"),
 
     # --- Anh đã thêm trước đó (giữ lại, kèm ngữ cảnh cho từ có thật) ---
-    # Spring Boot/Security/Data... là framework có thật, không sửa
-    (r"\bSpring\b(?!\s+(?:boot|security|data|cloud|mvc|framework|batch))", "Sprint"),
-    (r"\b(trên|qua|kênh|sàn)\s+shopping\b", r"\1 Shopee"),
+    # Spring Boot/JPA/Security..., "Spring Festival", "mùa Spring" là từ có thật:
+    # chỉ sửa khi sau đó là số hoặc từ hay đi với Sprint ("spring 4", "spring mới",
+    # "Spring tiếp theo", "spring planning")
+    (r"\bSpring\b(?=\s*\d|\s+(?:tiếp|mới|này|sau|trước|tới|kế|đầu|cuối|hiện|planning|review|backlog|goal)\b)",
+     "Sprint"),
+    # Không có "kênh": "kênh shopping online" (kênh mua sắm) là cụm có thật
+    (r"\b(trên|qua|sàn)\s+shopping\b", r"\1 Shopee"),
     (r"\breact\b", "React"),
-    # "view" (của cơ sở dữ liệu) là từ có thật: chỉ sửa thành Vue khi câu đang nói
-    # về frontend (có React, Angular, giao diện, component...)
+    # "view" là từ có thật (view của database, "view biển", "view sản phẩm"):
+    # chỉ sửa thành Vue khi câu đang nói về frontend (có React, Angular, giao diện...)
+    # VÀ sau "view" là hết vế hoặc từ nối ("dùng view rồi", "view thay vì React").
+    # "view đẹp", "view biển", "view trong database": sau view là danh/tính từ -> giữ.
     (r"^(?=.*\b(?:react|angular|frontend|giao\s+diện|component|javascript|framework)\b)"
      r"(.*?\b(?:dùng|không\s+dùng|qua|với|hay|thay\s+vì|bằng)\s+)view\b"
-     r"(?!\s+(?:trong|của|cho)\s+(?:database|sql|csdl|cơ\s+sở\s+dữ\s+liệu))", r"\1Vue"),
+     r"(?=\s*(?:[,.!?;:]|$)|\s+(?:nữa|rồi|thay\s+vì|chứ|hay|hoặc|với|và|vì|nhé|nha|thì|luôn)\b)",
+     r"\1Vue"),
     (r"\bFacebook\b", "Facebook"),
     (r"\bTikTok\b", "TikTok"),
     (r"\blazada\b", "Lazada"),
@@ -61,16 +72,21 @@ SUA_LOI = [
 # - "ok": chỉ bỏ ở đầu câu, khi là một vế riêng ("..., ok."), hoặc ngay sau mốc giờ
 #   ("lúc 9h ok."). Các trường hợp khác "ok" thường mang nghĩa đồng ý
 #   ("Slide ok.", "Bạn Tuấn ok.") nên giữ lại.
+#   Đầu câu vẫn giữ "Ok là ..." ("Ok là chốt phương án A") và "OK button".
+#   (Không đòi dấu phẩy sau "ok" đầu câu: Whisper hay bỏ dấu phẩy, vd
+#    "ok phần database để mình làm" thì "ok" vẫn là từ đệm.)
+# - "à"/"ok" ngay trước dấu "?" là từ để HỎI, giữ lại: "Thế à?", "Hạn thứ 6, ok?"
+#   (bỏ đi thì "Hạn là thứ 6, ok?" thành "Hạn là thứ 6?", nghĩa khác).
 # - Không có "á": dễ trùng "châu Á", tên người "Á".
 TU_DEM = (
     r"\b(?:ờ|ờm|ừ|ừm|ơ|ạ|nhé)\b"
     r"|\b(?-i:nha)\b(?!\s+(?:khoa|sĩ|thuốc|bè))"
-    r"|(?:^\s*|(?<=[.?!,;:…—–])\s*)à\b(?!\s+(?:không|quên|mà|đúng))"
-    r"|\bà(?=\s*(?:[.?!]|$))"
-    r"|^\s*ok\b"
-    r"|(?<=[.?!,;:…—–])\s*ok(?=\s*(?:[,.?!]|$))"
+    r"|(?:^\s*|(?<=[.?!,;:…—–])\s*)à\b(?!\s+(?:không|quên|mà|đúng))(?!\s*\?)"
+    r"|\bà(?=\s*(?:[.!]|$))"
+    r"|^\s*ok\b(?!\s+(?:là|button)\b)(?!\s*\?)"
+    r"|(?<=[.?!,;:…—–])\s*ok(?=\s*(?:[,.!]|$))"
     # "... lúc 9h ok." / "... 9 giờ ok.": "ok" chốt câu sau mốc giờ, không phải nội dung
-    r"|(?:(?<=\dh )|(?<=giờ )|(?<=phút ))ok(?=\s*[.?!]?\s*$)"
+    r"|(?:(?<=\dh )|(?<=giờ )|(?<=phút ))ok(?=\s*[.!]?\s*$)"
 )
 
 MAU_XA_GIAO = [

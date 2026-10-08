@@ -61,6 +61,8 @@ def chuan_hoa_khoang_trang(van_ban):
     van_ban = re.sub(r"([,;:])(?:\s*[,;:])+", r"\1", van_ban)  # "a,, b" -> "a, b"
     van_ban = re.sub(r"[,;:]\s*([.?!])", r"\1", van_ban)      # "a, ." -> "a."
     van_ban = re.sub(r"^[,.;:?!\s]+", "", van_ban)            # dấu câu đầu câu
+    # "Tuấn—à hôm nay" bỏ "à" còn "Tuấn— hôm nay": gạch dính chữ trước thì bỏ khoảng sau
+    van_ban = re.sub(r"(?<=\w[—–])\s+", "", van_ban)
     # Không tự viết hoa chữ đầu sau khi bỏ từ đệm: phần trích xuất ghép mệnh đề
     # giữa các câu, viết hoa sẽ sinh ra kiểu "rà soát lại Phần database".
     return van_ban.strip()

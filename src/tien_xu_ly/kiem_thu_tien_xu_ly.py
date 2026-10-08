@@ -48,14 +48,28 @@ CA_LAM_SACH = [
     ("Bạn Phúc xem view sản phẩm.", "Bạn Phúc xem view sản phẩm.", False),
     ("Mình đi shopping với khách hàng.", "Mình đi shopping với khách hàng.", False),
     ("Doanh số trên shopping giảm.", "Doanh số trên Shopee giảm.", False),
+    ("Bích Linh là thứ 6 nhé.", "deadline là thứ 6.", False),
+    ("Họp xong. Bích Linh là ngày 20 tháng 10.", "Họp xong. deadline là ngày 20 tháng 10.", False),
+    ("Team mình chốt là dùng react chứ không dùng view nữa.",
+     "Team mình chốt là dùng React chứ không dùng Vue nữa.", False),
+    ("Frontend dùng view hay React?", "Frontend dùng Vue hay React?", False),
+    ("Hôm nay chia việc cho spring tiếp theo.", "Hôm nay chia việc cho Sprint tiếp theo.", False),
+    ("Bắt đầu cuộc họp spring 4.", "Bắt đầu cuộc họp Sprint 4.", True),
     # --- Từ đệm: bỏ khi là đệm, giữ khi có nghĩa ---
     ("Rồi, à, hôm nay mình review nha.", "Rồi, hôm nay mình review.", False),
     ("À, nhóm mình đã chốt rồi à.", "nhóm mình đã chốt rồi.", False),
-    ("Tuấn—à hôm nay không có Tuấn.", "Tuấn— hôm nay không có Tuấn.", False),
+    # (trước đây mong đợi "Tuấn— hôm nay", tức là chốt luôn khoảng trắng thừa sau khi bỏ "à")
+    ("Tuấn—à hôm nay không có Tuấn.", "Tuấn—hôm nay không có Tuấn.", False),
     ("File này ok chưa em?", "File này ok chưa em?", False),
     ("Thị trường châu Á tăng mạnh.", "Thị trường châu Á tăng mạnh.", False),
     ("Anh Á phụ trách viết báo cáo.", "Anh Á phụ trách viết báo cáo.", False),
     ("Ừm, ờ, bạn Khoa làm database ạ.", "bạn Khoa làm database.", False),
+    # "ok" đầu câu không có dấu phẩy (Whisper hay bỏ dấu phẩy) vẫn là từ đệm
+    ("ok phần database để mình làm.", "phần database để mình làm.", False),
+    ("Ok chốt lại phân công: Hạnh chạy ads.", "chốt lại phân công: Hạnh chạy ads.", False),
+    # "ok?"/"à?" là từ để hỏi: giữ, chỉ bỏ "nhé"
+    ("Hạn là thứ 6 nhé, ok?", "Hạn là thứ 6, ok?", False),
+    ("Deadline à? Thứ 6.", "Deadline à? Thứ 6.", False),
     # --- Câu xã giao: chỉ khi CẢ câu là xã giao ---
     ("Ok, mình bắt đầu meeting nha.", "mình bắt đầu meeting.", True),
     ("Ok, vậy thôi, cảm ơn mọi người.", "vậy thôi, cảm ơn mọi người.", True),
@@ -112,6 +126,23 @@ CAU_KHONG_DUOC_DOI = [
     "Hạn thứ 6 ok.",
     "Sprint 4 ok.",
     "Bích Linh là thứ hai trong danh sách.",
+    # "Bích Linh" là tên người khi đứng giữa câu hoặc sau mốc ngày còn động từ
+    "Lan với Bích Linh là thứ 6 nộp báo cáo.",
+    "Còn Bích Linh là thứ sáu nộp.",
+    "Bích Linh là thứ 6 nộp báo cáo.",
+    # "ok" đầu câu mang nội dung
+    "Ok là chốt phương án A.",
+    "OK button bị lỗi, Tuấn fix.",
+    # "ok"/"à" trước dấu hỏi là từ để hỏi
+    "Bạn làm lúc 9 giờ ok?",
+    "Mình chọn phương án B à?",
+    "Thế à?",
+    # "view" là danh từ ("view biển") dù câu có nói tới frontend
+    "Nhóm frontend họp với khách, khách thích view đẹp hay view biển?",
+    # "Spring" có thật, "kênh shopping" có thật
+    "Dùng Spring JPA cho phần backend.",
+    "Spring Festival năm nay tổ chức ở Cần Thơ.",
+    "Mở thêm kênh shopping online cho khách.",
 ]
 
 # (câu đã sạch, kết quả tách từ mong đợi phải CHỨA các cụm này)
