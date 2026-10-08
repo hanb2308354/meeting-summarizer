@@ -164,7 +164,7 @@ Kết quả nằm trong `data/processed/<tên>.json`, mỗi câu gồm:
 | `tach_tu` | Bản `sach` đã tách từ bằng PyVi (vd `hạn_chót`, `phụ_trách`)             |
 | `xa_giao` | `true` nếu là câu chào hỏi, cảm ơn, hỏi ý kiến                           |
 
-Format này giống hệt đầu ra hàm `tien_xu_ly()` hiện có trong `src/nlp`, nên phần NLP có thể đọc thẳng file này khi muốn.
+Format này giống hệt đầu ra hàm `tien_xu_ly()` mà phần NLP đang gọi. `src/nlp/tien_xu_ly.py` giờ chỉ là cầu nối sang `src/tien_xu_ly`, nên mọi chỗ gọi `from tien_xu_ly import tien_xu_ly` trong `src/nlp` vẫn chạy như cũ. Sửa cách làm sạch văn bản thì sửa ở `src/tien_xu_ly`.
 
 | File                     | Vai trò                                                                       |
 | ------------------------ | ----------------------------------------------------------------------------- |
@@ -178,7 +178,7 @@ Format này giống hệt đầu ra hàm `tien_xu_ly()` hiện có trong `src/nl
 | Nhóm       | File                                             | Vai trò                                                                   |
 | ---------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
 | Chuẩn hóa  | `doc_transcript.py`                              | Đọc và kiểm tra file transcript JSON                                      |
-| Chuẩn hóa  | `tien_xu_ly.py`                                  | Sửa lỗi nhận dạng, bỏ từ đệm, nhận diện câu xã giao, tách từ bằng PyVi    |
+| Chuẩn hóa  | `tien_xu_ly.py`                                  | Cầu nối: gọi phần tiền xử lý trong `src/tien_xu_ly` (Hân), giữ nguyên cách gọi cũ |
 | Chuẩn hóa  | `tu_dien.py`                                     | Hằng số dùng chung (động từ, mẫu câu, từ điển lỗi nhận dạng)              |
 | Tóm tắt    | `tom_tat.py`                                     | Tách câu, TextRank có điểm cộng/phạt, chọn câu kiểu MMR, rút gọn          |
 | Trích xuất | `nhan_dien_ten.py`                               | Nhận diện tên người phụ trách                                             |
