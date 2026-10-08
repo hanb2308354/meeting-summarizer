@@ -91,6 +91,11 @@ TU_DEM = (
 
 MAU_XA_GIAO = [
     r"cảm ơn",
+    # Chào: chỉ khi "chào" đứng đầu vế và theo sau là người nghe, để "Chào hàng là
+    # việc của Lan" (chào hàng = mời mua) không bị coi là xã giao
+    r"^(?:xin\s+)?chào(?:\s+(?:mọi\s+người|cả\s+nhà|các\s+bạn|cả\s+nhóm|team|anh|chị|em|thầy|cô)\b|$)",
+    r"^hello\b",   # không có "hi": trùng "hi vọng" (cách viết khác của "hy vọng")
+    r"^(?:thanks?|thank\s+you)\b",
     r"có ai.*(câu hỏi|ý kiến)",
     # "bắt đầu (cuộc) họp", không khớp "bắt đầu phụ trách đặt phòng họp"
     r"bắt đầu\s+(?:\S+\s+){0,3}?(?<!phòng )(?:họp|meeting)\b",
@@ -105,7 +110,9 @@ SO_TU_TOI_DA_XA_GIAO = 15
 VE_KET_XA_GIAO = (
     # (không cần "vậy nhé", "thế nhé": chữ "nhé" đã bị bỏ ở bước từ đệm trước đó)
     r"^(?:ok|rồi|vậy|vậy thôi|thế thôi|hết rồi|xong rồi|"
-    r"chào mọi người|chào cả nhà|chào các bạn|mọi người|các bạn|cả nhà)$"
+    r"chào mọi người|chào cả nhà|chào các bạn|mọi người|các bạn|cả nhà|"
+    # "Hello mọi người, mình bắt đầu nhé" (chữ "nhé" đã bị bỏ trước đó)
+    r"(?:mình\s+|chúng\s+ta\s+)?bắt đầu(?:\s+thôi)?)$"
 )
 
 # Câu có mốc thời gian thì không phải xã giao ("Mình bắt đầu họp lúc 9h thứ hai tuần sau")

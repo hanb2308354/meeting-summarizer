@@ -82,6 +82,14 @@ CA_LAM_SACH = [
     ("Mình bắt đầu họp lúc 9h thứ hai tuần sau.", "Mình bắt đầu họp lúc 9h thứ hai tuần sau.", False),
     ("Rồi, cảm ơn mọi người.", "Rồi, cảm ơn mọi người.", True),
     ("Chào mọi người, mình bắt đầu buổi họp giao ban.", "Chào mọi người, mình bắt đầu buổi họp giao ban.", True),
+    ("Xin chào mọi người.", "Xin chào mọi người.", True),
+    ("Chào cả nhà.", "Chào cả nhà.", True),
+    ("Hello mọi người, mình bắt đầu nhé.", "Hello mọi người, mình bắt đầu.", True),
+    ("Thanks mọi người.", "Thanks mọi người.", True),
+    ("Chào hàng là việc của Lan.", "Chào hàng là việc của Lan.", False),
+    ("Hello mọi người, Tuấn làm slide.", "Hello mọi người, Tuấn làm slide.", False),
+    ("Mình bắt đầu làm phần đăng nhập.", "Mình bắt đầu làm phần đăng nhập.", False),
+    ("Hi vọng Lan xong phần slide.", "Hi vọng Lan xong phần slide.", False),
 ]
 
 # Câu ĐÚNG, có tên người, địa danh, cụm từ thường gặp: tiền xử lý KHÔNG được đổi gì.
