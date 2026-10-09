@@ -258,6 +258,15 @@ def giu_doan_khong_co_moc_thoi_gian_theo_tu():
 
 
 @ca
+def giu_cau_nhac_lai_sau_cau_tra_loi_ngan():
+    # "A", "Dạ.", "A": người nói nhắc lại câu sau một câu trả lời ngắn, không phải model kẹt
+    a = "Bạn Tuấn làm slide trước thứ sáu."
+    cau, so_loai = chay_nhan_dang([doan(chuoi_tu(0, a)), doan(chuoi_tu(4, "Dạ.")), doan(chuoi_tu(6, a))])
+    if so_loai or len(cau) != 3:
+        return f"loại {so_loai} đoạn, còn {cau}"
+
+
+@ca
 def giu_cau_hop_marketing_that():
     # Nói rõ (model tự tin), nhắc tới subscribe/like/bấm chuông là chuyện công việc
     cau, so_loai = chay_nhan_dang([

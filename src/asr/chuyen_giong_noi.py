@@ -390,7 +390,13 @@ def nhan_dang(model, song_am):
         # Đoạn đủ dài mà lặp y hệt 1 trong 2 đoạn ngay trước -> model bị kẹt
         # (bắt cả kiểu A, A và kiểu A, B, A, B). Đoạn bị bỏ giống hệt đoạn đã giữ nên không mất chữ.
         van_ban = chuan_hoa_so_sanh(doan.text)
-        if not ly_do and van_ban in hai_doan_truoc and len(van_ban.split()) >= SO_TU_TOI_THIEU_LOC_TRUNG:
+        du_dai = len(van_ban.split()) >= SO_TU_TOI_THIEU_LOC_TRUNG
+        lap_lien_ke = hai_doan_truoc[-1:] == [van_ban]
+        # Kiểu A, B, A chỉ tính là kẹt khi B cũng là câu dài; "A, Dạ., A" là người nói
+        # nhắc lại câu sau một câu trả lời ngắn, giữ lại để không mất mốc thời gian.
+        lap_xen_ke = (len(hai_doan_truoc) == 2 and hai_doan_truoc[0] == van_ban
+                      and len(hai_doan_truoc[1].split()) >= SO_TU_TOI_THIEU_LOC_TRUNG)
+        if not ly_do and du_dai and (lap_lien_ke or lap_xen_ke):
             ly_do = "lặp lại đoạn trước"
         if ly_do:
             so_doan_bi_loai += 1
