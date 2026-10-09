@@ -384,19 +384,20 @@ def nhan_dang(model, song_am):
 
     cac_tu = []
     so_doan_bi_loai = 0
-    van_ban_truoc = None
+    hai_doan_truoc = []  # chữ của 2 đoạn được giữ gần nhất
     for doan in cac_doan:
         ly_do = ly_do_loai(doan)
-        # Đoạn đủ dài mà lặp y hệt đoạn ngay trước -> model bị kẹt
+        # Đoạn đủ dài mà lặp y hệt 1 trong 2 đoạn ngay trước -> model bị kẹt
+        # (bắt cả kiểu A, A và kiểu A, B, A, B). Đoạn bị bỏ giống hệt đoạn đã giữ nên không mất chữ.
         van_ban = chuan_hoa_so_sanh(doan.text)
-        if not ly_do and van_ban == van_ban_truoc and len(van_ban.split()) >= SO_TU_TOI_THIEU_LOC_TRUNG:
+        if not ly_do and van_ban in hai_doan_truoc and len(van_ban.split()) >= SO_TU_TOI_THIEU_LOC_TRUNG:
             ly_do = "lặp lại đoạn trước"
         if ly_do:
             so_doan_bi_loai += 1
             # In ra để tự kiểm tra: nếu thấy câu thật bị loại thì báo lại để chỉnh ngưỡng
             print(f"  [LOẠI - {ly_do}] [{doan.start:7.2f} --> {doan.end:7.2f}] {doan.text.strip()}")
             continue
-        van_ban_truoc = van_ban
+        hai_doan_truoc = (hai_doan_truoc + [van_ban])[-2:]
         if doan.words:
             cac_tu.extend(doan.words)
         else:

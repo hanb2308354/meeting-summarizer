@@ -175,6 +175,27 @@ def giu_cau_tra_loi_ngan_lap_lai():
 
 
 @ca
+def loai_doan_lap_xen_ke_a_b_a_b():
+    # Model kẹt lặp 2 câu xen kẽ: chỉ giữ lần đầu của mỗi câu
+    a, b = "Bạn Tuấn làm phần API.", "Mọi người nhớ nộp trước thứ sáu."
+    cau, so_loai = chay_nhan_dang([doan(chuoi_tu(0, a)), doan(chuoi_tu(3, b)),
+                                   doan(chuoi_tu(7, a)), doan(chuoi_tu(10, b))])
+    if cau != [a, b] or so_loai != 2:
+        return f"ra {cau}, loại {so_loai}"
+    # Câu ngắn ("Dạ.", "Ok.") lặp xen kẽ là bình thường, giữ hết
+    cau, _ = chay_nhan_dang([doan(chuoi_tu(0, "Dạ.")), doan(chuoi_tu(1.5, "Ok.")),
+                             doan(chuoi_tu(3, "Dạ.")), doan(chuoi_tu(4.5, "Ok."))])
+    if cau != ["Dạ.", "Ok.", "Dạ.", "Ok."]:
+        return f"câu ngắn bị loại: {cau}"
+    # Câu dài nhắc lại sau 2 câu khác thì giữ (chỉ xét 2 đoạn gần nhất)
+    c = "Còn phần giao diện thì sao."
+    cau, _ = chay_nhan_dang([doan(chuoi_tu(0, a)), doan(chuoi_tu(3, b)),
+                             doan(chuoi_tu(7, c)), doan(chuoi_tu(10, a))])
+    if cau != [a, b, c, a]:
+        return f"câu nhắc lại xa bị loại: {cau}"
+
+
+@ca
 def giu_cau_hop_that_co_chu_video():
     cau, _ = chay_nhan_dang([doan(chuoi_tu(0, "Video tiếp theo mình làm về sản phẩm mới, deadline thứ sáu."))])
     if len(cau) != 1:
