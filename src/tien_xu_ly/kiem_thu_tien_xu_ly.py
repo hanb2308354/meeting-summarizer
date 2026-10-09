@@ -10,6 +10,7 @@ import pickle
 import subprocess
 import sys
 import tempfile
+import time
 import unicodedata
 from pathlib import Path
 
@@ -108,6 +109,14 @@ CA_LAM_SACH = [
     ("Cảm ơn mọi người, hẹn gặp lại.", "Cảm ơn mọi người, hẹn gặp lại.", True),
     ("Tạm biệt mọi người.", "Tạm biệt mọi người.", True),
     ("Bye mọi người.", "Bye mọi người.", True),
+    # --- Dọn khoảng trắng/dấu câu sau khi bỏ từ đệm ---
+    ("Dùng .NET và C# nhé.", "Dùng .NET và C#.", False),     # dấu chấm dính chữ không phải dấu câu
+    ("Ờ, .NET chạy ổn rồi.", ".NET chạy ổn rồi.", False),
+    ("Thì... ờ... mình nghĩ là xong rồi.", "Thì... mình nghĩ là xong rồi.", False),
+    ("(ờ) Tuấn làm slide.", "Tuấn làm slide.", False),        # không để lại "()"
+    ("Ừ ừ, à à à, bạn Lan làm slide.", "bạn Lan làm slide.", False),
+    ("Lan sửa nha trang chủ.", "Lan sửa trang chủ.", False),  # "nha" vẫn là đệm trước "trang chủ"
+    ("Học kỳ Spring 2025 xong, sang spring 5.", "Học kỳ Spring 2025 xong, sang Sprint 5.", False),
 ]
 
 # Câu ĐÚNG, có tên người, địa danh, cụm từ thường gặp: tiền xử lý KHÔNG được đổi gì.
@@ -173,6 +182,16 @@ CAU_KHONG_DUOC_DOI = [
     "Dùng Spring JPA cho phần backend.",
     "Spring Festival năm nay tổ chức ở Cần Thơ.",
     "Mở thêm kênh shopping online cho khách.",
+    # Dấu chấm dính chữ (".NET") không bị nối vào từ trước
+    "Chuyển sang: .NET cho phần backend.",
+    ".NET là framework mới của nhóm.",
+    # "Spring 2025" là học kỳ/năm; "shopping mall/online" là cụm tiếng Anh có thật
+    "Học kỳ Spring 2025 nhóm mình đăng ký.",
+    "Đi qua shopping mall gần trường.",
+    "Bán trên shopping online cho khách.",
+    "Họp ở nha trang vào thứ hai tuần sau.",
+    # Cụm xã giao nằm giữa câu giao việc: không được đổi chữ (xa_giao kiểm ở CA_LAM_SACH)
+    "Lan viết thư cảm ơn nhà tài trợ.",
 ]
 
 # (câu đã sạch, kết quả tách từ mong đợi phải CHỨA các cụm này)
@@ -236,6 +255,18 @@ def kiem_dinh_dang_va_stt():
             loi.append(f"sai trường: {sorted(c)}")
     if [c["start"] for c in kq] != [1.0, 4.0]:
         loi.append(f"mốc thời gian bị lệch: {[c['start'] for c in kq]}")
+    return loi
+
+
+def kiem_tu_dem_lap_dai_chay_nhanh():
+    # Whisper đôi khi ra "à à à ..." hàng nghìn lần; trước đây mất ~5 giây cho 5000 chữ
+    bat_dau = time.time()
+    kq = txl.bo_tu_dem(" ".join(["à"] * 5000) + " bạn Lan làm slide.")
+    loi = []
+    if kq.strip() != "bạn Lan làm slide.":
+        loi.append(f"ra {kq.strip()[:40]!r}")
+    if time.time() - bat_dau > 0.5:
+        loi.append(f"chạy mất {time.time() - bat_dau:.1f} giây")
     return loi
 
 
@@ -355,6 +386,7 @@ if __name__ == "__main__":
         (f"Câu đúng không được đổi ({len(CAU_KHONG_DUOC_DOI)} câu)", kiem_cau_khong_duoc_doi),
         (f"Tách từ ({len(CA_TACH_TU)} câu)", kiem_tach_tu),
         ("Định dạng đầu ra và stt", kiem_dinh_dang_va_stt),
+        ("Từ đệm lặp rất dài vẫn chạy nhanh", kiem_tu_dem_lap_dai_chay_nhanh),
         ("Unicode tổ hợp (NFD)", kiem_unicode_to_hop),
         ("Đọc/ghi file (BOM, file rỗng, file tạm)", kiem_doc_ghi_file),
         ("Cầu nối src/nlp/tien_xu_ly.py (3 thư mục chạy, pickle)", kiem_cau_noi),

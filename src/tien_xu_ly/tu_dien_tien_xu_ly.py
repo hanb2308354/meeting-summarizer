@@ -44,11 +44,13 @@ SUA_LOI = [
     # --- Anh đã thêm trước đó (giữ lại, kèm ngữ cảnh cho từ có thật) ---
     # Spring Boot/JPA/Security..., "Spring Festival", "mùa Spring" là từ có thật:
     # chỉ sửa khi sau đó là số hoặc từ hay đi với Sprint ("spring 4", "spring mới",
-    # "Spring tiếp theo", "spring planning")
-    (r"\bSpring\b(?=\s*\d|\s+(?:tiếp|mới|này|sau|trước|tới|kế|đầu|hiện|planning|review|backlog|goal)\b)",
+    # "Spring tiếp theo", "spring planning"). Số chỉ 1-2 chữ số: "Spring 2025" là
+    # học kỳ/năm, không phải Sprint.
+    (r"\bSpring\b(?=\s*\d{1,2}\b|\s+(?:tiếp|mới|này|sau|trước|tới|kế|đầu|hiện|planning|review|backlog|goal)\b)",
      "Sprint"),
-    # Không có "kênh": "kênh shopping online" (kênh mua sắm) là cụm có thật
-    (r"\b(trên|qua|sàn)\s+shopping\b", r"\1 Shopee"),
+    # Không có "kênh": "kênh shopping online" (kênh mua sắm) là cụm có thật.
+    # "shopping mall/center/online" là cụm tiếng Anh có thật, giữ nguyên.
+    (r"\b(trên|qua|sàn)\s+shopping\b(?!\s+(?:mall|center|centre|online)\b)", r"\1 Shopee"),
     (r"\breact\b", "React"),
     # "view" là từ có thật (view của database, "view biển", "view sản phẩm"):
     # chỉ sửa thành Vue khi câu đang nói về frontend (có React, Angular, giao diện...)
@@ -70,7 +72,8 @@ SUA_LOI = [
 
 # Từ đệm, bỏ đi khi:
 # - ờ, ờm, ừ, ừm, ơ, ạ, nhé: luôn là đệm khi đứng riêng.
-# - "nha" viết thường, trừ "nha khoa", "nha sĩ"... ("Nha Trang" viết hoa nên không bị đụng).
+# - "nha" viết thường, trừ "nha khoa", "nha sĩ", "nha trang" (Whisper đôi khi viết
+#   thường tên Nha Trang; nhưng "... nha trang chủ" thì "nha" vẫn là đệm).
 # - "à": ở đầu câu, sau dấu câu, hoặc cuối câu; nhưng giữ "à không", "à quên", "à mà"
 #   (người nói đang tự sửa lời, bỏ đi sẽ đổi nghĩa).
 # - "ok": chỉ bỏ ở đầu câu, khi là một vế riêng ("..., ok."), hoặc ngay sau mốc giờ
@@ -84,7 +87,7 @@ SUA_LOI = [
 # - Không có "á": dễ trùng "châu Á", tên người "Á".
 TU_DEM = (
     r"\b(?:ờ|ờm|ừ|ừm|ơ|ạ|nhé)\b"
-    r"|\b(?-i:nha)\b(?!\s+(?:khoa|sĩ|thuốc|bè))"
+    r"|\b(?-i:nha)\b(?!\s+(?:khoa|sĩ|thuốc|bè|trang\b(?!\s+chủ)))"
     r"|(?:^\s*|(?<=[.?!,;:…—–])\s*)à\b(?!\s+(?:không|quên|mà|đúng))(?!\s*\?)"
     r"|\bà(?=\s*(?:[.!]|$))"
     r"|^\s*ok\b(?!\s+(?:là|button|lắm|luôn|chưa|không|hết|rồi|nhất|quá)\b)(?!\s*\?)"

@@ -47,6 +47,9 @@ def bo_tu_dem(van_ban):
     Lặp tới khi không đổi nữa: bỏ một từ đệm có thể làm lộ ra từ đệm khác
     ("lúc 10 giờ ok nhé." -> bỏ "nhé" xong mới thấy "ok" đứng cuối câu).
     """
+    # Gộp từ đệm lặp liền nhau ("à à à ...") thành một trước: nếu không, mỗi vòng lặp
+    # chỉ bỏ được "à" ở hai đầu, chuỗi dài vài nghìn chữ sẽ chạy mất vài giây.
+    van_ban = re.sub(r"\b(ờ|ờm|ừ|ừm|ơ|à)(?:[\s,]+\1\b)+", r"\1", van_ban, flags=re.IGNORECASE)
     while True:
         moi = re.sub(TU_DEM, "", van_ban, flags=re.IGNORECASE)
         if moi == van_ban:
@@ -57,10 +60,15 @@ def bo_tu_dem(van_ban):
 def chuan_hoa_khoang_trang(van_ban):
     """Dọn khoảng trắng và dấu câu thừa còn sót lại sau khi bỏ từ đệm."""
     van_ban = re.sub(r"\s+", " ", van_ban)
-    van_ban = re.sub(r"\s+([,.?!;:])", r"\1", van_ban)       # "a ," -> "a,"
+    van_ban = re.sub(r"\(\s*\)|\[\s*\]", "", van_ban)        # "(ờ) Tuấn" bỏ "ờ" còn "()"
+    van_ban = re.sub(r"\s+", " ", van_ban)
+    # (?!\w): dấu chấm dính chữ phía sau là một phần của từ (".NET"), không phải dấu câu
+    van_ban = re.sub(r"\s+([,.?!;:])(?!\w)", r"\1", van_ban)  # "a ," -> "a,"
     van_ban = re.sub(r"([,;:])(?:\s*[,;:])+", r"\1", van_ban)  # "a,, b" -> "a, b"
-    van_ban = re.sub(r"[,;:]\s*([.?!])", r"\1", van_ban)      # "a, ." -> "a."
-    van_ban = re.sub(r"^[,.;:?!\s]+", "", van_ban)            # dấu câu đầu câu
+    van_ban = re.sub(r"[,;:]\s*([.?!])(?!\w)", r"\1", van_ban)  # "a, ." -> "a."
+    # Bỏ "ờ" trong "Thì... ờ... mình" còn "Thì...... mình": gộp lại thành "..."
+    van_ban = re.sub(r"\.{4,}", "...", van_ban)
+    van_ban = re.sub(r"^(?:[,;:?!\s]|\.(?!\w))+", "", van_ban)  # dấu câu đầu câu (giữ ".NET")
     # "Tuấn—à hôm nay" bỏ "à" còn "Tuấn— hôm nay": gạch dính chữ trước thì bỏ khoảng sau
     van_ban = re.sub(r"(?<=\w[—–])\s+", "", van_ban)
     # Không tự viết hoa chữ đầu sau khi bỏ từ đệm: phần trích xuất ghép mệnh đề
