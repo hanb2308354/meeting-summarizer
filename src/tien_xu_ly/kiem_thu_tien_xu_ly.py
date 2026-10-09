@@ -26,6 +26,13 @@ if hasattr(sys.stdout, "reconfigure"):
 
 # (câu thô, câu sạch mong đợi, có phải câu xã giao không)
 CA_LAM_SACH = [
+    # Chuỗi từ đệm: giữ "à"/"ok" mang nghĩa dù sau nó còn "ờ"/"ừm"
+    ("Thế à ờ ờ?", "Thế à?", False),
+    ("Vậy à ừm ờ?", "Vậy à?", False),
+    ("Ờ à ừm không, ngày 6.", "à không, ngày 6.", False),
+    ("Ờ à ừm quên, Lan làm slide.", "à quên, Lan làm slide.", False),
+    ("Ừm ok ờ là được.", "ok là được.", False),
+    ("Hạn thứ 6, ok ờ ờ?", "Hạn thứ 6, ok?", False),
     ("Mình bắt đầu thảo luận phần họp báo.", "Mình bắt đầu thảo luận phần họp báo.", False),
     ("(ờ) Tuấn sửa hàm login() nhé.", "Tuấn sửa hàm login().", False),
     ("Bích Linh là thứ 6 tuần này, nhớ gửi file cho cả nhóm.",
@@ -317,6 +324,11 @@ def kiem_tu_dem_lap_dai_chay_nhanh():
             loi.append(f"{chuoi[:2]}...: ra {kq.strip()[:40]!r}")
     if time.time() - bat_dau > 1.5:
         loi.append(f"chạy mất {time.time() - bat_dau:.1f} giây")
+    # Một "từ" rất dài không có dấu chấm (vd chuỗi rác từ ASR) không được làm treo
+    bat_dau = time.time()
+    txl.tien_xu_ly(cau_tho(["a" * 20000 + " bạn Lan làm slide."]))
+    if time.time() - bat_dau > 1.0:
+        loi.append(f"chuỗi 20.000 ký tự liền nhau chạy mất {time.time() - bat_dau:.1f} giây")
     return loi
 
 

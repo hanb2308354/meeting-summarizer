@@ -37,7 +37,8 @@ def chuan_hoa_unicode(van_ban):
 
 # Địa chỉ web, tên miền, đường dẫn: chữ nối nhau bằng dấu chấm (có thể kèm "/"),
 # vd "api.example.com", "github.com/abc/front-end". Không áp bảng sửa lỗi lên các từ này.
-MAU_DIA_CHI = r"(?:https?://)?[\w-]+(?:\.[\w-]+)+(?:/[\w-]+(?:\.[\w-]+)*)*/?"
+# (?<![\w-]) ở đầu: chỉ thử bắt đầu từ đầu một từ, tránh chạy rất chậm với chuỗi dài liền nhau
+MAU_DIA_CHI = r"(?<![\w-])(?:https?://)?[\w-]+(?:\.[\w-]+)+(?:/[\w-]+(?:\.[\w-]+)*)*/?"
 
 
 def sua_loi_nhan_dang(van_ban):
@@ -72,8 +73,16 @@ def bo_tu_dem(van_ban):
     # "nha" chỉ tính khi viết thường ("Nha Trang" không phải từ đệm), giống TU_DEM.
     # (Chuỗi 1-2 từ đệm vẫn đi qua luật bình thường, không đổi kết quả.)
     tu = r"(?:ờ|ờm|ừ|ừm|ơ|à|(?-i:nha)|nhé|ok)"
-    van_ban = re.sub(r"\b(?:" + tu + r"[\s,]+){2,}(" + tu + r"\b)",
-                     lambda m: (", " if "," in m.group(0) else "") + m.group(1),
+    def giu_mot_tu(m):
+        # Ưu tiên giữ "à"/"ok"/"nha" cuối cùng trong chuỗi, vì chỉ các từ này có ngoại lệ
+        # mang nghĩa ("Thế à ờ ờ?" -> "Thế à?", "Ừm ok ờ là được." -> "ok là được.").
+        # Không có thì giữ từ cuối cùng như cũ.
+        cac_tu = re.findall(r"\w+", m.group(0))
+        co_nghia = [t for t in cac_tu if t.lower() in ("à", "ok") or t == "nha"]
+        giu = co_nghia[-1] if co_nghia else m.group(1)
+        return (", " if "," in m.group(0) else "") + giu
+
+    van_ban = re.sub(r"\b(?:" + tu + r"[\s,]+){2,}(" + tu + r"\b)", giu_mot_tu,
                      van_ban, flags=re.IGNORECASE)
     while True:
         moi = re.sub(TU_DEM, "", van_ban, flags=re.IGNORECASE)
