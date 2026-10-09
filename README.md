@@ -210,7 +210,7 @@ Bảng sửa lỗi nghe nhầm hiện được viết theo các lỗi gặp khi 
 | ---------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
 | Chuẩn hóa  | `doc_transcript.py`                              | Đọc và kiểm tra file transcript JSON                                      |
 | Chuẩn hóa  | `tien_xu_ly.py`                                  | Cầu nối: gọi phần tiền xử lý trong `src/tien_xu_ly` (Hân), giữ nguyên cách gọi cũ |
-| Chuẩn hóa  | `tu_dien.py`                                     | Hằng số dùng chung (động từ, mẫu câu). `SUA_LOI`, `TU_DEM`, `MAU_XA_GIAO`, `SO_TU_TOI_DA_XA_GIAO` trong file là bản cũ, không còn dùng; bảng đang dùng nằm ở `src/tien_xu_ly/tu_dien_tien_xu_ly.py` |
+| Chuẩn hóa  | `tu_dien.py`                                     | Hằng số dùng chung của tóm tắt và trích xuất (động từ, mẫu câu). Bảng của phần tiền xử lý nằm ở `src/tien_xu_ly/tu_dien_tien_xu_ly.py` |
 | Tóm tắt    | `tom_tat.py`                                     | Tách câu, TextRank có điểm cộng/phạt, chọn câu kiểu MMR, rút gọn          |
 | Trích xuất | `nhan_dien_ten.py`                               | Nhận diện tên người phụ trách                                             |
 | Trích xuất | `nhan_dien_han.py`                               | Tìm hạn chót trong câu                                                    |

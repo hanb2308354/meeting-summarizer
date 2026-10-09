@@ -7,9 +7,7 @@
 # Đầu ra giữ nguyên format: stt, speaker, start, end, goc, sach, tach_tu, xa_giao.
 # Muốn sửa cách làm sạch văn bản thì sửa ở src/tien_xu_ly, KHÔNG sửa file này.
 #
-# Lưu ý: SUA_LOI, TU_DEM, MAU_XA_GIAO, SO_TU_TOI_DA_XA_GIAO trong src/nlp/tu_dien.py
-# là bản CŨ, không còn file nào dùng. Bảng đang dùng nằm ở
-# src/tien_xu_ly/tu_dien_tien_xu_ly.py.
+# Bảng sửa lỗi, từ đệm, mẫu câu xã giao nằm ở src/tien_xu_ly/tu_dien_tien_xu_ly.py.
 import sys
 from pathlib import Path
 

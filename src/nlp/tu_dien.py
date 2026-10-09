@@ -112,33 +112,7 @@ MAU_CAU_GAN_CHU_CHO_VIEC = (
     r")"
 )
 
-# --- Hằng số của phần tiền xử lý (nguồn: tien_xu_ly.py) ---
-# Lỗi Whisper hay nhận sai (mẫu -> sửa lại). Thêm dần khi gặp lỗi mới
-SUA_LOI = [
-    (r"\bSpring\b", "Sprint"),
-    (r"\bshopping\b", "Shopee"),
-    (r"\breact\b", "React"),
-    (r"\b(dùng|không dùng)\s+view\b", r"\1 Vue"),
-    (r"\bview\b", "Vue"),
-    (r"\bFacebook\b", "Facebook"),
-    (r"\bTikTok\b", "TikTok"),
-    (r"\bGoogle Drive\b", "Google Drive"),
-    (r"\bGoogle Meet\b", "Google Meet"),
-    (r"\bMessenger\b", "Messenger"),
-    (r"\bAPI\b", "API"),
-    (r"\bSprint\b", "Sprint"),
-]
-
-TU_DEM = r"\b(?:ờ|ừm|à|ạ|nha|nhé|á|ok)\b"
-
-MAU_XA_GIAO = [
-    r"cảm ơn",
-    r"có ai.*(câu hỏi|ý kiến)",
-    r"bắt đầu.*(họp|meeting)",
-    r"vào đủ rồi",
-]
-
-SO_TU_TOI_DA_XA_GIAO = 15
+# --- Phần tiền xử lý: đã chuyển sang src/tien_xu_ly/tu_dien_tien_xu_ly.py (Hân) ---
 
 # --- Hằng số của phần tóm tắt (nguồn: tom_tat.py) ---
 SO_CAU_TOI_THIEU = 2
