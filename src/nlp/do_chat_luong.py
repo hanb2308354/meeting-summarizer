@@ -11,7 +11,7 @@ from pathlib import Path
 
 GOC_REPO = Path(__file__).resolve().parents[2]
 DUONG_DAN_NHAN = GOC_REPO / "data" / "nhan_dap_an.json"
-THU_MUC_TRANSCRIPT = GOC_REPO / "data" / "transcripts"
+THU_MUC_VAN_BAN_SACH = GOC_REPO / "data" / "processed"
 
 # Các loại kết quả của một việc
 DUNG = "ĐÚNG"
@@ -242,11 +242,10 @@ def dong_so_lieu(ten, cac_viec, cac_qd, cac_lich):
 
 def chay_pipeline(ten_file):
     """Chạy pipeline trong bộ nhớ (không ghi outputs/), trả về tasks, decisions, next_meeting."""
-    from doc_transcript import doc_transcript
-    from kiem_cau import chay_loi
+    from doc_van_ban_sach import doc_van_ban_sach
+    from kiem_cau import chay_loi_sach
 
-    bai_doc = doc_transcript(THU_MUC_TRANSCRIPT / ten_file)
-    ket_qua = chay_loi(bai_doc)
+    ket_qua = chay_loi_sach(doc_van_ban_sach(THU_MUC_VAN_BAN_SACH / ten_file))
     return ket_qua["tasks"], ket_qua["decisions"], ket_qua["next_meeting"]
 
 
@@ -278,8 +277,8 @@ def chay_do(chi_tiet):
         nhan = json.load(f)
     ket_qua = {}
     for ten_file, nhan_file in nhan.items():
-        if not (THU_MUC_TRANSCRIPT / ten_file).exists():
-            print(f"BỎ QUA | {ten_file} | không có trong data/transcripts/")
+        if not (THU_MUC_VAN_BAN_SACH / ten_file).exists():
+            print(f"BỎ QUA | {ten_file} | không có trong data/processed/ (chạy src/tien_xu_ly/tien_xu_ly.py trước)")
             continue
         tasks, decisions, next_meeting = chay_pipeline(ten_file)
         ket_qua[ten_file] = (nhan_file.get("tap", "khong_ro"),

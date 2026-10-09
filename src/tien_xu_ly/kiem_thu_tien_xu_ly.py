@@ -6,7 +6,7 @@
 # Cách dùng:  python src/tien_xu_ly/kiem_thu_tien_xu_ly.py
 # Mã thoát 0 khi tất cả đều ĐẠT.
 import json
-import pickle
+import re
 import subprocess
 import sys
 import tempfile
@@ -378,46 +378,35 @@ def kiem_doc_ghi_file():
 
 # Đoạn mã chạy như một file trong src/nlp: thư mục src/nlp đứng đầu sys.path
 # (giống khi chạy "python src/nlp/chay_nlp.py"), rồi gọi đúng câu lệnh của Anh.
-MA_GOI_CAU_NOI = """
-import pickle, sys
+MA_DOC_BEN_NLP = """
+import sys
 sys.path.insert(0, sys.argv[1])
-from tien_xu_ly import tien_xu_ly
-import doc_transcript
-pickle.dumps(tien_xu_ly)
-print(tien_xu_ly.__module__)
-print(sys.modules[tien_xu_ly.__module__].__file__)
-print(doc_transcript.__file__)
-print(tien_xu_ly([{"speaker": "S", "start": 0, "end": 1, "text": "Ờ, bích link thứ 6 nhé."}])[0]["sach"])
+from doc_van_ban_sach import doc_van_ban_sach
+for tep in sys.argv[2:]:
+    doc_van_ban_sach(tep)
+print("ok")
 """
 
 
-def kiem_cau_noi():
-    """Cầu nối src/nlp/tien_xu_ly.py: gọi được từ mọi thư mục, ra đúng hàm của Hân,
-    không thay doc_transcript của phần NLP, và pickle được (multiprocessing trên Windows)."""
+def kiem_cho_noi_voi_nlp():
+    """Chỗ nối với phần NLP: Anh đọc file văn bản sạch bằng doc_van_ban_sach.
+
+    - Mọi file trong data/processed phải đọc được bằng hàm đó, chạy từ nhiều thư mục.
+    - Code chính của src/nlp không được tự gọi tiền xử lý nữa (chỉ đọc file).
+    """
     loi = []
     thu_muc_nlp = THU_MUC_GOC / "src" / "nlp"
+    cac_tep = sorted(str(p) for p in (THU_MUC_GOC / "data" / "processed").glob("*.json"))
     for cwd in (THU_MUC_GOC, thu_muc_nlp, Path(THU_MUC_GOC.anchor)):
-        kq = subprocess.run([sys.executable, "-c", MA_GOI_CAU_NOI, str(thu_muc_nlp)],
+        kq = subprocess.run([sys.executable, "-c", MA_DOC_BEN_NLP, str(thu_muc_nlp), *cac_tep],
                             cwd=cwd, capture_output=True, text=True, encoding="utf-8")
-        if kq.returncode != 0:
-            loi.append(f"chạy từ {cwd}: lỗi {kq.stderr.strip().splitlines()[-1:]}")
-            continue
-        dong = kq.stdout.splitlines()
-        mong_doi = ["lam_sach", str(THU_MUC_NAY / "lam_sach.py"),
-                    str(thu_muc_nlp / "doc_transcript.py"), "deadline thứ 6."]
-        if [d.strip() for d in dong] != mong_doi:
-            loi.append(f"chạy từ {cwd}: ra {dong}, mong đợi {mong_doi}")
-    # Chạy chính file cầu nối từ thư mục khác (đường dẫn tuyệt đối)
-    tep = THU_MUC_GOC / "data" / "transcripts" / "thu_nghiem.json"
-    kq = subprocess.run([sys.executable, str(thu_muc_nlp / "tien_xu_ly.py"), str(tep)],
-                        cwd=THU_MUC_GOC.anchor, capture_output=True, text=True, encoding="utf-8")
-    if kq.returncode != 0 or "0." not in kq.stdout:
-        loi.append(f"python src/nlp/tien_xu_ly.py chạy từ / lỗi: {kq.stderr.strip()[-200:]}")
-    # Trong cùng tiến trình: hàm pickle được (tên module đăng ký đúng trong sys.modules)
-    try:
-        pickle.loads(pickle.dumps(txl.tien_xu_ly))
-    except Exception as e:
-        loi.append(f"không pickle được: {e}")
+        if kq.returncode != 0 or kq.stdout.strip() != "ok":
+            loi.append(f"đọc từ {cwd}: lỗi {kq.stderr.strip().splitlines()[-1:]}")
+    for tep in ("chay_nlp.py", "tom_tat.py", "trich_xuat.py", "do_chat_luong.py"):
+        noi_dung = (thu_muc_nlp / tep).read_text(encoding="utf-8")
+        # Chỉ xét câu lệnh import (Anh có hàm riêng tên lam_sach_mo_ta, không liên quan)
+        if re.search(r"^\s*(?:from|import)\s+(?:tien_xu_ly|lam_sach)\b", noi_dung, re.MULTILINE):
+            loi.append(f"src/nlp/{tep} vẫn tự gọi tiền xử lý thay vì đọc data/processed")
     return loi
 
 
@@ -451,7 +440,7 @@ if __name__ == "__main__":
         ("Từ đệm lặp rất dài vẫn chạy nhanh", kiem_tu_dem_lap_dai_chay_nhanh),
         ("Unicode tổ hợp (NFD)", kiem_unicode_to_hop),
         ("Đọc/ghi file (BOM, file rỗng, file tạm)", kiem_doc_ghi_file),
-        ("Cầu nối src/nlp/tien_xu_ly.py (3 thư mục chạy, pickle)", kiem_cau_noi),
+        ("Chỗ nối: src/nlp đọc được mọi file data/processed, không tự gọi tiền xử lý", kiem_cho_noi_voi_nlp),
         ("data/processed khớp với code hiện tại", kiem_data_processed_khop_code),
     ]
     so_dat = 0
