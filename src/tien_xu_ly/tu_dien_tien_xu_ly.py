@@ -20,12 +20,14 @@ SUA_LOI = [
     # ("Bích Linh là thứ 6 tuần này."). Giữ tên khi đứng giữa câu ("Lan với Bích Linh
     # là thứ 6 nộp", "Còn Bích Linh là thứ sáu nộp") hoặc sau mốc ngày còn động từ.
     (DANH_XUNG + r"\bbích\s+link\b", "deadline"),
-    (r"(?:^|(?<=[.?!]\s))bích\s+linh\b(?=\s+là\s+"
+    # Nếu cả đoạn có "đầu tiên"/"thứ nhất" thì đang xếp thứ tự người ("Lan thuyết trình
+    # đầu tiên. Bích Linh là thứ hai.") -> giữ tên. (Mẫu neo ở ^ nên mỗi đoạn chỉ sửa 1 lần.)
+    (r"^(?!.*\b(?:đầu\s+tiên|thứ\s+nhất)\b)((?:.*?[.?!]\s)?)bích\s+linh\b(?=\s+là\s+"
      r"(?:thứ\s+(?:\d|hai|ba|tư|năm|sáu|bảy)|chủ\s+nhật|ngày\s+\d+(?:\s+tháng\s+\d+)?|cuối\s+tuần)"
      r"(?:\s+(?:tuần|tháng)\s+(?:này|sau|tới))?(?:\s+(?:nhé|nha|nhá))?\s*"
      # Dấu phẩy chỉ tính là hết ý khi sau đó KHÔNG phải câu liệt kê thứ tự
      # ("Bích Linh là thứ hai, Lan là thứ ba" là xếp thứ tự người, không phải hạn)
-     r"(?:[.!?]|,(?!\s*\S+(?:\s+\S+)?\s+là\s+thứ\b)|$))", "deadline"),
+     r"(?:[.!?]|,(?!\s*\S+(?:\s+\S+)?\s+là\s+thứ\b)|$))", r"\1deadline"),
     (r"\bphôn\s+th[eê]n\b|\bfront\s*-\s*end\b", "frontend"),
     (r"\b(phần|bên|team|code)\s+bắt\s+kênh\b", r"\1 backend"),
     (r"\bbackgnd\b|\bback\s*-\s*end\b", "backend"),
@@ -46,12 +48,20 @@ SUA_LOI = [
     # chỉ sửa khi sau đó là số hoặc từ hay đi với Sprint ("spring 4", "spring mới",
     # "Spring tiếp theo", "spring planning"). Số chỉ 1-2 chữ số: "Spring 2025" là
     # học kỳ/năm, không phải Sprint.
-    (r"\bSpring\b(?=\s*\d{1,2}\b(?![.,]\d)|\s+(?:tiếp|mới|này|sau|trước|tới|kế|đầu|hiện|planning|review|backlog|goal)\b)",
+    # Không sửa sau "mùa" (mùa xuân) và sau từ chỉ phiên bản framework ("dùng Spring 6",
+    # "nâng cấp lên Spring 6", "phiên bản Spring 5"), kể cả vế "... Spring 6 hay Spring 5".
+    # ("spring 4 hay spring 5" vẫn thành Sprint cả hai, nhờ luật ngay dưới.)
+    (r"(?<!mùa )(?<!dùng )(?<!lên )(?<!bản )(?<!cấp )"
+     r"(?<!spring \d hay )(?<!spring \d\d hay )(?<!spring \d hoặc )(?<!spring \d\d hoặc )"
+     r"\bSpring\b(?=\s*\d{1,2}\b(?![.,]\d)|\s+(?:tiếp|mới|này|sau|trước|tới|kế|đầu|hiện|planning|review|backlog|goal)\b)",
      "Sprint"),
+    # Luật trên chạy một lượt trên chữ GỐC nên "spring 4 hay spring 5" chỉ sửa được chữ đầu;
+    # chữ sau "Sprint 4 hay" chắc chắn cũng là Sprint.
+    (r"\b(sprint\s+\d{1,2}\s+(?:hay|hoặc)\s+)spring\b(?=\s*\d)", r"\1Sprint"),
     # Không có "kênh": "kênh shopping online" (kênh mua sắm) là cụm có thật.
     # "shopping mall/center/online" là cụm tiếng Anh có thật, giữ nguyên.
     (r"\b(trên|qua|sàn)\s+shopping\b(?!\s+(?:mall|center|centre|online)\b)", r"\1 Shopee"),
-    (r"\breact\b", "React"),
+    (r"\breact\b(?!-\w)", "React"),   # "react-dom" là tên gói, giữ nguyên
     # "view" là từ có thật (view của database, "view biển", "view sản phẩm"):
     # chỉ sửa thành Vue khi câu đang nói về frontend (có React, Angular, giao diện...)
     # VÀ sau "view" là hết vế hoặc từ nối ("dùng view rồi", "view thay vì React").
@@ -77,7 +87,7 @@ SUA_LOI = [
 # - "à": ở đầu câu, sau dấu câu, hoặc cuối câu; nhưng giữ "à không", "à quên", "à mà"
 #   (người nói đang tự sửa lời, bỏ đi sẽ đổi nghĩa).
 # - "ok": chỉ bỏ ở đầu câu, khi là một vế riêng ("..., ok."), hoặc ngay sau mốc giờ
-#   ("lúc 9h ok."). Các trường hợp khác "ok" thường mang nghĩa đồng ý
+#   ("lúc 9h ok.", "lúc 9h30 ok."). Các trường hợp khác "ok" thường mang nghĩa đồng ý
 #   ("Slide ok.", "Bạn Tuấn ok.") nên giữ lại.
 #   Đầu câu vẫn giữ "Ok là ...", "OK button", "Ok lắm", "Ok luôn"... (ok có nghĩa).
 #   (Không đòi dấu phẩy sau "ok" đầu câu: Whisper hay bỏ dấu phẩy, vd
@@ -93,7 +103,7 @@ TU_DEM = (
     r"|^\s*ok\b(?!\s+(?:là|button|lắm|luôn|chưa|không|hết|rồi|nhất|quá)\b)(?!\s*\?)"
     r"|(?<=[.?!,;:…—–])\s*ok(?=\s*(?:[,.!]|$))"
     # "... lúc 9h ok." / "... 9 giờ ok.": "ok" chốt câu sau mốc giờ, không phải nội dung
-    r"|(?:(?<=\dh )|(?<=giờ )|(?<=phút ))ok(?=\s*[.!]?\s*$)"
+    r"|(?:(?<=\dh )|(?<=\dh\d\d )|(?<=giờ )|(?<=phút ))ok(?=\s*[.!]?\s*$)"
 )
 
 # MỌI mẫu đều NEO Ở ĐẦU VẾ (^): cụm xã giao nằm giữa câu thường là một phần của

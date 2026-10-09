@@ -135,6 +135,16 @@ CA_LAM_SACH = [
     ("Thế ờ ờ à?", "Thế à?", False),
     ("ờ ờ Nha ờ ờ Trang.", "Nha Trang.", False),   # "Nha" viết hoa không bao giờ là từ đệm
     ("Lan làm slide à, ờ ờ ok.", "Lan làm slide.", False),  # giữ dấu phẩy để "ok" vẫn bị bỏ
+    # Spring: "spring 4 hay spring 5" là Sprint cả hai
+    ("Spring 4 hay spring 5?", "Sprint 4 hay Sprint 5?", False),
+    ("spring 4 hoặc spring 5 đều được.", "Sprint 4 hoặc Sprint 5 đều được.", False),
+    # Dấu câu thừa khi bỏ từ đệm nằm giữa hai câu
+    ("Vậy à. Ok.", "Vậy.", False),
+    ("Thế à? Ok.", "Thế à?", False),
+    # CỐ Ý giữ ".,": gộp thành "." thì phần trích xuất của Anh nối hai câu (giu_rieng_01 sinh việc giả)
+    ("Lúc 21 giờ. À, có thể trễ.", "Lúc 21 giờ., có thể trễ.", False),
+    # "ok" chốt câu sau giờ có phút
+    ("Nộp lúc 9h30 ok.", "Nộp lúc 9h30.", False),
 ]
 
 # Câu ĐÚNG, có tên người, địa danh, cụm từ thường gặp: tiền xử lý KHÔNG được đổi gì.
@@ -215,6 +225,21 @@ CAU_KHONG_DUOC_DOI = [
     # Cụm xã giao nằm giữa câu giao việc: không được đổi chữ (xa_giao kiểm ở CA_LAM_SACH)
     "Lan viết thư cảm ơn nhà tài trợ.",
     "Hello team bạn Tuấn sẽ làm phần API.",
+    # Spring là mùa xuân / phiên bản framework, không phải Sprint
+    "Mùa Spring này đi Đà Lạt.",
+    "Dùng Spring 6 hay Spring 5?",
+    "Nâng cấp lên Spring 6 cho backend.",
+    "Phiên bản Spring 5 vẫn chạy ổn.",
+    # "Bích Linh" trong câu xếp thứ tự (câu trước có "đầu tiên"/"thứ nhất")
+    "Lan thuyết trình đầu tiên. Bích Linh là thứ hai.",
+    "Lan là thứ nhất. Bích Linh là thứ hai.",
+    # Địa chỉ web, tên gói: không áp bảng sửa lỗi
+    "Gọi api.example.com để lấy dữ liệu.",
+    "Clone github.com/abc/front-end về máy.",
+    "Mở https://api.example.com/v1/back-end để xem.",
+    "Cài react-dom cho frontend.",
+    # Dấu câu thật không bị gộp
+    "Thì... mình nghĩ là xong rồi.",
 ]
 
 # (câu đã sạch, kết quả tách từ mong đợi phải CHỨA các cụm này)

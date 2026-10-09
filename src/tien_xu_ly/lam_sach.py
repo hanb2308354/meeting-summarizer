@@ -35,11 +35,23 @@ def chuan_hoa_unicode(van_ban):
     return unicodedata.normalize("NFC", van_ban)
 
 
+# Địa chỉ web, tên miền, đường dẫn: chữ nối nhau bằng dấu chấm (có thể kèm "/"),
+# vd "api.example.com", "github.com/abc/front-end". Không áp bảng sửa lỗi lên các từ này.
+MAU_DIA_CHI = r"(?:https?://)?[\w-]+(?:\.[\w-]+)+(?:/[\w-]+(?:\.[\w-]+)*)*/?"
+
+
 def sua_loi_nhan_dang(van_ban):
-    """Sửa các từ Whisper hay nhận sai theo bảng SUA_LOI."""
+    """Sửa các từ Whisper hay nhận sai theo bảng SUA_LOI.
+
+    Địa chỉ web được thay tạm bằng ký tự \\x00 rồi trả lại sau khi sửa, để
+    "api.example.com" không thành "API.example.com", ".../front-end" không thành ".../frontend".
+    """
+    cac_dia_chi = re.findall(MAU_DIA_CHI, van_ban)
+    van_ban = re.sub(MAU_DIA_CHI, "\x00", van_ban)
     for mau, thay_the in SUA_LOI:
         van_ban = re.sub(mau, thay_the, van_ban, flags=re.IGNORECASE)
-    return van_ban
+    tra_lai = iter(cac_dia_chi)
+    return re.sub("\x00", lambda m: next(tra_lai), van_ban)
 
 
 def bo_tu_dem(van_ban):
@@ -79,6 +91,12 @@ def chuan_hoa_khoang_trang(van_ban):
     van_ban = re.sub(r"[,;:]\s*([.?!])(?!\w)", r"\1", van_ban)  # "a, ." -> "a."
     # Bỏ "ờ" trong "Thì... ờ... mình" còn "Thì...... mình": gộp lại thành "..."
     van_ban = re.sub(r"\.{4,}", "...", van_ban)
+    # Bỏ từ đệm giữa hai câu ("Vậy à. Ok.", "Thế à? Ok.") để lại "Vậy..", "Thế à?.":
+    # giữ lại một dấu kết câu.
+    # KHÔNG gộp ".," ("21 giờ. À, có thể" -> "21 giờ., có thể"): đã thử đổi thành "." thì
+    # phần trích xuất của Anh nối hai câu lại (chữ sau dấu chấm viết thường), sinh thêm việc giả.
+    van_ban = re.sub(r"(?<!\.)\.\.(?![.\w])", ".", van_ban)      # ".." -> "." (giữ "...")
+    van_ban = re.sub(r"([?!])\.(?![.\w])", r"\1", van_ban)         # "?." -> "?"
     van_ban = re.sub(r"^(?:[,;:?!\s]|\.(?!\w))+", "", van_ban)  # dấu câu đầu câu (giữ ".NET")
     # "Tuấn—à hôm nay" bỏ "à" còn "Tuấn— hôm nay": gạch dính chữ trước thì bỏ khoảng sau
     van_ban = re.sub(r"(?<=\w[—–])\s+", "", van_ban)
