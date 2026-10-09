@@ -119,6 +119,15 @@ CA_LAM_SACH = [
     ("Ừ ừ, à à à, bạn Lan làm slide.", "bạn Lan làm slide.", False),
     ("Lan sửa nha trang chủ.", "Lan sửa trang chủ.", False),  # "nha" vẫn là đệm trước "trang chủ"
     ("Học kỳ Spring 2025 xong, sang spring 5.", "Học kỳ Spring 2025 xong, sang Sprint 5.", False),
+    # Chuỗi từ đệm dài đứng trước từ có ngoại lệ: kết quả phải giống như khi chỉ có 1 từ đệm
+    ("Ờ ờ Nha Trang thì sao.", "Nha Trang thì sao.", False),
+    ("ok ok nha khoa Hòa Bình gần trường.", "nha khoa Hòa Bình gần trường.", False),
+    ("ờ ờ ok là được.", "ok là được.", False),
+    ("ờ à à không, ngày 6.", "à không, ngày 6.", False),
+    ("ờ ờ à quên, Lan làm slide.", "à quên, Lan làm slide.", False),
+    ("Thế ờ ờ à?", "Thế à?", False),
+    ("ờ ờ Nha ờ ờ Trang.", "Nha Trang.", False),   # "Nha" viết hoa không bao giờ là từ đệm
+    ("Lan làm slide à, ờ ờ ok.", "Lan làm slide.", False),  # giữ dấu phẩy để "ok" vẫn bị bỏ
 ]
 
 # Câu ĐÚNG, có tên người, địa danh, cụm từ thường gặp: tiền xử lý KHÔNG được đổi gì.

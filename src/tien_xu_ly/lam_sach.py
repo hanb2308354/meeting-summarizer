@@ -50,11 +50,18 @@ def bo_tu_dem(van_ban):
     # Từ đệm nằm gọn trong ngoặc ("(ờ) Tuấn"): bỏ luôn cả ngoặc. Không xóa ngoặc rỗng
     # nói chung, vì "login()", "mảng []" là chữ thật.
     van_ban = re.sub(r"[(\[]\s*(?:ờ|ờm|ừ|ừm|ơ|à|ạ|nha|nhé|ok)\s*[)\]]", "", van_ban, flags=re.IGNORECASE)
-    # Gộp chuỗi từ 3 từ đệm liền nhau trở lên ("à ờ à ờ ...") thành từ đầu tiên:
+    # Gộp chuỗi từ 3 từ đệm liền nhau trở lên ("à ờ à ờ ...") thành từ CUỐI CÙNG:
     # nếu không, mỗi vòng lặp chỉ bỏ được từ ở hai đầu, chuỗi dài chạy mất vài giây.
+    # Phải giữ từ CUỐI vì các ngoại lệ của TU_DEM xét chữ phía sau nó: "ờ ờ à không"
+    # -> "à không", "ờ ờ nha khoa" -> "nha khoa", "ờ ờ ok là" -> "ok là", "Thế ờ ờ à?" -> "Thế à?".
+    # Nếu trong chuỗi có dấu phẩy thì giữ lại một dấu phẩy, vì luật "ok"/"à" xét cả dấu câu
+    # phía trước ("làm slide à, ờ ờ ok." -> "làm slide, ok." -> "làm slide.").
+    # "nha" chỉ tính khi viết thường ("Nha Trang" không phải từ đệm), giống TU_DEM.
     # (Chuỗi 1-2 từ đệm vẫn đi qua luật bình thường, không đổi kết quả.)
-    van_ban = re.sub(r"\b(ờ|ờm|ừ|ừm|ơ|à|nha|nhé|ok)(?:[\s,]+(?:ờ|ờm|ừ|ừm|ơ|à|nha|nhé|ok)\b){2,}",
-                     r"\1", van_ban, flags=re.IGNORECASE)
+    tu = r"(?:ờ|ờm|ừ|ừm|ơ|à|(?-i:nha)|nhé|ok)"
+    van_ban = re.sub(r"\b(?:" + tu + r"[\s,]+){2,}(" + tu + r"\b)",
+                     lambda m: (", " if "," in m.group(0) else "") + m.group(1),
+                     van_ban, flags=re.IGNORECASE)
     while True:
         moi = re.sub(TU_DEM, "", van_ban, flags=re.IGNORECASE)
         if moi == van_ban:
