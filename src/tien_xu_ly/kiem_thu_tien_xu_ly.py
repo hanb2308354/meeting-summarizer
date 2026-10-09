@@ -102,6 +102,13 @@ CA_LAM_SACH = [
      "Bạn Nam tổng hợp xem có ai có câu hỏi không.", False),
     ("Tuấn làm slide thì mình bắt đầu họp.", "Tuấn làm slide thì mình bắt đầu họp.", False),
     ("Hẹn gặp lại khách hàng để chốt hợp đồng.", "Hẹn gặp lại khách hàng để chốt hợp đồng.", False),
+    # Câu chào dính câu giao việc vì thiếu dấu phẩy (Whisper hay bỏ dấu phẩy)
+    ("Hello team bạn Tuấn sẽ làm phần API nhé.", "Hello team bạn Tuấn sẽ làm phần API.", False),
+    ("Mình bắt đầu họp luôn bạn Tuấn sẽ làm phần API.",
+     "Mình bắt đầu họp luôn bạn Tuấn sẽ làm phần API.", False),
+    ("Có ai nhận phần câu hỏi trắc nghiệm không?", "Có ai nhận phần câu hỏi trắc nghiệm không?", False),
+    ("có ai nhận viết phần ý kiến khách hàng không", "có ai nhận viết phần ý kiến khách hàng không", False),
+    ("Chào mọi người nhớ gửi báo cáo cho Lan.", "Chào mọi người nhớ gửi báo cáo cho Lan.", False),
     # Câu xã giao thật, kể cả cách viết khác và câu chào kết thúc
     ("Mọi người vào đông đủ rồi thì mình bắt đầu cuộc họp Sprint 4.",
      "Mọi người vào đông đủ rồi thì mình bắt đầu cuộc họp Sprint 4.", True),
@@ -207,6 +214,7 @@ CAU_KHONG_DUOC_DOI = [
     "Họp ở nha trang vào thứ hai tuần sau.",
     # Cụm xã giao nằm giữa câu giao việc: không được đổi chữ (xa_giao kiểm ở CA_LAM_SACH)
     "Lan viết thư cảm ơn nhà tài trợ.",
+    "Hello team bạn Tuấn sẽ làm phần API.",
 ]
 
 # (câu đã sạch, kết quả tách từ mong đợi phải CHỨA các cụm này)

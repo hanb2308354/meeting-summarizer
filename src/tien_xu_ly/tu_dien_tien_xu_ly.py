@@ -127,6 +127,13 @@ MAU_XA_GIAO = [
 
 SO_TU_TOI_DA_XA_GIAO = 15
 
+# Vế có động từ giao việc thì KHÔNG phải xã giao, dù mở đầu bằng câu chào: Whisper hay
+# bỏ dấu phẩy nên "Hello team bạn Tuấn sẽ làm phần API" chỉ là MỘT vế; "Có ai nhận phần
+# câu hỏi trắc nghiệm không?" là hỏi người nhận việc. "giao ban" là tên buổi họp, không phải giao việc.
+MAU_GIAO_VIEC = (
+    r"\b(?:sẽ|phụ\s+trách|nhớ|giao(?!\s+ban)|nhận|làm|gửi|nộp|sửa|fix|deploy|viết|chuẩn\s+bị)\b"
+)
+
 # Vế ngắn được phép đi kèm câu xã giao mà không làm mất tính "xã giao"
 # ("Rồi, cảm ơn mọi người", "Vậy thôi, cảm ơn"). Dùng danh sách cố định thay vì
 # "vế ngắn bất kỳ", vì "Cảm ơn Lan, Tuấn làm slide" có vế "Tuấn làm slide" là giao việc.

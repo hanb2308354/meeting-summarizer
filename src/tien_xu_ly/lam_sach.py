@@ -16,6 +16,7 @@ from pyvi import ViTokenizer
 
 from tu_dien_tien_xu_ly import (
     MAU_THOI_GIAN,
+    MAU_GIAO_VIEC,
     MAU_XA_GIAO,
     SO_TU_TOI_DA_XA_GIAO,
     SUA_LOI,
@@ -113,6 +114,8 @@ def la_xa_giao(van_ban):
     - Mọi vế trong câu đều là xã giao, hoặc là vế kết quen thuộc ("vậy thôi").
       "Có ai ý kiến không, anh Bình phụ trách báo cáo" -> KHÔNG phải xã giao.
     - Câu có mốc thời gian -> KHÔNG phải xã giao ("bắt đầu họp lúc 9h thứ hai").
+    - Vế có động từ giao việc (sẽ, làm, nhận, gửi...) -> KHÔNG phải xã giao, vì Whisper
+      hay bỏ dấu phẩy nên câu chào và câu giao việc có thể dính thành một vế.
     """
     if len(van_ban.split()) >= SO_TU_TOI_DA_XA_GIAO:
         return False
@@ -121,6 +124,8 @@ def la_xa_giao(van_ban):
     cac_ve = [ve.strip() for ve in re.split(r"[,.?!;]", van_ban) if ve.strip()]
 
     def co_mau(ve):
+        if re.search(MAU_GIAO_VIEC, ve, flags=re.IGNORECASE):
+            return False  # "Hello team bạn Tuấn sẽ làm phần API" (thiếu dấu phẩy) là giao việc
         return any(re.search(mau, ve, flags=re.IGNORECASE) for mau in MAU_XA_GIAO)
 
     def la_ve_ket(ve):
