@@ -92,6 +92,22 @@ CA_LAM_SACH = [
     ("Hello mọi người, Tuấn làm slide.", "Hello mọi người, Tuấn làm slide.", False),
     ("Mình bắt đầu làm phần đăng nhập.", "Mình bắt đầu làm phần đăng nhập.", False),
     ("Hi vọng Lan xong phần slide.", "Hi vọng Lan xong phần slide.", False),
+    # Cụm xã giao nằm GIỮA câu giao việc: không phải xã giao (phần NLP bỏ câu xã giao -> mất việc)
+    ("Tuấn chuẩn bị slide trước khi bắt đầu họp.", "Tuấn chuẩn bị slide trước khi bắt đầu họp.", False),
+    ("Lan viết thư cảm ơn nhà tài trợ.", "Lan viết thư cảm ơn nhà tài trợ.", False),
+    ("Bạn Nam tổng hợp xem có ai có câu hỏi không.",
+     "Bạn Nam tổng hợp xem có ai có câu hỏi không.", False),
+    ("Tuấn làm slide thì mình bắt đầu họp.", "Tuấn làm slide thì mình bắt đầu họp.", False),
+    ("Hẹn gặp lại khách hàng để chốt hợp đồng.", "Hẹn gặp lại khách hàng để chốt hợp đồng.", False),
+    # Câu xã giao thật, kể cả cách viết khác và câu chào kết thúc
+    ("Mọi người vào đông đủ rồi thì mình bắt đầu cuộc họp Sprint 4.",
+     "Mọi người vào đông đủ rồi thì mình bắt đầu cuộc họp Sprint 4.", True),
+    ("Mình xin phép bắt đầu cuộc họp.", "Mình xin phép bắt đầu cuộc họp.", True),
+    ("Vậy mọi người có ai ý kiến gì không?", "Vậy mọi người có ai ý kiến gì không?", True),
+    ("Xin cám ơn mọi người.", "Xin cám ơn mọi người.", True),
+    ("Cảm ơn mọi người, hẹn gặp lại.", "Cảm ơn mọi người, hẹn gặp lại.", True),
+    ("Tạm biệt mọi người.", "Tạm biệt mọi người.", True),
+    ("Bye mọi người.", "Bye mọi người.", True),
 ]
 
 # Câu ĐÚNG, có tên người, địa danh, cụm từ thường gặp: tiền xử lý KHÔNG được đổi gì.

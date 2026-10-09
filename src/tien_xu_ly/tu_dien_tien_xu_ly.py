@@ -93,17 +93,33 @@ TU_DEM = (
     r"|(?:(?<=\dh )|(?<=giờ )|(?<=phút ))ok(?=\s*[.!]?\s*$)"
 )
 
+# MỌI mẫu đều NEO Ở ĐẦU VẾ (^): cụm xã giao nằm giữa câu thường là một phần của
+# câu giao việc ("Lan viết thư cảm ơn nhà tài trợ", "Tuấn chuẩn bị slide trước khi
+# bắt đầu họp"), mà phần NLP BỎ câu xã giao khi trích việc -> mất việc.
+# Trước cụm chỉ cho phép vài từ mở đầu cố định (xin, mình, vậy, rồi...).
 MAU_XA_GIAO = [
-    r"cảm ơn",
+    # "cảm ơn" hay được viết "cám ơn"
+    r"^(?:(?:xin|em|mình|tôi|vậy|rồi|thôi|ok)\s+){0,2}c[ảá]m\s+ơn\b",
     # Chào: chỉ khi "chào" đứng đầu vế và theo sau là người nghe, để "Chào hàng là
     # việc của Lan" (chào hàng = mời mua) không bị coi là xã giao
     r"^(?:xin\s+)?chào(?:\s+(?:mọi\s+người|cả\s+nhà|các\s+bạn|cả\s+nhóm|team|anh|chị|em|thầy|cô)\b|$)",
     r"^hello\b",   # không có "hi": trùng "hi vọng" (cách viết khác của "hy vọng")
     r"^(?:thanks?|thank\s+you)\b",
-    r"có ai.*(câu hỏi|ý kiến)",
-    # "bắt đầu (cuộc) họp", không khớp "bắt đầu phụ trách đặt phòng họp"
-    r"bắt đầu\s+(?:\S+\s+){0,3}?(?<!phòng )(?:họp|meeting)\b",
-    r"vào đủ rồi",
+    # Chào kết thúc: phải là CẢ vế ("Hẹn gặp lại khách hàng để chốt hợp đồng" là việc)
+    r"^(?:(?:xin|chào)\s+)?tạm\s+biệt(?:\s+(?:mọi\s+người|cả\s+nhà|các\s+bạn|team))?$",
+    r"^hẹn\s+gặp\s+lại(?:\s+(?:mọi\s+người|cả\s+nhà|các\s+bạn|sau))?$",
+    r"^bye(?:\s+bye)?(?:\s+(?:mọi\s+người|cả\s+nhà|các\s+bạn|team))?$",
+    # "Có ai có câu hỏi gì không?", "Vậy mọi người có ai ý kiến không?"
+    # (không khớp "Bạn Nam tổng hợp xem có ai có câu hỏi không": đó là giao việc)
+    r"^(?:(?:vậy|thế|rồi|còn|giờ|ok|mọi\s+người|các\s+bạn|cả\s+nhà|anh\s+chị)\s+){0,2}"
+    r"có\s+ai\b.*(?:câu\s+hỏi|ý\s+kiến|thắc\s+mắc)",
+    # "(mình) bắt đầu (cuộc) họp", không khớp "bắt đầu phụ trách đặt phòng họp".
+    # Cho phép mở đầu bằng "... đủ rồi thì" ("mọi người vào đông đủ rồi thì mình bắt đầu
+    # cuộc họp"), nhưng không cho "Tuấn làm slide thì mình bắt đầu họp" (có giao việc).
+    r"^(?:.*\bđủ(?:\s+rồi)?\s+thì\s+)?"
+    r"(?:(?:mình|chúng\s+ta|ta|giờ|bây\s+giờ|thôi|vậy|rồi|em|tôi|xin\s+phép)\s+){0,3}"
+    r"bắt\s+đầu\s+(?:\S+\s+){0,3}?(?<!phòng )(?:họp|meeting)\b",
+    r"^(?:(?:mọi\s+người|cả\s+nhà|các\s+bạn|team)\s+)?(?:đã\s+)?vào\s+(?:đông\s+)?đủ\s+rồi",
 ]
 
 SO_TU_TOI_DA_XA_GIAO = 15
