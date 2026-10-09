@@ -179,7 +179,7 @@ Kết quả nằm trong `data/processed/<tên>.json`, mỗi câu gồm:
 | `goc`     | Nguyên văn ASR                                                           |
 | `sach`    | Đã sửa lỗi nghe nhầm, bỏ từ đệm, dọn dấu câu                             |
 | `tach_tu` | Bản `sach` đã tách từ bằng PyVi (vd `hạn_chót`, `phụ_trách`)             |
-| `xa_giao` | `true` nếu CẢ câu chỉ là chào hỏi, cảm ơn, hỏi ý kiến, chào kết thúc (cụm xã giao nằm giữa câu giao việc thì `false`) |
+| `xa_giao` | `true` nếu câu ngắn chỉ là chào hỏi, cảm ơn, hỏi ý kiến, chào kết thúc. `false` nếu có vế giao việc, kể cả khi Whisper bỏ dấu phẩy làm câu chào dính vào câu giao việc ("Hello team bạn Tuấn sẽ làm phần API"), có động từ giao việc (sẽ, làm, nhận, gửi...) hoặc có mốc thời gian |
 
 Format này giống hệt đầu ra hàm `tien_xu_ly()`. Phần NLP **không đọc** `data/processed/`: nó gọi thẳng `tien_xu_ly()` trên `data/transcripts/` qua cầu nối `src/nlp/tien_xu_ly.py` (chỉ thêm `src/tien_xu_ly` vào `sys.path` rồi `from lam_sach import tien_xu_ly`), nên mọi chỗ gọi `from tien_xu_ly import tien_xu_ly` trong `src/nlp` vẫn chạy như cũ. `data/processed/` chỉ để xem; sửa từ điển xong nhớ chạy lại lệnh trên, nếu quên thì kiểm thử sẽ báo file đã cũ. Sửa cách làm sạch văn bản thì sửa ở `src/tien_xu_ly`.
 
@@ -187,9 +187,20 @@ Format này giống hệt đầu ra hàm `tien_xu_ly()`. Phần NLP **không đ�
 | ------------------------ | ----------------------------------------------------------------------------- |
 | `lam_sach.py`            | **Code chính**: hàm `tien_xu_ly()` (không đọc/ghi file), phần NLP gọi hàm này |
 | `tien_xu_ly.py`          | Chạy từ dòng lệnh: transcript → `data/processed/<tên>.json`                   |
-| `doc_transcript.py`      | Đọc và kiểm tra file transcript JSON (đọc được file có BOM)                   |
+| `doc_transcript.py`      | Đọc và kiểm tra file transcript JSON cho lệnh `tien_xu_ly.py` ở trên (đọc được file có BOM). Luồng NLP **không** dùng file này, xem lưu ý bên dưới |
 | `tu_dien_tien_xu_ly.py`  | Bảng sửa lỗi nghe nhầm, từ đệm, mẫu câu xã giao, cụm từ cần nối khi tách từ   |
 | `kiem_thu_tien_xu_ly.py` | Kiểm thử: câu làm sạch, câu đúng không được đổi, tách từ, đọc/ghi file, cầu nối (chạy từ 3 thư mục), `data/processed` khớp với code |
+
+**Bốn thứ cùng tên `tien_xu_ly`** (dễ nhầm):
+
+- thư mục `src/tien_xu_ly/`: toàn bộ phần làm sạch văn bản của Hân;
+- hàm `tien_xu_ly()`: nằm trong `src/tien_xu_ly/lam_sach.py`, đây là code làm sạch thật;
+- `src/tien_xu_ly/tien_xu_ly.py`: chỉ là lệnh chạy tay, ghi ra `data/processed/`;
+- `src/nlp/tien_xu_ly.py`: cầu nối để code NLP của Anh vẫn viết `from tien_xu_ly import tien_xu_ly` như cũ.
+
+Giữ nguyên các tên này vì code của Anh đang import theo tên.
+
+**Lưu ý về BOM (ghi chú cho Anh):** có hai file `doc_transcript.py` gần giống nhau. Bản trong `src/tien_xu_ly` (đọc được BOM, kiểm tra kiểu dữ liệu) chỉ dùng cho lệnh `tien_xu_ly.py` ở trên. Luồng NLP (`chay_nlp.py`, `trich_xuat.py`, `tom_tat.py`) đọc file bằng `src/nlp/doc_transcript.py` của Anh, mở file với `encoding="utf-8"`, nên transcript lưu bằng Notepad dạng "UTF-8 with BOM" sẽ báo lỗi `Unexpected UTF-8 BOM`. Hiện tại hãy lưu transcript soạn tay ở dạng **UTF-8** (không BOM). Đề xuất cho Anh: đổi thành `encoding="utf-8-sig"` trong `src/nlp/doc_transcript.py` (đọc được cả hai loại), hoặc dùng chung một bản `doc_transcript.py`.
 
 Bảng sửa lỗi nghe nhầm hiện được viết theo các lỗi gặp khi chạy thử, chưa thống kê trên nhiều bản ghi thật; luật nào có thể đụng tên người hoặc từ có thật thì chỉ áp dụng khi có ngữ cảnh (xem ghi chú trong `tu_dien_tien_xu_ly.py`).
 
