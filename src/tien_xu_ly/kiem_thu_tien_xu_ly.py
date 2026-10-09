@@ -26,6 +26,8 @@ if hasattr(sys.stdout, "reconfigure"):
 
 # (câu thô, câu sạch mong đợi, có phải câu xã giao không)
 CA_LAM_SACH = [
+    ("Mình bắt đầu thảo luận phần họp báo.", "Mình bắt đầu thảo luận phần họp báo.", False),
+    ("(ờ) Tuấn sửa hàm login() nhé.", "Tuấn sửa hàm login().", False),
     ("Bích Linh là thứ 6 tuần này, nhớ gửi file cho cả nhóm.",
      "deadline là thứ 6 tuần này, nhớ gửi file cho cả nhóm.", False),
     # --- Sửa lỗi nghe nhầm ---
@@ -122,6 +124,10 @@ CA_LAM_SACH = [
 # Câu ĐÚNG, có tên người, địa danh, cụm từ thường gặp: tiền xử lý KHÔNG được đổi gì.
 # Mỗi khi thêm luật sửa lỗi mới vào tu_dien_tien_xu_ly.py, bộ này phải vẫn ĐẠT.
 CAU_KHONG_DUOC_DOI = [
+    "Tuấn sửa hàm login() trước thứ sáu.",
+    "Trả về mảng [] khi rỗng.",
+    "Spring 3.0 ra rồi.",
+    "Mình bắt đầu thảo luận phần họp báo.",
     "Bích Linh là thứ hai, Lan là thứ ba.",
     "Ok lắm, cứ thế làm.",
     "Ok luôn, Tuấn làm.",
@@ -261,11 +267,13 @@ def kiem_dinh_dang_va_stt():
 def kiem_tu_dem_lap_dai_chay_nhanh():
     # Whisper đôi khi ra "à à à ..." hàng nghìn lần; trước đây mất ~5 giây cho 5000 chữ
     bat_dau = time.time()
-    kq = txl.bo_tu_dem(" ".join(["à"] * 5000) + " bạn Lan làm slide.")
     loi = []
-    if kq.strip() != "bạn Lan làm slide.":
-        loi.append(f"ra {kq.strip()[:40]!r}")
-    if time.time() - bat_dau > 0.5:
+    # Cùng một từ lặp, từ đệm xen kẽ, và "ok" lặp
+    for chuoi in (["à"] * 5000, ["à", "ờ"] * 2500, ["ok"] * 3000):
+        kq = txl.bo_tu_dem(" ".join(chuoi) + " bạn Lan làm slide.")
+        if kq.strip() != "bạn Lan làm slide.":
+            loi.append(f"{chuoi[:2]}...: ra {kq.strip()[:40]!r}")
+    if time.time() - bat_dau > 1.5:
         loi.append(f"chạy mất {time.time() - bat_dau:.1f} giây")
     return loi
 

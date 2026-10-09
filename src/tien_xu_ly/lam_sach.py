@@ -47,9 +47,14 @@ def bo_tu_dem(van_ban):
     Lặp tới khi không đổi nữa: bỏ một từ đệm có thể làm lộ ra từ đệm khác
     ("lúc 10 giờ ok nhé." -> bỏ "nhé" xong mới thấy "ok" đứng cuối câu).
     """
-    # Gộp từ đệm lặp liền nhau ("à à à ...") thành một trước: nếu không, mỗi vòng lặp
-    # chỉ bỏ được "à" ở hai đầu, chuỗi dài vài nghìn chữ sẽ chạy mất vài giây.
-    van_ban = re.sub(r"\b(ờ|ờm|ừ|ừm|ơ|à)(?:[\s,]+\1\b)+", r"\1", van_ban, flags=re.IGNORECASE)
+    # Từ đệm nằm gọn trong ngoặc ("(ờ) Tuấn"): bỏ luôn cả ngoặc. Không xóa ngoặc rỗng
+    # nói chung, vì "login()", "mảng []" là chữ thật.
+    van_ban = re.sub(r"[(\[]\s*(?:ờ|ờm|ừ|ừm|ơ|à|ạ|nha|nhé|ok)\s*[)\]]", "", van_ban, flags=re.IGNORECASE)
+    # Gộp chuỗi từ 3 từ đệm liền nhau trở lên ("à ờ à ờ ...") thành từ đầu tiên:
+    # nếu không, mỗi vòng lặp chỉ bỏ được từ ở hai đầu, chuỗi dài chạy mất vài giây.
+    # (Chuỗi 1-2 từ đệm vẫn đi qua luật bình thường, không đổi kết quả.)
+    van_ban = re.sub(r"\b(ờ|ờm|ừ|ừm|ơ|à|nha|nhé|ok)(?:[\s,]+(?:ờ|ờm|ừ|ừm|ơ|à|nha|nhé|ok)\b){2,}",
+                     r"\1", van_ban, flags=re.IGNORECASE)
     while True:
         moi = re.sub(TU_DEM, "", van_ban, flags=re.IGNORECASE)
         if moi == van_ban:
@@ -59,8 +64,6 @@ def bo_tu_dem(van_ban):
 
 def chuan_hoa_khoang_trang(van_ban):
     """Dọn khoảng trắng và dấu câu thừa còn sót lại sau khi bỏ từ đệm."""
-    van_ban = re.sub(r"\s+", " ", van_ban)
-    van_ban = re.sub(r"\(\s*\)|\[\s*\]", "", van_ban)        # "(ờ) Tuấn" bỏ "ờ" còn "()"
     van_ban = re.sub(r"\s+", " ", van_ban)
     # (?!\w): dấu chấm dính chữ phía sau là một phần của từ (".NET"), không phải dấu câu
     van_ban = re.sub(r"\s+([,.?!;:])(?!\w)", r"\1", van_ban)  # "a ," -> "a,"

@@ -46,7 +46,7 @@ SUA_LOI = [
     # chỉ sửa khi sau đó là số hoặc từ hay đi với Sprint ("spring 4", "spring mới",
     # "Spring tiếp theo", "spring planning"). Số chỉ 1-2 chữ số: "Spring 2025" là
     # học kỳ/năm, không phải Sprint.
-    (r"\bSpring\b(?=\s*\d{1,2}\b|\s+(?:tiếp|mới|này|sau|trước|tới|kế|đầu|hiện|planning|review|backlog|goal)\b)",
+    (r"\bSpring\b(?=\s*\d{1,2}\b(?![.,]\d)|\s+(?:tiếp|mới|này|sau|trước|tới|kế|đầu|hiện|planning|review|backlog|goal)\b)",
      "Sprint"),
     # Không có "kênh": "kênh shopping online" (kênh mua sắm) là cụm có thật.
     # "shopping mall/center/online" là cụm tiếng Anh có thật, giữ nguyên.
@@ -121,7 +121,7 @@ MAU_XA_GIAO = [
     # cuộc họp"), nhưng không cho "Tuấn làm slide thì mình bắt đầu họp" (có giao việc).
     r"^(?:.*\bđủ(?:\s+rồi)?\s+thì\s+)?"
     r"(?:(?:mình|chúng\s+ta|ta|giờ|bây\s+giờ|thôi|vậy|rồi|em|tôi|xin\s+phép)\s+){0,3}"
-    r"bắt\s+đầu\s+(?:\S+\s+){0,3}?(?<!phòng )(?:họp|meeting)\b",
+    r"bắt\s+đầu\s+(?:\S+\s+){0,3}?(?<!phòng )(?:họp|meeting)\b(?!\s+báo)",
     r"^(?:(?:mọi\s+người|cả\s+nhà|các\s+bạn|team)\s+)?(?:đã\s+)?vào\s+(?:đông\s+)?đủ\s+rồi",
 ]
 
