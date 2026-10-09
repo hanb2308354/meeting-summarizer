@@ -311,6 +311,20 @@ def tach_cau_sau_dau_cham_trong_ngoac_kep():
 
 
 @ca
+def tach_cau_khi_cau_sau_mo_ngoac_kep_viet_hoa():
+    # Từ sau bắt đầu bằng nháy/ngoặc mở: phải xét chữ cái ngay sau nháy, không phải chính dấu nháy
+    cau = [c["text"] for c in asr.tach_cau(chuoi_tu(0, 'Thì... "Bạn Lan làm slide."'))]
+    if cau != ["Thì...", '"Bạn Lan làm slide."']:
+        return f"ra {cau}"
+    cau = [c["text"] for c in asr.tach_cau(chuoi_tu(0, 'Làm báo cáo, v.v. "Bạn Lan" làm demo.'))]
+    if len(cau) != 2:
+        return f"ra {cau}"
+    cau = [c["text"] for c in asr.tach_cau(chuoi_tu(0, 'Thì... "mình" nghĩ là xong rồi.'))]
+    if len(cau) != 1:
+        return f"ngập ngừng mà vẫn bị cắt: {cau}"
+
+
+@ca
 def bo_cau_chi_co_dau_cau():
     cau = [c["text"] for c in asr.tach_cau(chuoi_tu(0, "Xong rồi. . Tuấn làm."))]
     if cau != ["Xong rồi.", "Tuấn làm."]:

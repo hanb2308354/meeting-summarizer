@@ -457,7 +457,8 @@ def tach_cau(cac_tu):
         chu = tu.word.strip().rstrip("\"'”’»)]")
         # Chữ viết tắt không kết thúc câu, TRỪ KHI từ ngay sau viết hoa
         # ("... v.v. Bạn Lan làm slide." vẫn là 2 câu)
-        tu_sau = cac_tu[i + 1].word.strip() if i + 1 < len(cac_tu) else ""
+        # Bỏ ngoặc/nháy MỞ ở đầu từ sau để xét chữ hoa: 'Thì... "Bạn Lan làm slide."'
+        tu_sau = cac_tu[i + 1].word.strip().lstrip("\"'“‘«([") if i + 1 < len(cac_tu) else ""
         la_viet_tat = chu.lower() in TU_VIET_TAT and not (tu_sau[:1].isupper() and chu.lower() in ("v.v.", "đ."))
         # "Thì... mình nghĩ là" : dấu ba chấm là ngập ngừng, chỉ hết câu khi từ sau viết hoa
         # (hoặc là từ cuối cùng). Câu bị nối nhầm vẫn được cắt theo khoảng ngừng ở trên.
