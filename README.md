@@ -9,7 +9,7 @@
 
 | Thành viên  | MSSV     | Phụ trách                                                                            |
 | ----------- | -------- | ------------------------------------------------------------------------------------ |
-| Tô Tiểu Hân | B2308354 | Nhận dạng giọng nói (`src/asr`), ghép nối hệ thống, giao diện demo, đánh giá kết quả |
+| Tô Tiểu Hân | B2308354 | Nhận dạng giọng nói (`src/asr`), tiền xử lý văn bản (`src/tien_xu_ly`), ghép nối hệ thống, giao diện demo, đánh giá kết quả |
 | Lê Tuấn Anh | B2308345 | Xử lý văn bản (`src/nlp`): chuẩn hóa, tách từ, tóm tắt, trích xuất thông tin         |
 
 ## Luồng xử lý
@@ -135,7 +135,7 @@ python src/nlp/kiem_cau.py
 | ----------------------- | ------------------------------------------------------------ |
 | `chuyen_giong_noi.py`   | **Code chính**: file ghi âm → JSON                           |
 | `danh_gia_wer.py`       | Đo tỷ lệ lỗi từ (WER) so với văn bản gốc trong `data/dap_an/` |
-| `kiem_thu_asr.py`       | 26 ca kiểm thử tự động (không cần tải model)                 |
+| `kiem_thu_asr.py`       | Kiểm thử tự động (không cần tải model)                       |
 | `thu_faster_whisper.py` | Chỉ dùng để thử nghiệm chọn model, không dùng trong hệ thống |
 
 Lần đầu chạy cần **internet** để tải model `medium` (khoảng 1,5 GB); các lần sau dùng bản đã lưu trên máy.
@@ -179,7 +179,7 @@ Kết quả nằm trong `data/processed/<tên>.json`, mỗi câu gồm:
 | `goc`     | Nguyên văn ASR                                                           |
 | `sach`    | Đã sửa lỗi nghe nhầm, bỏ từ đệm, dọn dấu câu                             |
 | `tach_tu` | Bản `sach` đã tách từ bằng PyVi (vd `hạn_chót`, `phụ_trách`)             |
-| `xa_giao` | `true` nếu là câu chào hỏi, cảm ơn, hỏi ý kiến                           |
+| `xa_giao` | `true` nếu CẢ câu chỉ là chào hỏi, cảm ơn, hỏi ý kiến, chào kết thúc (cụm xã giao nằm giữa câu giao việc thì `false`) |
 
 Format này giống hệt đầu ra hàm `tien_xu_ly()`. Phần NLP **không đọc** `data/processed/`: nó gọi thẳng `tien_xu_ly()` trên `data/transcripts/` qua cầu nối `src/nlp/tien_xu_ly.py` (chỉ thêm `src/tien_xu_ly` vào `sys.path` rồi `from lam_sach import tien_xu_ly`), nên mọi chỗ gọi `from tien_xu_ly import tien_xu_ly` trong `src/nlp` vẫn chạy như cũ. `data/processed/` chỉ để xem; sửa từ điển xong nhớ chạy lại lệnh trên, nếu quên thì kiểm thử sẽ báo file đã cũ. Sửa cách làm sạch văn bản thì sửa ở `src/tien_xu_ly`.
 
@@ -189,7 +189,7 @@ Format này giống hệt đầu ra hàm `tien_xu_ly()`. Phần NLP **không đ�
 | `tien_xu_ly.py`          | Chạy từ dòng lệnh: transcript → `data/processed/<tên>.json`                   |
 | `doc_transcript.py`      | Đọc và kiểm tra file transcript JSON (đọc được file có BOM)                   |
 | `tu_dien_tien_xu_ly.py`  | Bảng sửa lỗi nghe nhầm, từ đệm, mẫu câu xã giao, cụm từ cần nối khi tách từ   |
-| `kiem_thu_tien_xu_ly.py` | Kiểm thử: 55 câu làm sạch, 51 câu đúng không được đổi, tách từ, đọc/ghi file, cầu nối (chạy từ 3 thư mục), `data/processed` khớp với code |
+| `kiem_thu_tien_xu_ly.py` | Kiểm thử: câu làm sạch, câu đúng không được đổi, tách từ, đọc/ghi file, cầu nối (chạy từ 3 thư mục), `data/processed` khớp với code |
 
 Bảng sửa lỗi nghe nhầm hiện được viết theo các lỗi gặp khi chạy thử, chưa thống kê trên nhiều bản ghi thật; luật nào có thể đụng tên người hoặc từ có thật thì chỉ áp dụng khi có ngữ cảnh (xem ghi chú trong `tu_dien_tien_xu_ly.py`).
 
@@ -240,7 +240,7 @@ Hướng mở rộng: gắn hạn theo vị trí (hạn đứng trước việc,
 
 ## Quy ước làm việc với Git
 
-- Không code trực tiếp trên `main`. Hân code trên nhánh `asr`, Anh code trên nhánh `nlp`.
+- Không code trực tiếp trên `main`. Hân code trên nhánh `han-asr-tien-xu-ly`, Anh code trên nhánh `nlp`.
 - Xong một phần chạy được thì mới gộp vào `main`.
 - Commit message ghi tiếng Việt, nói rõ đã làm gì.
 
