@@ -54,11 +54,15 @@ if __name__ == "__main__":
 
     chi_tiet = len(sys.argv) == 2
     tong = {"tu": 0, "sai": 0, "thieu": 0, "thua": 0}
+    bo_qua = []
     for ten in sys.argv[1:]:
         try:
             dap_an, kq = do_mot_file(ten)
         except (FileNotFoundError, ValueError) as loi:
-            sys.exit(str(loi))
+            # Nhiều file mà thiếu một file: bỏ qua file đó, vẫn tính WER gộp các file còn lại
+            print(f"{ten:<20} BỎ QUA: {loi}")
+            bo_qua.append(ten)
+            continue
         so_tu = len(dap_an.split())
         tong["tu"] += so_tu
         tong["sai"] += kq.substitutions
@@ -72,7 +76,13 @@ if __name__ == "__main__":
 
     # WER gộp = tổng lỗi / tổng số từ (không lấy trung bình WER từng file,
     # vì file ngắn sẽ bị tính nặng ngang file dài)
+    so_file = len(sys.argv) - 1 - len(bo_qua)
+    if not so_file:
+        sys.exit("Không đo được file nào.")
     wer_gop = (tong["sai"] + tong["thieu"] + tong["thua"]) / tong["tu"]
-    print(f"\nTỔNG: {len(sys.argv) - 1} file, {tong['tu']} từ, WER gộp = {wer_gop:.1%}")
+    print(f"\nTỔNG: {so_file} file, {tong['tu']} từ, WER gộp = {wer_gop:.1%}")
     if tong["tu"] < 300:
         print("(Lưu ý: dưới 300 từ thì WER dao động mạnh, nên đo thêm nhiều file)")
+    if bo_qua:
+        # Mã thoát 1 để người chạy biết WER gộp chưa tính đủ các file đã yêu cầu
+        sys.exit(f"Đã bỏ qua {len(bo_qua)} file: {', '.join(bo_qua)}")

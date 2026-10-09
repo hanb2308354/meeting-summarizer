@@ -37,7 +37,7 @@ from pathlib import Path
 
 import numpy as np
 from faster_whisper import WhisperModel, decode_audio
-from faster_whisper.transcribe import get_compression_ratio
+from faster_whisper.transcribe import Word, get_compression_ratio
 
 # In tiếng Việt bằng UTF-8, tránh lỗi bảng mã trên PowerShell
 if hasattr(sys.stdout, "reconfigure"):
@@ -76,9 +76,13 @@ TAP_TU_GOI_Y = {tu.strip().lower() for tu in TU_KHOA_GOI_Y.split(",")}
 # - CHẮC CHẮN bịa (không ai nói trong cuộc họp): loại luôn.
 # - NGHI bịa: cuộc họp marketing có thể nói thật ("tăng lượt subscribe cho kênh"),
 #   nên chỉ loại khi model cũng không tự tin về đoạn đó.
-MAU_CAU_BIA_CHAC = re.compile(r"ghiền mì gõ|thanks for watching", re.IGNORECASE)
+# ("Phụ đề được thực hiện bởi cộng đồng Amara.org", "Vietsub by ..." là câu cuối phụ đề
+#  Whisper học thuộc. "phụ đề"/"vietsub" vẫn có thể là chuyện thật của team làm video,
+#  nên để ở loại NGHI.)
+MAU_CAU_BIA_CHAC = re.compile(r"ghiền mì gõ|thanks for watching|amara\.org", re.IGNORECASE)
 MAU_CAU_BIA_NGHI = re.compile(
-    r"subscribe|like và share|bấm chuông|đăng ký kênh|"
+    r"subscribe|like và share|bấm chuông|đăng ký kênh|vietsub|"
+    r"phụ đề (?:được thực hiện )?bởi|"
     r"hẹn gặp lại các bạn trong (?:những )?video|"
     r"cảm ơn các bạn đã (?:theo dõi|xem|lắng nghe)",
     re.IGNORECASE,
@@ -393,7 +397,13 @@ def nhan_dang(model, song_am):
             print(f"  [LOẠI - {ly_do}] [{doan.start:7.2f} --> {doan.end:7.2f}] {doan.text.strip()}")
             continue
         van_ban_truoc = van_ban
-        cac_tu.extend(doan.words or [])
+        if doan.words:
+            cac_tu.extend(doan.words)
+        else:
+            # Đoạn có chữ nhưng không có mốc thời gian theo từ (hiếm, vd đoạn quá ngắn):
+            # coi cả đoạn là một "từ", để câu không bị mất khỏi JSON
+            cac_tu.append(Word(start=doan.start, end=doan.end,
+                               word=" " + doan.text.strip(), probability=1.0))
         print(f"  [{doan.start:7.2f} --> {doan.end:7.2f}] {doan.text.strip()}")
     return cac_tu, so_doan_bi_loai
 
@@ -443,7 +453,8 @@ def tach_cau(cac_tu):
             cac_cau_tho.append(cau_hien_tai)
             cau_hien_tai = []
         cau_hien_tai.append(tu)
-        chu = tu.word.strip()
+        # Bỏ ngoặc/nháy đóng ở cuối để nhận ra dấu hết câu: 'Lan nói "xong rồi." Tuấn...'
+        chu = tu.word.strip().rstrip("\"'”’»)]")
         # Chữ viết tắt không kết thúc câu, TRỪ KHI từ ngay sau viết hoa
         # ("... v.v. Bạn Lan làm slide." vẫn là 2 câu)
         tu_sau = cac_tu[i + 1].word.strip() if i + 1 < len(cac_tu) else ""
@@ -461,7 +472,8 @@ def tach_cau(cac_tu):
     for cau in cac_cau_tho:
         for phan in cat_cau_qua_dai(cau):
             cau_json = tao_cau(phan)
-            if cau_json["text"]:
+            # Bỏ "câu" chỉ có dấu câu (Whisper đôi khi tách riêng một từ ".")
+            if re.search(r"\w", cau_json["text"]):
                 ket_qua.append(cau_json)
     return ket_qua
 

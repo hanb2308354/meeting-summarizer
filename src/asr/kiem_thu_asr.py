@@ -5,9 +5,11 @@
 # Cách dùng:  python src/asr/kiem_thu_asr.py
 # Mỗi ca in ĐẠT / KHÔNG ĐẠT; mã thoát 0 khi tất cả đều ĐẠT.
 import contextlib
+import dataclasses
 import inspect
 import io
 import json
+import subprocess
 import sys
 import tempfile
 import unicodedata
@@ -211,6 +213,30 @@ def loai_cac_kieu_cau_bia():
 
 
 @ca
+def loai_cau_bia_cuoi_phu_de():
+    cac_doan = [
+        doan(chuoi_tu(0, "Phụ đề được thực hiện bởi cộng đồng Amara.org")),   # chắc chắn bịa
+        doan(chuoi_tu(5, "Vietsub by Mì Gõ Team"), khong_co_tieng=0.5),        # nghi + model không chắc
+    ]
+    cau, so_loai = chay_nhan_dang(cac_doan)
+    if cau or so_loai != 2:
+        return f"còn lại {cau}, loại {so_loai}"
+    # Team làm video nói thật, model nói rõ -> giữ
+    cau, so_loai = chay_nhan_dang([doan(chuoi_tu(0, "Lan làm vietsub cho video khách hàng."))])
+    if so_loai:
+        return "loại nhầm câu họp thật có chữ vietsub"
+
+
+@ca
+def giu_doan_khong_co_moc_thoi_gian_theo_tu():
+    # Đoạn có chữ nhưng words=None: trước đây in ra như được giữ mà không vào JSON
+    khong_co_tu = dataclasses.replace(doan(chuoi_tu(3, "Bạn Lan làm slide.")), words=None)
+    cau, so_loai = chay_nhan_dang([doan(chuoi_tu(0, "Bắt đầu nhé.")), khong_co_tu])
+    if cau != ["Bắt đầu nhé.", "Bạn Lan làm slide."] or so_loai:
+        return f"ra {cau}"
+
+
+@ca
 def giu_cau_hop_marketing_that():
     # Nói rõ (model tự tin), nhắc tới subscribe/like/bấm chuông là chuyện công việc
     cau, so_loai = chay_nhan_dang([
@@ -275,6 +301,20 @@ def khong_cat_o_dau_ba_cham_khi_dang_ngap_ngung():
     cau = [c["text"] for c in asr.tach_cau(chuoi_tu(0, "Vậy thôi… Bạn Lan làm slide."))]
     if len(cau) != 2:
         return f"không tách khi câu sau viết hoa: {cau}"
+
+
+@ca
+def tach_cau_sau_dau_cham_trong_ngoac_kep():
+    cau = [c["text"] for c in asr.tach_cau(chuoi_tu(0, 'Lan nói "xong rồi." Tuấn làm slide.'))]
+    if cau != ['Lan nói "xong rồi."', "Tuấn làm slide."]:
+        return f"ra {cau}"
+
+
+@ca
+def bo_cau_chi_co_dau_cau():
+    cau = [c["text"] for c in asr.tach_cau(chuoi_tu(0, "Xong rồi. . Tuấn làm."))]
+    if cau != ["Xong rồi.", "Tuấn làm."]:
+        return f"ra {cau}"
 
 
 @ca
@@ -433,6 +473,17 @@ def chuan_hoa_wer_cung_cach_doc_thi_giong_nhau():
         ra = danh_gia_wer.chuan_hoa(vao)
         if ra != mong_doi:
             return f"{vao!r} -> {ra!r}, mong đợi {mong_doi!r}"
+
+
+@ca
+def wer_nhieu_file_thieu_mot_van_tinh_gop():
+    tep = Path(danh_gia_wer.__file__)
+    kq = subprocess.run([sys.executable, str(tep), "thu_nghiem", "khong_co_file_nay"],
+                        capture_output=True, text=True, encoding="utf-8")
+    if "TỔNG: 1 file" not in kq.stdout or "BỎ QUA" not in kq.stdout:
+        return f"không tính WER gộp khi thiếu một file: {kq.stdout[-200:]} {kq.stderr[-200:]}"
+    if kq.returncode == 0:
+        return "mã thoát 0 dù có file bị bỏ qua"
 
 
 if __name__ == "__main__":
