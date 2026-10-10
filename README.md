@@ -202,7 +202,16 @@ python src/asr/danh_gia_bo.py hop_va_dien_thoai --so-sanh medium medium_chi_cau_
 | Không gợi ý                                      | 25,8%  | 4,0x           | 0           |
 | **Chỉ câu mở đầu** (mặc định mới)                | **25,6%** | 4,2x        | 1           |
 
-Từ khóa gợi ý làm model rút câu thành dạng liệt kê ("check customer, check staff, check row"), bịa câu kiểu YouTube và bị kẹt hàng trăm giây, nên đã bỏ. Mặc định mới: chỉ câu mở đầu + chỉ thử lại tới nhiệt độ 0.4 (các đoạn kẹt đều ra chữ bịa hoặc trống). Bộ `phuong_ngu` với cấu hình cũ: WER 8,3% (Bắc 3,0%, Trung 5,6%, Nam 11,0%, Tây Nguyên 13,9%).
+| **Chỉ câu mở đầu + thử lại tới nhiệt độ 0.4** (mặc định mới) | **25,6%** | **4,0x** | **0** |
+
+| Bộ `phuong_ngu`          | Tổng | Bắc  | Trung | Nam   | Tây Nguyên | Xử lý / độ dài |
+| ------------------------ | ---- | ---- | ----- | ----- | ---------- | -------------- |
+| Cấu hình cũ              | 8,3% | 3,0% | 5,6%  | 11,0% | 13,9%      | 6,2x           |
+| Mặc định mới             | 8,2% | 3,0% | 4,1%  | 13,2% | 13,9%      | 5,4x           |
+
+Từ khóa gợi ý làm model rút câu thành dạng liệt kê ("check customer, check staff, check row"), bịa câu kiểu YouTube và bị kẹt hàng trăm giây, nên đã bỏ. Mặc định mới giữ câu mở đầu (tốt nhất cho đoạn họp trực tuyến: 23,2%) và chỉ thử lại tới nhiệt độ 0.4 (các đoạn kẹt đều ra chữ bịa hoặc trống): WER họp/gọi điện giảm 28,2% → 25,6%, chạy nhanh hơn khoảng 25%, bộ phương ngữ giữ nguyên (chênh lệch giữa các miền chỉ vài từ, trong mức dao động của 30 đoạn).
+
+Điểm còn yếu (để cải tiến tiếp): gọi điện thoại (~55%, model bịa câu xã giao), giọng Nam / Tây Nguyên ("bả" → "bà", "luật" → "lục"), từ tiếng Anh chen giữa câu ("certificate" → "thiên tế"), đôi khi mất vài từ đầu đoạn; tốc độ khoảng 4 lần độ dài ghi âm trên CPU.
 
 ## Văn bản sạch: src/tien_xu_ly (Hân)
 
