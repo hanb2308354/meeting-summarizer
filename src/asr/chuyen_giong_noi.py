@@ -57,6 +57,10 @@ DUOI_HO_TRO = {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac", ".wma", ".webm",
 
 # Câu mở đầu: chỉ có tác dụng ở ~30 giây đầu, giúp model vào đúng "giọng văn" cuộc họp
 CAU_MO_DAU = "Cuộc họp nhóm, có dùng một số từ tiếng Anh."
+# Cụm 4 từ liền nhau của câu mở đầu, trừ cụm đầu "cuộc họp nhóm có" (người họp nói thật
+# "cuộc họp nhóm có ba người"); gặp các cụm còn lại trong đoạn ngắn là model đọc lại gợi ý
+_TU_MO_DAU = re.sub(r"\W+", " ", CAU_MO_DAU.lower()).split()
+CUM_4_TU_MO_DAU = {" ".join(_TU_MO_DAU[i:i + 4]) for i in range(1, len(_TU_MO_DAU) - 3)}
 
 # Từ khóa gợi ý: faster-whisper gắn vào MỌI đoạn 30 giây (khác initial_prompt chỉ
 # tác dụng ở đầu file), nên cuộc họp dài vẫn nhận đúng thuật ngữ đến cuối.
@@ -356,6 +360,12 @@ def ly_do_loai(doan):
             and sum(c in TAP_TU_GOI_Y for c in cum) / len(cum) >= 0.8
             and (model_khong_chac or len(cum) >= SO_CUM_LUON_LOAI)):
         return "đọc lại từ khóa gợi ý"
+    # Đọc lại câu mở đầu, kể cả chỉ một phần ("Còn một số từ tiếng Anh."): đo trên bộ
+    # đánh giá thấy ở đoạn khó nghe (điện thoại) model chép lại gợi ý thay vì lời thật
+    cac_tu = chuan_hoa_so_sanh(van_ban).split()
+    if len(cac_tu) <= SO_TU_TOI_DA_CAU_BIA and any(
+            " ".join(cac_tu[i:i + 4]) in CUM_4_TU_MO_DAU for i in range(len(cac_tu) - 3)):
+        return "đọc lại câu mở đầu"
     if chuan_hoa_so_sanh(van_ban) == chuan_hoa_so_sanh(CAU_MO_DAU):
         return "đọc lại câu mở đầu"
     return None
@@ -364,14 +374,19 @@ def ly_do_loai(doan):
 def nhan_dang(model, song_am, goi_y=True):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
-    goi_y=False tắt câu mở đầu và từ khóa gợi ý (chỉ dùng khi đánh giá so sánh).
+    goi_y (chỉ đổi khi đánh giá so sánh, src/asr/danh_gia_bo.py):
+        True / "day_du": câu mở đầu + từ khóa gợi ý
+        "tu_khoa"      : chỉ từ khóa gợi ý
+        False / "khong": không gợi ý gì
     """
+    dung_cau_mo_dau = goi_y in (True, "day_du")
+    dung_tu_khoa = goi_y in (True, "day_du", "tu_khoa")
     cac_doan, _ = model.transcribe(
         song_am,
         language="vi",
         beam_size=5,
-        initial_prompt=CAU_MO_DAU if goi_y else None,
-        hotwords=TU_KHOA_GOI_Y if goi_y else None,
+        initial_prompt=CAU_MO_DAU if dung_cau_mo_dau else None,
+        hotwords=TU_KHOA_GOI_Y if dung_tu_khoa else None,
         # Không dựa vào chữ của đoạn trước: chặn lỗi lặp vòng ở file dài.
         # Thuật ngữ vẫn được giữ nhờ hotwords gắn vào mọi đoạn.
         condition_on_previous_text=False,

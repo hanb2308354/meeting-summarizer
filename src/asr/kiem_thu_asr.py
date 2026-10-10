@@ -235,6 +235,36 @@ def loai_cac_kieu_cau_bia():
 
 
 @ca
+def loai_doan_chep_lai_mot_phan_cau_mo_dau():
+    # Đo trên bộ đánh giá: đoạn điện thoại khó nghe, model ghi "Còn một số từ tiếng Anh."
+    cau, so_loai = chay_nhan_dang([
+        doan(chuoi_tu(0.0, "Còn một số từ tiếng Anh.")),
+        doan(chuoi_tu(3.0, "Cuộc họp nhóm có ba người, Lan làm slide.")),   # câu thật: giữ
+        doan(chuoi_tu(8.0, "Mình dùng một số tool mới cho project.")),       # câu thật: giữ
+    ])
+    if so_loai != 1 or len(cau) != 2 or "tiếng Anh" in " ".join(cau):
+        return f"loại {so_loai}, còn {cau}"
+
+
+@ca
+def che_do_goi_y_truyen_dung_tham_so():
+    da_goi = []
+
+    class ModelGhi(ModelGia):
+        def transcribe(self, am_thanh, **tham_so):
+            da_goi.append((tham_so.get("initial_prompt"), tham_so.get("hotwords")))
+            return super().transcribe(am_thanh, **tham_so)
+
+    model = ModelGhi([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))])
+    for goi_y in (True, "day_du", "tu_khoa", "khong", False):
+        asr.nhan_dang(model, np.zeros(SR, dtype=np.float32), goi_y=goi_y)
+    mong_doi = [(True, True), (True, True), (False, True), (False, False), (False, False)]
+    thuc_te = [(p is not None, h is not None) for p, h in da_goi]
+    if thuc_te != mong_doi:
+        return f"(câu mở đầu, từ khóa) = {thuc_te}"
+
+
+@ca
 def loai_cau_bia_cuoi_phu_de():
     cac_doan = [
         doan(chuoi_tu(0, "Phụ đề được thực hiện bởi cộng đồng Amara.org")),   # chắc chắn bịa
@@ -752,6 +782,42 @@ def danh_gia_bo_do_wer_bao_cao_va_lam_tiep():
         return "số viết bằng chữ số vẫn bị tính là sai:\n" + bao_cao[:300]
     if "CẮT BỎ: 2" not in bao_cao or "Ghiền Mì Gõ" not in bao_cao:
         return "báo cáo không liệt kê đoạn bị bộ lọc [LOẠI]"
+
+
+@ca
+def so_sanh_cau_hinh_va_bao_doan_bi_ket():
+    import danh_gia_bo as dg
+    cac_muc = [{"id": f"d{i}", "tep": f"audio/{i}.wav", "nhom": "Phone Call" if i < 3 else "Meeting",
+                "nguon": str(i), "row_idx": i, "text": "anh bị người ta mạo danh số điện thoại"}
+               for i in range(6)]
+    dung = {"du_doan": "anh bị người ta mạo danh số điện thoại", "bi_loai": [], "do_dai": 5.0, "thoi_gian": 20.0}
+    bia = dict(dung, du_doan="cảm ơn mọi người hẹn gặp lại", thoi_gian=300.0)   # bịa + kẹt
+    a = {m["id"]: dict(dung) for m in cac_muc}
+    a["d0"] = bia
+    b = {m["id"]: dict(dung) for m in cac_muc[:5]}   # cấu hình b chưa chạy xong d5
+    goc = (dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO)
+    with tempfile.TemporaryDirectory() as tm:
+        tm = Path(tm)
+        thu_muc = tm / "bo" / "hop"
+        thu_muc.mkdir(parents=True)
+        (thu_muc / "nhan.json").write_text(json.dumps(cac_muc, ensure_ascii=False), encoding="utf-8")
+        (thu_muc / "ket_qua__a.json").write_text(json.dumps(a, ensure_ascii=False), encoding="utf-8")
+        (thu_muc / "ket_qua__b.json").write_text(json.dumps(b, ensure_ascii=False), encoding="utf-8")
+        try:
+            dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO = tm / "bo", tm / "bao_cao"
+            sys.argv = ["danh_gia_bo.py", "--so-sanh", "a", "b", "khong_co"]
+            with contextlib.redirect_stdout(io.StringIO()):
+                dg.main()
+            so_sanh = (tm / "bao_cao" / "hop__so_sanh.txt").read_text(encoding="utf-8")
+            bao_cao_a = dg.viet_bao_cao("hop", "a", dg.phan_tich(cac_muc, a))
+        finally:
+            dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO = goc
+    if "Trên 5 đoạn" not in so_sanh or "chưa chạy cấu hình khong_co" not in so_sanh:
+        return "so sánh phải chỉ tính các đoạn mọi cấu hình đều đã chạy:\n" + so_sanh[:400]
+    if "lệch >= 20 điểm): 1" not in so_sanh or "hẹn gặp lại" not in so_sanh:
+        return "không chỉ ra đoạn khác biệt:\n" + so_sanh
+    if "LÂU BẤT THƯỜNG" not in bao_cao_a or "d0 (Phone Call): 300s" not in bao_cao_a:
+        return "không báo đoạn bị kẹt:\n" + bao_cao_a[-500:]
 
 
 if __name__ == "__main__":

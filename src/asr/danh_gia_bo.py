@@ -144,6 +144,8 @@ def ten_cau_hinh(args):
     phan = [args.model]
     if args.khong_goi_y:
         phan.append("khong_goi_y")
+    if args.chi_tu_khoa:
+        phan.append("chi_tu_khoa")
     if args.khong_tien_xu_ly:
         phan.append("khong_tien_xu_ly")
     if args.loc_nhieu:
@@ -159,7 +161,8 @@ def nhan_dang_mot_doan(model, duong_dan, args):
         song_am, _ = asr.tien_xu_ly_am_thanh(song_am, args.loc_nhieu)
     dau_ra = io.StringIO()
     with contextlib.redirect_stdout(dau_ra):  # nhan_dang in từng đoạn: gom lại, chỉ giữ dòng [LOẠI]
-        cac_tu, _ = asr.nhan_dang(model, song_am, goi_y=not args.khong_goi_y)
+        goi_y = "khong" if args.khong_goi_y else "tu_khoa" if args.chi_tu_khoa else "day_du"
+        cac_tu, _ = asr.nhan_dang(model, song_am, goi_y=goi_y)
     return {
         "du_doan": " ".join(cau["text"] for cau in asr.tach_cau(cac_tu)),
         "bi_loai": [d.strip() for d in dau_ra.getvalue().splitlines() if "[LOẠI" in d],
@@ -302,10 +305,67 @@ def viet_bao_cao(ten_bo, cau_hinh, kq):
         d.append(f"      Đáp án : {dap_an[:160]}")
         d.append(f"      Máy nghe: {du_doan[:160]}")
 
+    # Model bị kẹt (thử lại nhiều lần ở nhiệt độ cao) thì chạy lâu gấp nhiều lần bình thường
+    ti_le = [(k["thoi_gian"] / k["do_dai"], m, k) for _, m, k, _, _ in kq["tung_doan"] if k["do_dai"]]
+    if len(ti_le) >= 5:
+        trung_vi = sorted(t for t, _, _ in ti_le)[len(ti_le) // 2]
+        lau = sorted([x for x in ti_le if x[0] > 3 * trung_vi], key=lambda x: -x[0])
+        d.append(f"\nĐOẠN XỬ LÝ LÂU BẤT THƯỜNG (> 3 lần mức thường {trung_vi:.1f}x): {len(lau)}"
+                 "  ← thường là model bị kẹt, hay đi kèm chữ bịa hoặc ra trống")
+        for t, muc, ket in lau:
+            d.append(f"  {muc['id']} ({muc['nhom']}): {ket['thoi_gian']:.0f}s cho {ket['do_dai']:.0f}s âm thanh"
+                     f" ({t:.1f}x) | máy nghe: {ket['du_doan'][:80] or '(trống)'}")
+
     if kq["doan_loi"]:
         d.append(f"\nĐOẠN KHÔNG ĐỌC ĐƯỢC ({len(kq['doan_loi'])}):")
         for muc, loi in kq["doan_loi"]:
             d.append(f"  {muc['id']}: {loi}")
+    return "\n".join(d)
+
+
+def so_sanh_cau_hinh(ten_bo, cac_cau_hinh):
+    """So các cấu hình đã chạy trên cùng các đoạn: bảng tổng, theo nhóm, và các đoạn khác biệt nhiều."""
+    thu_muc = THU_MUC_BO / ten_bo
+    cac_muc = doc_json(thu_muc / "nhan.json", [])
+    d = [f"SO SÁNH CẤU HÌNH: bộ {ten_bo}", "=" * 100]
+    ket = {}
+    for ch in cac_cau_hinh:
+        tep = thu_muc / f"ket_qua__{ch}.json"
+        if not tep.exists():
+            co = sorted(t.stem.split("__", 1)[1] for t in thu_muc.glob("ket_qua__*.json"))
+            d.append(f"  (chưa chạy cấu hình {ch}; đã có: {', '.join(co) or 'chưa có'})")
+            continue
+        ket[ch] = doc_json(tep, {})
+    # Chỉ so trên các đoạn mà mọi cấu hình đều đã chạy xong, cho công bằng
+    chung = [m for m in cac_muc if all(m["id"] in k for k in ket.values())]
+    if len(ket) < 2 or not chung:
+        d.append("Cần ít nhất 2 cấu hình đã chạy trên cùng các đoạn.")
+        return "\n".join(d)
+    d.append(f"Trên {len(chung)} đoạn mọi cấu hình đều đã chạy:\n")
+    phan = {ch: phan_tich(chung, k) for ch, k in ket.items()}
+    for ch, kq in phan.items():
+        d.append("  " + dong_so_lieu(ch, kq["tong"]))
+    cac_nhom = sorted({m["nhom"] for m in chung})
+    if len(cac_nhom) > 1:
+        d.append("\nWER theo nhóm:")
+        d.append("  " + f"{'':<24}" + "".join(f"{ch[:22]:>24}" for ch in phan))
+        for nhom in cac_nhom:
+            d.append("  " + f"{nhom[:24]:<24}" + "".join(
+                f"{wer_cua(kq['theo_nhom'][nhom]):>24.1%}" for kq in phan.values()))
+
+    wer_doan = {ch: {m["id"]: (w, du) for w, m, _, _, du in kq["tung_doan"]} for ch, kq in phan.items()}
+    khac = []
+    for muc in chung:
+        cac_wer = [wer_doan[ch].get(muc["id"], (None, ""))[0] for ch in phan]
+        if None not in cac_wer and max(cac_wer) - min(cac_wer) >= 0.2:
+            khac.append((max(cac_wer) - min(cac_wer), muc))
+    d.append(f"\nĐOẠN KHÁC BIỆT NHIỀU GIỮA CÁC CẤU HÌNH (WER lệch >= 20 điểm): {len(khac)}")
+    for _, muc in sorted(khac, key=lambda x: -x[0]):
+        d.append(f"  {muc['id']} ({muc['nhom']})")
+        d.append(f"      {'Đáp án':<22}: {chuan_hoa_danh_gia(muc['text'])[:130]}")
+        for ch in phan:
+            w, du = wer_doan[ch][muc["id"]]
+            d.append(f"      {ch[:16]:<16} {w:>4.0%}: {du[:130] or '(trống)'}")
     return "\n".join(d)
 
 
@@ -318,10 +378,17 @@ def main():
     parser.add_argument("--model", default=asr.TEN_MODEL, help=f"Model Whisper (mặc định {asr.TEN_MODEL})")
     parser.add_argument("--so-mau", type=int, default=0, help="Chỉ chạy N đoạn đầu mỗi bộ (chạy thử nhanh)")
     parser.add_argument("--khong-goi-y", action="store_true", help="Tắt câu mở đầu và từ khóa gợi ý")
+    parser.add_argument("--chi-tu-khoa", action="store_true",
+                        help="Chỉ dùng từ khóa gợi ý, tắt câu mở đầu")
     parser.add_argument("--khong-tien-xu-ly", action="store_true", help="Tắt tiền xử lý âm thanh")
     parser.add_argument("--loc-nhieu", action="store_true", help="Bật giảm tạp âm")
     parser.add_argument("--chay-lai", action="store_true", help="Bỏ kết quả cũ, nhận dạng lại từ đầu")
+    parser.add_argument("--so-sanh", nargs="+", metavar="CAU_HINH",
+                        help="Không chạy ASR, chỉ so các cấu hình đã chạy "
+                             "(vd: --so-sanh medium medium_khong_goi_y)")
     args = parser.parse_args()
+    if args.khong_goi_y and args.chi_tu_khoa:
+        sys.exit("Chọn một trong --khong-goi-y hoặc --chi-tu-khoa.")
 
     co_san = sorted(p.name for p in THU_MUC_BO.iterdir() if (p / "nhan.json").exists()) \
         if THU_MUC_BO.exists() else []
@@ -331,6 +398,15 @@ def main():
     thieu = [b for b in cac_bo if b not in co_san]
     if thieu:
         sys.exit(f"Chưa tải bộ: {', '.join(thieu)}. Đã có: {', '.join(co_san)}")
+
+    if args.so_sanh:
+        THU_MUC_BAO_CAO.mkdir(parents=True, exist_ok=True)
+        for ten_bo in cac_bo:
+            bao_cao = so_sanh_cau_hinh(ten_bo, args.so_sanh)
+            tep = THU_MUC_BAO_CAO / f"{ten_bo}__so_sanh.txt"
+            tep.write_text(bao_cao + "\n", encoding="utf-8")
+            print("\n" + bao_cao + f"\n\nĐã lưu: {asr.hien_thi(tep)}")
+        return
 
     model = []
 

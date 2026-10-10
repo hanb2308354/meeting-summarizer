@@ -179,14 +179,17 @@ pip install -r requirements.txt                   # cần pyarrow để đọc f
 python src/asr/tai_bo_danh_gia.py --so-mau 30     # 30 đoạn mỗi bộ vào data/bo_danh_gia/ (không lên git)
 python src/asr/danh_gia_bo.py                     # nhận dạng + báo cáo trong outputs/danh_gia_asr/
 python src/asr/danh_gia_bo.py --khong-goi-y       # so sánh: tắt câu mở đầu và từ khóa gợi ý
+python src/asr/danh_gia_bo.py --chi-tu-khoa       # so sánh: bỏ câu mở đầu, giữ từ khóa gợi ý
 python src/asr/danh_gia_bo.py --khong-tien-xu-ly  # so sánh: tắt tiền xử lý âm thanh
+python src/asr/danh_gia_bo.py hop_va_dien_thoai --so-sanh medium medium_khong_goi_y medium_chi_tu_khoa
+                                                  # không chạy ASR: bảng so các cấu hình đã chạy
 ```
 
 - Mẫu được chia đều theo nhóm (loại nội dung, phương ngữ, kênh) và giới hạn số đoạn cùng người nói / cùng video. Cùng `--hat-giong` thì lần nào cũng ra cùng tập đoạn, nên kết quả các lần so được với nhau.
 - Chạy lại với `--so-mau` lớn hơn chỉ tải bù; file gốc đã tải giữ trong `data/bo_danh_gia/<bộ>/_tai_ve/` nên không tải lại.
 - Hugging Face giới hạn số lần tải khi không đăng nhập (lỗi 429). Code tự chờ rồi thử lại; nếu vẫn hay bị, tạo token loại Read trên huggingface.co rồi chạy `$env:HF_TOKEN="hf_..."` trước lệnh tải (không đưa token lên git).
 - `danh_gia_bo.py` lưu kết quả sau từng đoạn: ngắt giữa chừng rồi chạy lại sẽ làm tiếp.
-- Báo cáo gồm: WER từng bộ và từng nhóm, các cặp từ hay nghe nhầm (để thêm luật sửa lỗi), từ hay bị sót / bị thêm, đoạn bị bộ lọc `[LOẠI]` cắt (để chỉnh ngưỡng), 15 đoạn sai nhiều nhất.
+- Báo cáo gồm: WER từng bộ và từng nhóm, các cặp từ hay nghe nhầm (để thêm luật sửa lỗi), từ hay bị sót / bị thêm, đoạn bị bộ lọc `[LOẠI]` cắt (để chỉnh ngưỡng), 15 đoạn sai nhiều nhất, đoạn xử lý lâu bất thường (model bị kẹt).
 - Số được đưa về cùng cách viết trước khi so ("20" và "hai mươi" là một), nên WER chỉ tính lỗi nghe sai.
 - Các bộ này không phải cuộc họp nhóm có chia việc, deadline: vẫn cần vài cuộc họp tự thu để đo trọn luồng đến phần tóm tắt.
 
