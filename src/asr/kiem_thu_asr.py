@@ -256,9 +256,10 @@ def che_do_goi_y_truyen_dung_tham_so():
             return super().transcribe(am_thanh, **tham_so)
 
     model = ModelGhi([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))])
-    for goi_y in (True, "day_du", "tu_khoa", "cau_mo_dau", "khong", False):
+    asr.nhan_dang(model, np.zeros(SR, dtype=np.float32))   # mặc định: chỉ câu mở đầu
+    for goi_y in ("day_du", "tu_khoa", "cau_mo_dau", "khong"):
         asr.nhan_dang(model, np.zeros(SR, dtype=np.float32), goi_y=goi_y)
-    mong_doi = [(True, True), (True, True), (False, True), (True, False), (False, False), (False, False)]
+    mong_doi = [(True, False), (True, True), (False, True), (True, False), (False, False)]
     thuc_te = [(p is not None, h is not None) for p, h in da_goi]
     if thuc_te != mong_doi:
         return f"(câu mở đầu, từ khóa) = {thuc_te}"
@@ -270,10 +271,15 @@ def che_do_goi_y_truyen_dung_tham_so():
             return super().transcribe(am_thanh, **tham_so)
 
     m = ModelNhietDo([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))])
-    asr.nhan_dang(m, np.zeros(SR, dtype=np.float32))
-    asr.nhan_dang(m, np.zeros(SR, dtype=np.float32), nhiet_do=(0.0, 0.2, 0.4))
-    if nhiet_do != ["mặc định", [0.0, 0.2, 0.4]]:
+    asr.nhan_dang(m, np.zeros(SR, dtype=np.float32))                  # mặc định: giới hạn
+    asr.nhan_dang(m, np.zeros(SR, dtype=np.float32), nhiet_do=None)   # như faster-whisper gốc
+    if nhiet_do != [[0.0, 0.2, 0.4], "mặc định"]:
         return f"nhiệt độ truyền sai: {nhiet_do}"
+    try:
+        asr.nhan_dang(m, np.zeros(SR, dtype=np.float32), goi_y=True)
+        return "goi_y sai kiểu phải báo lỗi"
+    except ValueError:
+        pass
 
 
 @ca
@@ -787,7 +793,9 @@ def danh_gia_bo_do_wer_bao_cao_va_lam_tiep():
                     dg.main()
         finally:
             dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO = goc
-        bao_cao = (tm / "bao_cao" / f"thu__{asr.TEN_MODEL}.txt").read_text(encoding="utf-8")
+        # Cấu hình mặc định = cấu hình của chuyen_giong_noi.py (chỉ câu mở đầu, giới hạn thử lại)
+        bao_cao = (tm / "bao_cao" / f"thu__{asr.TEN_MODEL}_chi_cau_mo_dau_gioi_han_thu_lai.txt"
+                   ).read_text(encoding="utf-8")
     if len(so_lan_tai_model) != 1:
         return f"tải model {len(so_lan_tai_model)} lần (lần chạy lại phải dùng kết quả đã lưu)"
     if "WER   0.0%" not in bao_cao:

@@ -55,15 +55,27 @@ THU_MUC_GOC = Path(__file__).resolve().parents[2]
 THU_MUC_KET_QUA = THU_MUC_GOC / "data" / "transcripts"
 DUOI_HO_TRO = {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac", ".wma", ".webm", ".mp4"}
 
-# Câu mở đầu: chỉ có tác dụng ở ~30 giây đầu, giúp model vào đúng "giọng văn" cuộc họp
+# Câu mở đầu (initial_prompt): chỉ có tác dụng ở ~30 giây đầu, giúp model vào đúng
+# "giọng văn" cuộc họp. Đo trên bộ đánh giá: tốt nhất cho đoạn họp trực tuyến (23,2% so với
+# 27,4% khi không gợi ý) và giữ được câu đầu ("Mày, mày đền đi") mà không gợi ý thì mất.
+# Đôi khi model chép lại câu này -> bộ lọc "đọc lại câu mở đầu" bên dưới.
+GOI_Y_MAC_DINH = "cau_mo_dau"
+# Các mức nhiệt độ model thử lại khi kết quả có vẻ hỏng. Mặc định của faster-whisper thử tới
+# 1.0; trên bộ đánh giá các đoạn bị kẹt (81-347 giây cho 4 giây âm thanh) đều ra chữ bịa
+# hoặc trống, nên chỉ thử tới 0.4: không đổi WER, nhanh hơn, không còn đoạn kẹt.
+NHIET_DO_THU_LAI = (0.0, 0.2, 0.4)
 CAU_MO_DAU = "Cuộc họp nhóm, có dùng một số từ tiếng Anh."
 # Cụm 4 từ liền nhau của câu mở đầu, trừ cụm đầu "cuộc họp nhóm có" (người họp nói thật
 # "cuộc họp nhóm có ba người"); gặp các cụm còn lại trong đoạn ngắn là model đọc lại gợi ý
 _TU_MO_DAU = re.sub(r"\W+", " ", CAU_MO_DAU.lower()).split()
 CUM_4_TU_MO_DAU = {" ".join(_TU_MO_DAU[i:i + 4]) for i in range(1, len(_TU_MO_DAU) - 3)}
 
-# Từ khóa gợi ý: faster-whisper gắn vào MỌI đoạn 30 giây (khác initial_prompt chỉ
-# tác dụng ở đầu file), nên cuộc họp dài vẫn nhận đúng thuật ngữ đến cuối.
+# Từ khóa gợi ý (hotwords): faster-whisper gắn vào MỌI đoạn 30 giây.
+# KHÔNG DÙNG MẶC ĐỊNH NỮA. Đo trên 30 đoạn họp/gọi điện (src/asr/danh_gia_bo.py, cùng tập):
+#     câu mở đầu + từ khóa 28,2% | chỉ từ khóa 35,8% | không gợi ý 25,8% | chỉ câu mở đầu 25,6%
+# Có từ khóa thì model hay rút câu thành dạng liệt kê ("check customer, check staff, check
+# row"), bịa câu kiểu YouTube và bị kẹt hàng trăm giây; từ tiếng Anh (customer, staff) vẫn
+# nghe đúng khi không có từ khóa. Giữ danh sách để bộ lọc nhận ra khi model đọc lại nó.
 TU_KHOA_GOI_Y = (
     "deadline, hạn chót, project, meeting, slide, file, check, demo, test, review, "
     "update, fix, bug, feedback, support, frontend, backend, database, API, "
@@ -371,17 +383,18 @@ def ly_do_loai(doan):
     return None
 
 
-def nhan_dang(model, song_am, goi_y=True, nhiet_do=None):
+def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
     Hai tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
-    goi_y   : True / "day_du" = câu mở đầu + từ khóa gợi ý; "tu_khoa" = chỉ từ khóa;
-              "cau_mo_dau" = chỉ câu mở đầu; False / "khong" = không gợi ý gì
-    nhiet_do: các mức nhiệt độ model thử lại khi kết quả có vẻ hỏng (None = mặc định của
-              faster-whisper, thử tới 1.0; ít mức hơn thì ít bị kẹt lâu hơn)
+    goi_y   : "cau_mo_dau" (mặc định) = chỉ câu mở đầu; "day_du" = câu mở đầu + từ khóa;
+              "tu_khoa" = chỉ từ khóa; "khong" = không gợi ý gì
+    nhiet_do: các mức nhiệt độ thử lại; None = mặc định của faster-whisper (thử tới 1.0)
     """
-    dung_cau_mo_dau = goi_y in (True, "day_du", "cau_mo_dau")
-    dung_tu_khoa = goi_y in (True, "day_du", "tu_khoa")
+    if goi_y not in ("day_du", "tu_khoa", "cau_mo_dau", "khong"):
+        raise ValueError(f"goi_y không hợp lệ: {goi_y!r}")
+    dung_cau_mo_dau = goi_y in ("day_du", "cau_mo_dau")
+    dung_tu_khoa = goi_y in ("day_du", "tu_khoa")
     them = {"temperature": list(nhiet_do)} if nhiet_do else {}
     cac_doan, _ = model.transcribe(
         song_am,
@@ -391,7 +404,6 @@ def nhan_dang(model, song_am, goi_y=True, nhiet_do=None):
         initial_prompt=CAU_MO_DAU if dung_cau_mo_dau else None,
         hotwords=TU_KHOA_GOI_Y if dung_tu_khoa else None,
         # Không dựa vào chữ của đoạn trước: chặn lỗi lặp vòng ở file dài.
-        # Thuật ngữ vẫn được giữ nhờ hotwords gắn vào mọi đoạn.
         condition_on_previous_text=False,
         word_timestamps=True,
         vad_filter=True,

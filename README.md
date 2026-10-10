@@ -177,13 +177,11 @@ Vài file tự thu chưa đủ để biết ASR sai ở đâu. Hai lệnh dướ
 ```powershell
 pip install -r requirements.txt                   # cần pyarrow để đọc file .parquet
 python src/asr/tai_bo_danh_gia.py --so-mau 30     # 30 đoạn mỗi bộ vào data/bo_danh_gia/ (không lên git)
-python src/asr/danh_gia_bo.py                     # nhận dạng + báo cáo trong outputs/danh_gia_asr/
-python src/asr/danh_gia_bo.py --khong-goi-y       # so sánh: tắt câu mở đầu và từ khóa gợi ý
-python src/asr/danh_gia_bo.py --chi-tu-khoa       # so sánh: bỏ câu mở đầu, giữ từ khóa gợi ý
-python src/asr/danh_gia_bo.py --chi-cau-mo-dau    # so sánh: giữ câu mở đầu, bỏ từ khóa gợi ý
-python src/asr/danh_gia_bo.py --gioi-han-thu-lai  # so sánh: chỉ thử lại ở nhiệt độ 0-0.4 (ít kẹt)
+python src/asr/danh_gia_bo.py                     # nhận dạng (cấu hình như chuyen_giong_noi.py) + báo cáo
+python src/asr/danh_gia_bo.py --goi-y khong       # so sánh cách gợi ý: day_du | tu_khoa | cau_mo_dau | khong
+python src/asr/danh_gia_bo.py --thu-lai day_du    # so sánh: thử lại tới nhiệt độ 1.0 như faster-whisper gốc
 python src/asr/danh_gia_bo.py --khong-tien-xu-ly  # so sánh: tắt tiền xử lý âm thanh
-python src/asr/danh_gia_bo.py hop_va_dien_thoai --so-sanh medium medium_khong_goi_y medium_chi_tu_khoa
+python src/asr/danh_gia_bo.py hop_va_dien_thoai --so-sanh medium medium_chi_cau_mo_dau_gioi_han_thu_lai
                                                   # không chạy ASR: bảng so các cấu hình đã chạy
 ```
 
@@ -194,6 +192,17 @@ python src/asr/danh_gia_bo.py hop_va_dien_thoai --so-sanh medium medium_khong_go
 - Báo cáo gồm: WER từng bộ và từng nhóm, các cặp từ hay nghe nhầm (để thêm luật sửa lỗi), từ hay bị sót / bị thêm, đoạn bị bộ lọc `[LOẠI]` cắt (để chỉnh ngưỡng), 15 đoạn sai nhiều nhất, đoạn xử lý lâu bất thường (model bị kẹt).
 - Số được đưa về cùng cách viết trước khi so ("20" và "hai mươi" là một), nên WER chỉ tính lỗi nghe sai.
 - Các bộ này không phải cuộc họp nhóm có chia việc, deadline: vẫn cần vài cuộc họp tự thu để đo trọn luồng đến phần tóm tắt.
+
+**Kết quả đã đo** (model medium, CPU; 30 đoạn mỗi bộ, cùng tập đoạn cho mọi cấu hình):
+
+| Cấu hình (`hop_va_dien_thoai`)                   | WER    | Xử lý / độ dài | Đoạn bị kẹt |
+| ------------------------------------------------ | ------ | -------------- | ----------- |
+| Câu mở đầu + từ khóa gợi ý (cấu hình cũ)         | 28,2%  | 5,4x           | 1           |
+| Chỉ từ khóa gợi ý                                | 35,8%  | 5,6x           | 2           |
+| Không gợi ý                                      | 25,8%  | 4,0x           | 0           |
+| **Chỉ câu mở đầu** (mặc định mới)                | **25,6%** | 4,2x        | 1           |
+
+Từ khóa gợi ý làm model rút câu thành dạng liệt kê ("check customer, check staff, check row"), bịa câu kiểu YouTube và bị kẹt hàng trăm giây, nên đã bỏ. Mặc định mới: chỉ câu mở đầu + chỉ thử lại tới nhiệt độ 0.4 (các đoạn kẹt đều ra chữ bịa hoặc trống). Bộ `phuong_ngu` với cấu hình cũ: WER 8,3% (Bắc 3,0%, Trung 5,6%, Nam 11,0%, Tây Nguyên 13,9%).
 
 ## Văn bản sạch: src/tien_xu_ly (Hân)
 
