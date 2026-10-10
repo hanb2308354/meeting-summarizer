@@ -256,12 +256,24 @@ def che_do_goi_y_truyen_dung_tham_so():
             return super().transcribe(am_thanh, **tham_so)
 
     model = ModelGhi([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))])
-    for goi_y in (True, "day_du", "tu_khoa", "khong", False):
+    for goi_y in (True, "day_du", "tu_khoa", "cau_mo_dau", "khong", False):
         asr.nhan_dang(model, np.zeros(SR, dtype=np.float32), goi_y=goi_y)
-    mong_doi = [(True, True), (True, True), (False, True), (False, False), (False, False)]
+    mong_doi = [(True, True), (True, True), (False, True), (True, False), (False, False), (False, False)]
     thuc_te = [(p is not None, h is not None) for p, h in da_goi]
     if thuc_te != mong_doi:
         return f"(câu mở đầu, từ khóa) = {thuc_te}"
+    nhiet_do = []
+
+    class ModelNhietDo(ModelGia):
+        def transcribe(self, am_thanh, **tham_so):
+            nhiet_do.append(tham_so.get("temperature", "mặc định"))
+            return super().transcribe(am_thanh, **tham_so)
+
+    m = ModelNhietDo([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))])
+    asr.nhan_dang(m, np.zeros(SR, dtype=np.float32))
+    asr.nhan_dang(m, np.zeros(SR, dtype=np.float32), nhiet_do=(0.0, 0.2, 0.4))
+    if nhiet_do != ["mặc định", [0.0, 0.2, 0.4]]:
+        return f"nhiệt độ truyền sai: {nhiet_do}"
 
 
 @ca

@@ -371,20 +371,23 @@ def ly_do_loai(doan):
     return None
 
 
-def nhan_dang(model, song_am, goi_y=True):
+def nhan_dang(model, song_am, goi_y=True, nhiet_do=None):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
-    goi_y (chỉ đổi khi đánh giá so sánh, src/asr/danh_gia_bo.py):
-        True / "day_du": câu mở đầu + từ khóa gợi ý
-        "tu_khoa"      : chỉ từ khóa gợi ý
-        False / "khong": không gợi ý gì
+    Hai tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
+    goi_y   : True / "day_du" = câu mở đầu + từ khóa gợi ý; "tu_khoa" = chỉ từ khóa;
+              "cau_mo_dau" = chỉ câu mở đầu; False / "khong" = không gợi ý gì
+    nhiet_do: các mức nhiệt độ model thử lại khi kết quả có vẻ hỏng (None = mặc định của
+              faster-whisper, thử tới 1.0; ít mức hơn thì ít bị kẹt lâu hơn)
     """
-    dung_cau_mo_dau = goi_y in (True, "day_du")
+    dung_cau_mo_dau = goi_y in (True, "day_du", "cau_mo_dau")
     dung_tu_khoa = goi_y in (True, "day_du", "tu_khoa")
+    them = {"temperature": list(nhiet_do)} if nhiet_do else {}
     cac_doan, _ = model.transcribe(
         song_am,
         language="vi",
         beam_size=5,
+        **them,
         initial_prompt=CAU_MO_DAU if dung_cau_mo_dau else None,
         hotwords=TU_KHOA_GOI_Y if dung_tu_khoa else None,
         # Không dựa vào chữ của đoạn trước: chặn lỗi lặp vòng ở file dài.

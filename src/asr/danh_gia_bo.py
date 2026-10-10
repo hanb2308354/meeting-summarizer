@@ -42,6 +42,7 @@ if hasattr(sys.stdout, "reconfigure"):
 THU_MUC_GOC = asr.THU_MUC_GOC
 THU_MUC_BO = THU_MUC_GOC / "data" / "bo_danh_gia"
 THU_MUC_BAO_CAO = THU_MUC_GOC / "outputs" / "danh_gia_asr"
+NHIET_DO_GIOI_HAN = (0.0, 0.2, 0.4)   # --gioi-han-thu-lai: bỏ các mức 0.6-1.0 hay sinh chữ bịa
 
 
 # ======================================================================
@@ -146,6 +147,10 @@ def ten_cau_hinh(args):
         phan.append("khong_goi_y")
     if args.chi_tu_khoa:
         phan.append("chi_tu_khoa")
+    if args.chi_cau_mo_dau:
+        phan.append("chi_cau_mo_dau")
+    if args.gioi_han_thu_lai:
+        phan.append("gioi_han_thu_lai")
     if args.khong_tien_xu_ly:
         phan.append("khong_tien_xu_ly")
     if args.loc_nhieu:
@@ -161,8 +166,10 @@ def nhan_dang_mot_doan(model, duong_dan, args):
         song_am, _ = asr.tien_xu_ly_am_thanh(song_am, args.loc_nhieu)
     dau_ra = io.StringIO()
     with contextlib.redirect_stdout(dau_ra):  # nhan_dang in từng đoạn: gom lại, chỉ giữ dòng [LOẠI]
-        goi_y = "khong" if args.khong_goi_y else "tu_khoa" if args.chi_tu_khoa else "day_du"
-        cac_tu, _ = asr.nhan_dang(model, song_am, goi_y=goi_y)
+        goi_y = ("khong" if args.khong_goi_y else "tu_khoa" if args.chi_tu_khoa
+                 else "cau_mo_dau" if args.chi_cau_mo_dau else "day_du")
+        nhiet_do = NHIET_DO_GIOI_HAN if args.gioi_han_thu_lai else None
+        cac_tu, _ = asr.nhan_dang(model, song_am, goi_y=goi_y, nhiet_do=nhiet_do)
     return {
         "du_doan": " ".join(cau["text"] for cau in asr.tach_cau(cac_tu)),
         "bi_loai": [d.strip() for d in dau_ra.getvalue().splitlines() if "[LOẠI" in d],
@@ -380,6 +387,10 @@ def main():
     parser.add_argument("--khong-goi-y", action="store_true", help="Tắt câu mở đầu và từ khóa gợi ý")
     parser.add_argument("--chi-tu-khoa", action="store_true",
                         help="Chỉ dùng từ khóa gợi ý, tắt câu mở đầu")
+    parser.add_argument("--chi-cau-mo-dau", action="store_true",
+                        help="Chỉ dùng câu mở đầu, tắt từ khóa gợi ý")
+    parser.add_argument("--gioi-han-thu-lai", action="store_true",
+                        help=f"Chỉ thử lại ở nhiệt độ {NHIET_DO_GIOI_HAN} (ít bị kẹt lâu)")
     parser.add_argument("--khong-tien-xu-ly", action="store_true", help="Tắt tiền xử lý âm thanh")
     parser.add_argument("--loc-nhieu", action="store_true", help="Bật giảm tạp âm")
     parser.add_argument("--chay-lai", action="store_true", help="Bỏ kết quả cũ, nhận dạng lại từ đầu")
@@ -387,8 +398,8 @@ def main():
                         help="Không chạy ASR, chỉ so các cấu hình đã chạy "
                              "(vd: --so-sanh medium medium_khong_goi_y)")
     args = parser.parse_args()
-    if args.khong_goi_y and args.chi_tu_khoa:
-        sys.exit("Chọn một trong --khong-goi-y hoặc --chi-tu-khoa.")
+    if args.khong_goi_y + args.chi_tu_khoa + args.chi_cau_mo_dau > 1:
+        sys.exit("Chọn một trong --khong-goi-y, --chi-tu-khoa, --chi-cau-mo-dau.")
 
     co_san = sorted(p.name for p in THU_MUC_BO.iterdir() if (p / "nhan.json").exists()) \
         if THU_MUC_BO.exists() else []

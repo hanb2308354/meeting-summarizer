@@ -180,6 +180,8 @@ python src/asr/tai_bo_danh_gia.py --so-mau 30     # 30 đoạn mỗi bộ vào d
 python src/asr/danh_gia_bo.py                     # nhận dạng + báo cáo trong outputs/danh_gia_asr/
 python src/asr/danh_gia_bo.py --khong-goi-y       # so sánh: tắt câu mở đầu và từ khóa gợi ý
 python src/asr/danh_gia_bo.py --chi-tu-khoa       # so sánh: bỏ câu mở đầu, giữ từ khóa gợi ý
+python src/asr/danh_gia_bo.py --chi-cau-mo-dau    # so sánh: giữ câu mở đầu, bỏ từ khóa gợi ý
+python src/asr/danh_gia_bo.py --gioi-han-thu-lai  # so sánh: chỉ thử lại ở nhiệt độ 0-0.4 (ít kẹt)
 python src/asr/danh_gia_bo.py --khong-tien-xu-ly  # so sánh: tắt tiền xử lý âm thanh
 python src/asr/danh_gia_bo.py hop_va_dien_thoai --so-sanh medium medium_khong_goi_y medium_chi_tu_khoa
                                                   # không chạy ASR: bảng so các cấu hình đã chạy
