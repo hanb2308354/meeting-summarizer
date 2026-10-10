@@ -5,6 +5,8 @@ av<19
 numpy
 # Đo tỷ lệ lỗi từ (WER) cho phần nhận dạng giọng nói
 jiwer==4.0.0
+# Đọc file .parquet của các bộ dữ liệu đánh giá ASR (src/asr/tai_bo_danh_gia.py)
+pyarrow==21.0.0
 
 # Phần xử lý văn bản (NLP)
 pyvi==0.1.1

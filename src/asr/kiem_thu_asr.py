@@ -579,48 +579,66 @@ def chon_mau_chia_deu_nhom_va_gioi_han_nguoi_noi():
 
 
 @ca
-def tai_bo_luu_nhan_va_tai_tiep_khi_chay_lai():
+def tai_bo_parquet_chia_deu_tach_am_thanh_va_tai_bu():
+    import pyarrow as pa
+    import pyarrow.parquet as pq
     import tai_bo_danh_gia as tb
-    goc = (tb.THU_MUC_BO, tb.goi_api, tb.tai_file, tb.NGHI_GIUA_LAN_GOI)
+    phuong_ngu = ["northern dialect", "central dialect", "southern dialect", "highland central", "minority"]
+    so_dong = 60
+    am_thanh = [b"RIFF" + bytes([i]) * 20 if i % 2 else b"ID3" + bytes([i]) * 20 for i in range(so_dong)]
+    bang = pa.table({
+        "transcription": [f"câu số {i} có đủ chữ" if i != 7 else "ngắn" for i in range(so_dong)],
+        # Toàn bộ "minority" chỉ có 2 dòng: thiếu nhóm thì lượt 2 phải lấy bù từ nhóm khác
+        "dialect": [phuong_ngu[i % 4] if i not in (3, 33) else phuong_ngu[4] for i in range(so_dong)],
+        "audio": [{"bytes": am_thanh[i], "path": None} for i in range(so_dong)],
+    })
     so_lan_tai = []
-
-    def api_gia(dataset, split, offset, so_dong):
-        dong = [{"row_idx": i, "row": {"region": ["North", "Central", "South"][i % 3],
-                                       "speakerID": f"s{i}", "text": f"câu thứ {i} có đủ từ",
-                                       "audio": [{"src": f"http://x/{i}.wav", "type": "audio/wav"}]}}
-                for i in range(offset, min(offset + so_dong, 100))]
-        return {"num_rows_total": 100, "rows": dong}
-
-    def tai_gia(url, duong_dan):
-        so_lan_tai.append(url)
-        duong_dan.write_bytes(b"RIFF")
-
+    goc = (tb.THU_MUC_BO, tb.tai_file)
     with tempfile.TemporaryDirectory() as tm:
+        tm = Path(tm)
+        tep_goc = tm / "goc.parquet"
+        pq.write_table(bang, tep_goc, row_group_size=16)   # nhiều row group: đọc đúng nhóm
+
+        def tai_gia(url, duong_dan, bao_tien_do=False):
+            so_lan_tai.append(url)
+            duong_dan.write_bytes(tep_goc.read_bytes())
+
         try:
-            tb.THU_MUC_BO, tb.goi_api, tb.tai_file, tb.NGHI_GIUA_LAN_GOI = Path(tm), api_gia, tai_gia, 0
+            tb.THU_MUC_BO, tb.tai_file = tm / "bo", tai_gia
+            tb._bo_nho_parquet.clear()
             with contextlib.redirect_stdout(io.StringIO()):
-                lan_1 = tb.tai_mot_bo("vimd", 6, 42)
-                lan_2 = tb.tai_mot_bo("vimd", 6, 42)      # đủ rồi: không tải gì thêm
-                lan_3 = tb.tai_mot_bo("vimd", 9, 42)      # tăng số mẫu: chỉ tải bù 3
+                lan_1 = tb.tai_mot_bo("phuong_ngu", 20, 42)
+                lan_2 = tb.tai_mot_bo("phuong_ngu", 25, 42)   # tải bù: không tải lại file gốc
         finally:
-            tb.THU_MUC_BO, tb.goi_api, tb.tai_file, tb.NGHI_GIUA_LAN_GOI = goc
-        nhan = json.loads((Path(tm) / "vimd" / "nhan.json").read_text(encoding="utf-8"))
-    if (len(lan_1), len(lan_2), len(lan_3), len(so_lan_tai), len(nhan)) != (6, 6, 9, 9, 9):
-        return f"số đoạn {len(lan_1)}/{len(lan_2)}/{len(lan_3)}, số lần tải {len(so_lan_tai)}"
-    if lan_3[:6] != lan_1:
-        return "tải bù làm đổi các đoạn đã có"
+            tb.THU_MUC_BO, tb.tai_file = goc
+            tb._bo_nho_parquet.clear()
+        thu_muc = tm / "bo" / "phuong_ngu"
+        sai_am_thanh = [m["id"] for m in lan_2
+                        if (thu_muc / m["tep"]).read_bytes() != am_thanh[m["row_idx"]]
+                        or Path(m["tep"]).suffix != (".wav" if m["row_idx"] % 2 else ".mp3")]
+    dem = Counter(m["nhom"] for m in lan_1)
+    if len(lan_1) != 20 or dem["minority"] != 2 or max(dem.values()) > 6:
+        return f"chia theo phương ngữ sai: {dict(dem)}"
+    if any(m["row_idx"] == 7 for m in lan_2):
+        return "lấy cả đoạn quá ngắn"
+    if len(so_lan_tai) != 1 or len(lan_2) != 25 or lan_2[:20] != lan_1:
+        return f"tải bù sai: tải file gốc {len(so_lan_tai)} lần, {len(lan_2)} đoạn"
+    if sai_am_thanh:
+        return f"âm thanh tách ra không khớp dòng: {sai_am_thanh[:3]}"
 
 
 @ca
 def tai_bo_qua_danh_sach_chia_deu_theo_kenh():
     import tai_bo_danh_gia as tb
-    kenh = ["vietcetera", "nguoitrongmuonnghe", "nguoiviethaingoai", "vietsuccess"]
-    danh_sach = [{"audio": f"audio/asr_segments_{kenh[i % 4]}_part00/video{i // 3} ab_seg{i:03d}.wav",
+    kenh = ["vietcetera", "nguoitrongmuonnghe", "nguoiviethaingoai", "trinhlieu"]
+    thu_muc_kenh = ["asr_segments_vietcetera_part06", "asr_segments_nguoitrongmuonnghe_part00",
+                    "asr_dataset_nguoiviethaingoai", "asr_dataset_trinhlieu_part01"]
+    danh_sach = [{"audio": f"audio/{thu_muc_kenh[i % 4]}/video{i // 3} ab_seg{i:03d}.wav",
                   "text": f"câu nói tự nhiên số {i}", "duration": 12.0, "source": f"video{i // 3}"}
                  for i in range(80)]
     cac_url = []
 
-    def tai_gia(url, duong_dan):
+    def tai_gia(url, duong_dan, bao_tien_do=False):
         cac_url.append(url)
         noi_dung = json.dumps(danh_sach) if url.endswith("dev.json") else "RIFF"
         duong_dan.write_text(noi_dung, encoding="utf-8")
@@ -630,8 +648,8 @@ def tai_bo_qua_danh_sach_chia_deu_theo_kenh():
         try:
             tb.THU_MUC_BO, tb.tai_file = Path(tm), tai_gia
             with contextlib.redirect_stdout(io.StringIO()):
-                cac_muc = tb.tai_mot_bo("vietsuperspeech", 8, 42)
-                tb.tai_mot_bo("vietsuperspeech", 10, 42)   # tải bù: không tải lại danh sách
+                cac_muc = tb.tai_mot_bo("tu_nhien", 8, 42)
+                tb.tai_mot_bo("tu_nhien", 10, 42)   # tải bù: không tải lại danh sách
         finally:
             tb.THU_MUC_BO, tb.tai_file = goc
     dem_kenh = Counter(m["nhom"] for m in cac_muc)
