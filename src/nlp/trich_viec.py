@@ -495,7 +495,7 @@ def gan_han_theo_noi_dung(tasks, clause, chi_so, vi_tri_viec, stt_cau):
 def ghi_nhan_viec(tasks, owner, task_text, start, clause, chi_so_cau, vi_tri_viec, last_task, stt_cau):
     """Tạo việc mới, hoặc gộp/cập nhật hạn vào việc cũ của cùng chủ; trả về việc đã ghi."""
     han = tim_han_chot(clause)
-    han_moi = han[0] if han else None
+    han_moi = max(han, key=lambda h: clause.lower().rfind(h.lower())) if han else None
     cap_nhat_han = re.search(MAU_CAP_NHAT_HAN, clause, flags=re.IGNORECASE) is not None
 
     viec_cu, kieu = None, "moi"
@@ -799,6 +799,20 @@ def lay_viec(cac_cau, ten_biet):
                 else:
                     ghi_vet("LOAI_MO_TA_RONG", stt_cau, clause, "loại")
                 continue
+            ten_mo_dau = next(
+                (ten for ten in ten_biet if re.match(rf"{re.escape(ten)}\s*,", text, flags=re.IGNORECASE)),
+                None,
+            )
+            if ten_mo_dau and re.search(MAU_CAP_NHAT_HAN, clause, flags=re.IGNORECASE):
+                khop_doi = re.search(r"\bhạn\s+(?P<mo_ta>.+?)\s+(?:từ|sang)\b", clause, flags=re.IGNORECASE)
+                mo_ta_doi = khop_doi.group("mo_ta").strip(" .,;:!?") if khop_doi else ""
+                viec_cu = tim_viec_trung(tasks, ten_mo_dau, mo_ta_doi, True) if mo_ta_doi and tu_noi_dung(mo_ta_doi) else None
+                if viec_cu is not None:
+                    last_task = ghi_nhan_viec(
+                        tasks, ten_mo_dau, viec_cu["task"], cau["start"], clause,
+                        chi_so, vi_tri_viec, last_task, stt_cau,
+                    )
+                    continue
             if not gan_han_theo_noi_dung(tasks, clause, chi_so, vi_tri_viec, stt_cau):
                 ghi_vet("LOAI_KHONG_CHU_VIEC", stt_cau, clause, "loại")
     return tasks

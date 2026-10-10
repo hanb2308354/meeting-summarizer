@@ -112,6 +112,15 @@ DANH_SACH_CA = (
         "mong_doi": [("Bảo", "nộp", "chủ nhật")],
         "dang_loi_da_biet": True,
     },
+    {
+        "ten": "Đổi hạn tên ở mệnh đề riêng",
+        "cau": [
+            "Anh Phúc tổng hợp báo cáo kiểm kê, gửi trước thứ Hai.",
+            "Phúc, anh đổi hạn báo cáo kiểm kê từ thứ Hai sang thứ Ba.",
+        ],
+        "mong_doi": [("Phúc", "tổng hợp báo cáo kiểm kê", "thứ Ba")],
+        "dang_loi_da_biet": False,
+    },
 )
 
 
