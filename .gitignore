@@ -11,3 +11,6 @@ __pycache__/
 # File ghi âm cuộc họp không đưa lên GitHub
 data/audio/*
 !data/audio/.gitkeep
+
+# Mẫu bộ dữ liệu tải về để đánh giá ASR (src/asr/tai_bo_danh_gia.py): giấy phép không cho phát tán lại
+data/bo_danh_gia/

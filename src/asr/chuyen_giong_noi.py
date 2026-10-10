@@ -361,14 +361,17 @@ def ly_do_loai(doan):
     return None
 
 
-def nhan_dang(model, song_am):
-    """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại."""
+def nhan_dang(model, song_am, goi_y=True):
+    """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
+
+    goi_y=False tắt câu mở đầu và từ khóa gợi ý (chỉ dùng khi đánh giá so sánh).
+    """
     cac_doan, _ = model.transcribe(
         song_am,
         language="vi",
         beam_size=5,
-        initial_prompt=CAU_MO_DAU,
-        hotwords=TU_KHOA_GOI_Y,
+        initial_prompt=CAU_MO_DAU if goi_y else None,
+        hotwords=TU_KHOA_GOI_Y if goi_y else None,
         # Không dựa vào chữ của đoạn trước: chặn lỗi lặp vòng ở file dài.
         # Thuật ngữ vẫn được giữ nhờ hotwords gắn vào mọi đoạn.
         condition_on_previous_text=False,

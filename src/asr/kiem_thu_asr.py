@@ -14,6 +14,7 @@ import sys
 import tempfile
 import unicodedata
 import wave
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -528,6 +529,126 @@ def wer_nhieu_file_thieu_mot_van_tinh_gop():
         return f"không tính WER gộp khi thiếu một file: {kq.stdout[-200:]} {kq.stderr[-200:]}"
     if kq.returncode == 0:
         return "mã thoát 0 dù có file bị bỏ qua"
+
+
+# ----------------------------------------------------------------------
+# 8. Đánh giá trên bộ dữ liệu tải về (tai_bo_danh_gia.py, danh_gia_bo.py)
+# ----------------------------------------------------------------------
+@ca
+def doc_so_va_chuan_hoa_so_cong_bang():
+    import danh_gia_bo as dg
+    mong_doi = {"21": "hai mươi mốt", "105": "một trăm linh năm", "1005": "một nghìn không trăm linh năm",
+                "2024": "hai nghìn không trăm hai mươi bốn", "20500": "hai mươi nghìn năm trăm",
+                "15": "mười lăm", "0901": "không chín không một"}
+    for so, chu in mong_doi.items():
+        if dg.doc_so(so) != chu:
+            return f"{so} -> {dg.doc_so(so)!r}, mong đợi {chu!r}"
+    # Máy viết số, đáp án viết chữ (mỗi vùng đọc một kiểu): phải coi là giống nhau
+    cung_nghia = [("20 tháng 10", "hai mươi tháng mười"), ("24 người", "hai mươi tư người"),
+                  ("2,5%", "hai phẩy năm phần trăm"), ("1.000.000 đồng", "một triệu đồng"),
+                  ("năm 2024", "năm hai ngàn không trăm hai mươi bốn"), ("105", "một trăm lẻ năm"),
+                  ("35", "ba mươi lăm"), ("9h30", "chín giờ ba mươi")]
+    for a, b in cung_nghia:
+        if dg.chuan_hoa_danh_gia(a) != dg.chuan_hoa_danh_gia(b):
+            return f"{a!r} và {b!r} lẽ ra phải giống nhau sau chuẩn hóa"
+    # Từ thường không được bị đổi nhầm ("năm" là năm học, "tư" là tư duy)
+    if dg.chuan_hoa_danh_gia("năm nay tư duy tốt") != "năm nay tư duy tốt":
+        return "chuẩn hóa số làm đổi nhầm chữ thường"
+
+
+@ca
+def chon_mau_chia_deu_nhom_va_gioi_han_nguoi_noi():
+    import tai_bo_danh_gia as tb
+    cau_hinh = tb.CAC_BO["vimd"]
+    cac_dong = []
+    for i in range(60):
+        mien = ["North", "Central", "South"][i % 3] if i < 45 else "North"
+        cac_dong.append((i, {"region": mien, "speakerID": f"spk_{i // 4}", "text": "một hai ba bốn"}))
+    cac_dong.append((99, {"region": "South", "speakerID": "x", "text": "ngắn"}))   # dưới 3 từ: bỏ
+    chon = tb.chon_dong(cac_dong, cau_hinh, 9, [])
+    dem_mien, dem_nguoi = Counter(d["region"] for _, d in chon), Counter(d["speakerID"] for _, d in chon)
+    if len(chon) != 9 or max(dem_mien.values()) > 3 or max(dem_nguoi.values()) > 2:
+        return f"chọn {len(chon)} đoạn, theo miền {dict(dem_mien)}, theo người {dict(dem_nguoi)}"
+    if any(r == 99 for r, _ in chon):
+        return "lấy cả đoạn quá ngắn"
+    # Đã có sẵn 9 đoạn -> tăng lên 12 chỉ lấy thêm 3, không trùng đoạn cũ
+    da_co = [{"row_idx": r, "nhom": d["region"], "nguon": d["speakerID"]} for r, d in chon]
+    them = tb.chon_dong(cac_dong, cau_hinh, 12, da_co)
+    if len(them) != 3 or {r for r, _ in them} & {r for r, _ in chon}:
+        return f"tải bù sai: thêm {len(them)} đoạn"
+
+
+@ca
+def tai_bo_luu_nhan_va_tai_tiep_khi_chay_lai():
+    import tai_bo_danh_gia as tb
+    goc = (tb.THU_MUC_BO, tb.goi_api, tb.tai_file)
+    so_lan_tai = []
+
+    def api_gia(dataset, split, offset, so_dong):
+        dong = [{"row_idx": i, "row": {"region": ["North", "Central", "South"][i % 3],
+                                       "speakerID": f"s{i}", "text": f"câu thứ {i} có đủ từ",
+                                       "audio": [{"src": f"http://x/{i}.wav", "type": "audio/wav"}]}}
+                for i in range(offset, min(offset + so_dong, 100))]
+        return {"num_rows_total": 100, "rows": dong}
+
+    def tai_gia(url, duong_dan):
+        so_lan_tai.append(url)
+        duong_dan.write_bytes(b"RIFF")
+
+    with tempfile.TemporaryDirectory() as tm:
+        try:
+            tb.THU_MUC_BO, tb.goi_api, tb.tai_file = Path(tm), api_gia, tai_gia
+            with contextlib.redirect_stdout(io.StringIO()):
+                lan_1 = tb.tai_mot_bo("vimd", 6, 42)
+                lan_2 = tb.tai_mot_bo("vimd", 6, 42)      # đủ rồi: không tải gì thêm
+                lan_3 = tb.tai_mot_bo("vimd", 9, 42)      # tăng số mẫu: chỉ tải bù 3
+        finally:
+            tb.THU_MUC_BO, tb.goi_api, tb.tai_file = goc
+        nhan = json.loads((Path(tm) / "vimd" / "nhan.json").read_text(encoding="utf-8"))
+    if (len(lan_1), len(lan_2), len(lan_3), len(so_lan_tai), len(nhan)) != (6, 6, 9, 9, 9):
+        return f"số đoạn {len(lan_1)}/{len(lan_2)}/{len(lan_3)}, số lần tải {len(so_lan_tai)}"
+    if lan_3[:6] != lan_1:
+        return "tải bù làm đổi các đoạn đã có"
+
+
+@ca
+def danh_gia_bo_do_wer_bao_cao_va_lam_tiep():
+    import danh_gia_bo as dg
+    cac_doan = [doan(chuoi_tu(0.0, "Bạn Lan làm 20 slide.")),
+                doan(chuoi_tu(3.0, "Hãy subscribe cho kênh Ghiền Mì Gõ"))]   # bị [LOẠI]
+    so_lan_tai_model = []
+
+    def model_gia(*a, **k):
+        so_lan_tai_model.append(1)
+        return ModelGia(cac_doan)
+
+    goc = (dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO)
+    with tempfile.TemporaryDirectory() as tm:
+        tm = Path(tm)
+        thu_muc = tm / "bo" / "thu"
+        (thu_muc / "audio").mkdir(parents=True)
+        cac_muc = []
+        for i in range(2):
+            ghi_wav(thu_muc / "audio" / f"{i}.wav", tieng_noi_gia(4))
+            cac_muc.append({"id": f"thu_{i}", "tep": f"audio/{i}.wav", "nhom": "North", "nguon": "a",
+                            "row_idx": i, "text": "bạn lan làm hai mươi slide"})
+        (thu_muc / "nhan.json").write_text(json.dumps(cac_muc, ensure_ascii=False), encoding="utf-8")
+        try:
+            dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO = tm / "bo", tm / "bao_cao"
+            asr.WhisperModel = model_gia
+            for _ in range(2):   # lần 2: đã có kết quả, không được tải model lại
+                sys.argv = ["danh_gia_bo.py"]
+                with contextlib.redirect_stdout(io.StringIO()):
+                    dg.main()
+        finally:
+            dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO = goc
+        bao_cao = (tm / "bao_cao" / f"thu__{asr.TEN_MODEL}.txt").read_text(encoding="utf-8")
+    if len(so_lan_tai_model) != 1:
+        return f"tải model {len(so_lan_tai_model)} lần (lần chạy lại phải dùng kết quả đã lưu)"
+    if "WER   0.0%" not in bao_cao:
+        return "số viết bằng chữ số vẫn bị tính là sai:\n" + bao_cao[:300]
+    if "CẮT BỎ: 2" not in bao_cao or "Ghiền Mì Gõ" not in bao_cao:
+        return "báo cáo không liệt kê đoạn bị bộ lọc [LOẠI]"
 
 
 if __name__ == "__main__":
