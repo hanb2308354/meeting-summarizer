@@ -174,6 +174,7 @@ python src/asr/danh_gia_bo.py --khong-goi-y       # so sánh: tắt câu mở đ
 python src/asr/danh_gia_bo.py --khong-tien-xu-ly  # so sánh: tắt tiền xử lý âm thanh
 ```
 
+- Hugging Face giới hạn số lần tải khi không đăng nhập (lỗi 429). Code tự chờ rồi thử lại; nếu vẫn hay bị, tạo token loại Read trên huggingface.co rồi chạy `$env:HF_TOKEN="hf_..."` trước lệnh tải (không đưa token lên git).
 - Chạy lại `tai_bo_danh_gia.py` với `--so-mau` lớn hơn chỉ tải bù, giữ các đoạn cũ. Cùng `--hat-giong` thì lần nào cũng ra cùng tập đoạn, nên kết quả các lần so được với nhau.
 - `danh_gia_bo.py` lưu kết quả sau từng đoạn: ngắt giữa chừng rồi chạy lại sẽ làm tiếp.
 - Báo cáo gồm: WER từng bộ và từng miền, các cặp từ hay nghe nhầm (để thêm luật sửa lỗi), từ hay bị sót / bị thêm, đoạn bị bộ lọc `[LOẠI]` cắt (để chỉnh ngưỡng), 15 đoạn sai nhiều nhất.

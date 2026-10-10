@@ -581,7 +581,7 @@ def chon_mau_chia_deu_nhom_va_gioi_han_nguoi_noi():
 @ca
 def tai_bo_luu_nhan_va_tai_tiep_khi_chay_lai():
     import tai_bo_danh_gia as tb
-    goc = (tb.THU_MUC_BO, tb.goi_api, tb.tai_file)
+    goc = (tb.THU_MUC_BO, tb.goi_api, tb.tai_file, tb.NGHI_GIUA_LAN_GOI)
     so_lan_tai = []
 
     def api_gia(dataset, split, offset, so_dong):
@@ -597,18 +597,95 @@ def tai_bo_luu_nhan_va_tai_tiep_khi_chay_lai():
 
     with tempfile.TemporaryDirectory() as tm:
         try:
-            tb.THU_MUC_BO, tb.goi_api, tb.tai_file = Path(tm), api_gia, tai_gia
+            tb.THU_MUC_BO, tb.goi_api, tb.tai_file, tb.NGHI_GIUA_LAN_GOI = Path(tm), api_gia, tai_gia, 0
             with contextlib.redirect_stdout(io.StringIO()):
                 lan_1 = tb.tai_mot_bo("vimd", 6, 42)
                 lan_2 = tb.tai_mot_bo("vimd", 6, 42)      # đủ rồi: không tải gì thêm
                 lan_3 = tb.tai_mot_bo("vimd", 9, 42)      # tăng số mẫu: chỉ tải bù 3
         finally:
-            tb.THU_MUC_BO, tb.goi_api, tb.tai_file = goc
+            tb.THU_MUC_BO, tb.goi_api, tb.tai_file, tb.NGHI_GIUA_LAN_GOI = goc
         nhan = json.loads((Path(tm) / "vimd" / "nhan.json").read_text(encoding="utf-8"))
     if (len(lan_1), len(lan_2), len(lan_3), len(so_lan_tai), len(nhan)) != (6, 6, 9, 9, 9):
         return f"số đoạn {len(lan_1)}/{len(lan_2)}/{len(lan_3)}, số lần tải {len(so_lan_tai)}"
     if lan_3[:6] != lan_1:
         return "tải bù làm đổi các đoạn đã có"
+
+
+@ca
+def tai_bo_qua_danh_sach_chia_deu_theo_kenh():
+    import tai_bo_danh_gia as tb
+    kenh = ["vietcetera", "nguoitrongmuonnghe", "nguoiviethaingoai", "vietsuccess"]
+    danh_sach = [{"audio": f"audio/asr_segments_{kenh[i % 4]}_part00/video{i // 3} ab_seg{i:03d}.wav",
+                  "text": f"câu nói tự nhiên số {i}", "duration": 12.0, "source": f"video{i // 3}"}
+                 for i in range(80)]
+    cac_url = []
+
+    def tai_gia(url, duong_dan):
+        cac_url.append(url)
+        noi_dung = json.dumps(danh_sach) if url.endswith("dev.json") else "RIFF"
+        duong_dan.write_text(noi_dung, encoding="utf-8")
+
+    goc = (tb.THU_MUC_BO, tb.tai_file)
+    with tempfile.TemporaryDirectory() as tm:
+        try:
+            tb.THU_MUC_BO, tb.tai_file = Path(tm), tai_gia
+            with contextlib.redirect_stdout(io.StringIO()):
+                cac_muc = tb.tai_mot_bo("vietsuperspeech", 8, 42)
+                tb.tai_mot_bo("vietsuperspeech", 10, 42)   # tải bù: không tải lại danh sách
+        finally:
+            tb.THU_MUC_BO, tb.tai_file = goc
+    dem_kenh = Counter(m["nhom"] for m in cac_muc)
+    if len(cac_muc) != 8 or set(dem_kenh) != set(kenh) or max(dem_kenh.values()) > 2:
+        return f"chia theo kênh sai: {dict(dem_kenh)}"
+    if max(Counter(m["nguon"] for m in cac_muc).values()) > 2:
+        return "lấy quá 2 đoạn của cùng một video"
+    if sum(u.endswith("dev.json") for u in cac_url) != 1:
+        return "tải danh sách nhiều lần"
+    link_am = [u for u in cac_url if u.endswith(".wav")]
+    if not all(u.startswith("https://huggingface.co/datasets/thanhnew2001/VietSuperSpeech/resolve/main/audio/")
+               and " " not in u for u in link_am):
+        return f"link tải âm thanh sai: {link_am[:1]}"
+
+
+@ca
+def mang_cho_va_thu_lai_khi_bi_gioi_han():
+    import urllib.error
+    import tai_bo_danh_gia as tb
+
+    def loi(ma, cho=None):
+        return urllib.error.HTTPError("http://x", ma, "loi", {"Retry-After": cho} if cho else {}, None)
+
+    def chay(cac_ket_qua):
+        """Giả lập urlopen trả lần lượt các kết quả; trả (kết quả, các lần chờ, số lần gọi)."""
+        con_lai, da_cho = list(cac_ket_qua), []
+        goc = (tb.urllib.request.urlopen, tb.time.sleep)
+
+        def urlopen_gia(yeu_cau, timeout):
+            kq = con_lai.pop(0)
+            if isinstance(kq, Exception):
+                raise kq
+            return kq
+        try:
+            tb.urllib.request.urlopen, tb.time.sleep = urlopen_gia, da_cho.append
+            with contextlib.redirect_stdout(io.StringIO()):
+                return tb.mo_url("http://x"), da_cho, len(cac_ket_qua) - len(con_lai)
+        except tb.LoiTai as e:
+            return e, da_cho, len(cac_ket_qua) - len(con_lai)
+        finally:
+            tb.urllib.request.urlopen, tb.time.sleep = goc
+
+    kq, cho, _ = chay([loi(429, "7"), loi(503), "ok"])
+    if kq != "ok" or cho != [7, tb.CHO_KHI_LOI[1]]:
+        return f"429/503 phải chờ rồi thử lại (theo Retry-After): {kq}, chờ {cho}"
+    kq, cho, so_lan = chay([loi(404), "ok"])
+    if not isinstance(kq, tb.LoiTai) or so_lan != 1:
+        return "lỗi 404 không được thử lại"
+    kq, _, so_lan = chay([loi(403), "ok"])
+    if not isinstance(kq, tb.LoiTai) or "HF_TOKEN" not in str(kq):
+        return "lỗi 403 phải nhắc kiểm tra token"
+    kq, cho, so_lan = chay([loi(429)] * (len(tb.CHO_KHI_LOI) + 1))
+    if not isinstance(kq, tb.LoiTai) or len(cho) != len(tb.CHO_KHI_LOI):
+        return "thử lại mãi không dừng"
 
 
 @ca
