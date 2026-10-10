@@ -9,7 +9,8 @@ Hugging Face (ổn định hơn API xem dữ liệu, vốn hay lỗi 500/429).
 
     hop_va_dien_thoai : 200 đoạn họp trực tuyến, gọi điện... (1 file ~83 MB)
     phuong_ngu        : LSVSC, có nhãn phương ngữ (1 file ~390 MB, lấy mẫu trong đó)
-    tu_nhien          : VietSuperSpeech, trò chuyện YouTube (tải từng file .wav nhỏ)
+    tu_nhien          : VietSuperSpeech, trò chuyện YouTube - KHÔNG chạy mặc định (lời gốc
+                        do máy tạo, nhiều câu sai hẳn)
     vimd              : ViMD, giọng 63 tỉnh (3 file ~450 MB mỗi file) - KHÔNG chạy mặc định
 
 Kết quả (KHÔNG đưa lên git, đã có trong .gitignore):
@@ -93,12 +94,15 @@ CAC_BO = {
         "kieu": "danh_sach",
         "danh_sach": "dev.json",   # [{"audio": "audio/<kênh>/<video>_segNNN.wav", "text", ...}]
         "mo_ta": "VietSuperSpeech: trò chuyện, vlog, phỏng vấn trên YouTube",
-        "giay_phep": "chưa ghi giấy phép; lời gốc có thể do máy tạo, xem như tham khảo",
+        "giay_phep": "chưa ghi giấy phép; lời gốc do máy tạo, nhiều câu sai, chỉ để tham khảo",
         "van_ban": ["text"],
         "nhom": lambda dong: ten_kenh(dong.get("audio") or ""),
         "so_nhom": 4,
         "nguon": lambda dong: dong.get("source") or dong.get("audio", "?").rsplit("_seg", 1)[0],
         "toi_da_moi_nguon": 2,
+        # Chạy thử: phần dev gần như chỉ có 1 kênh và nhiều lời gốc sai hẳn (máy tạo),
+        # nên không dùng để chấm điểm; chỉ giữ để tham khảo
+        "khong_mac_dinh": True,
     },
     "vimd": {
         "dataset": "nguyendv02/ViMD_Dataset",

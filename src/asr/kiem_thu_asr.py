@@ -547,13 +547,21 @@ def doc_so_va_chuan_hoa_so_cong_bang():
     cung_nghia = [("20 tháng 10", "hai mươi tháng mười"), ("24 người", "hai mươi tư người"),
                   ("2,5%", "hai phẩy năm phần trăm"), ("1.000.000 đồng", "một triệu đồng"),
                   ("năm 2024", "năm hai ngàn không trăm hai mươi bốn"), ("105", "một trăm lẻ năm"),
-                  ("35", "ba mươi lăm"), ("9h30", "chín giờ ba mươi")]
+                  ("35", "ba mươi lăm"), ("9h30", "chín giờ ba mươi"),
+                  ("trên 10km", "trên mười ki lô mét"), ("nặng 5 kg", "nặng năm ki-lô-gam"),
+                  ("đừng tưởng kỳ kèo", "đừng tưởng kì kèo"), ("hòa thuận thủy lợi", "hoà thuận thuỷ lợi"),
+                  ("lý do", "lí do")]
     for a, b in cung_nghia:
         if dg.chuan_hoa_danh_gia(a) != dg.chuan_hoa_danh_gia(b):
             return f"{a!r} và {b!r} lẽ ra phải giống nhau sau chuẩn hóa"
     # Từ thường không được bị đổi nhầm ("năm" là năm học, "tư" là tư duy)
     if dg.chuan_hoa_danh_gia("năm nay tư duy tốt") != "năm nay tư duy tốt":
         return "chuẩn hóa số làm đổi nhầm chữ thường"
+    # Nghe sai thật thì vẫn phải khác nhau
+    for a, b in [("bất động sản", "cộng sản"), ("bả đi chợ", "bà đi chợ"), ("tầm nhìn", "tâm nhìn"),
+                 ("cái km", "cái ki lô mét")]:   # "km" không đứng sau số thì không đổi
+        if dg.chuan_hoa_danh_gia(a) == dg.chuan_hoa_danh_gia(b):
+            return f"{a!r} và {b!r} khác nhau thật mà bị coi là giống"
 
 
 @ca

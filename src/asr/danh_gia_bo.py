@@ -104,8 +104,26 @@ BIEN_THE_SO = [
 ]
 
 
+# Đơn vị viết tắt và cách đọc: "10km" và "mười ki lô mét" là một
+DON_VI = {"km": "ki lô mét", "kg": "ki lô gam", "cm": "xen ti mét", "mm": "mi li mét",
+          "m2": "mét vuông", "m²": "mét vuông", "ha": "héc ta"}
+MAU_DON_VI = re.compile(r"(?<=\d)\s*(" + "|".join(map(re.escape, DON_VI)) + r")\b")
+MAU_DON_VI_DOC = re.compile(r"\b(ki|xen|mi)[\s-]+(lô|ti|li)[\s-]+(mét|gam)\b")
+
+# Chính tả có hai cách viết đều đúng: không tính là nghe sai
+# - i/y: kì/kỳ, lí/lý, mĩ/mỹ...   - bỏ dấu kiểu cũ/mới: hoà/hòa, thuỷ/thủy
+I_Y = {"kỳ": "kì", "ký": "kí", "kỷ": "kỉ", "lý": "lí", "mỹ": "mĩ", "sỹ": "sĩ", "hy": "hi", "qui": "quy"}
+MAU_I_Y = re.compile(r"\b(" + "|".join(I_Y) + r")\b")
+DAU_KIEU_CU = {"oà": "òa", "oá": "óa", "oả": "ỏa", "oã": "õa", "oạ": "ọa",
+               "oè": "òe", "oé": "óe", "oẻ": "ỏe", "oẽ": "õe", "oẹ": "ọe",
+               "uỳ": "ùy", "uý": "úy", "uỷ": "ủy", "uỹ": "ũy", "uỵ": "ụy"}
+MAU_DAU_KIEU_CU = re.compile(r"(?<!q)(" + "|".join(DAU_KIEU_CU) + r")\b")   # "quý" giữ nguyên
+
+
 def chuan_hoa_danh_gia(van_ban):
     van_ban = unicodedata.normalize("NFC", van_ban.lower())
+    van_ban = MAU_DON_VI.sub(lambda m: " " + DON_VI[m[1]], van_ban)
+    van_ban = MAU_DON_VI_DOC.sub(r"\1 \2 \3", van_ban)   # ki-lô-mét -> ki lô mét
     van_ban = re.sub(r"(\d+)\s*h\s*(\d+)?\b", lambda m: f"{m[1]} giờ {m[2] or ''}", van_ban)
     van_ban = re.sub(r"\b\d{1,3}(?:\.\d{3})+\b", lambda m: m[0].replace(".", ""), van_ban)  # 1.000.000
     van_ban = re.sub(r"(\d+)[,.](\d+)", r"\1 phẩy \2", van_ban)                              # 2,5
@@ -114,6 +132,8 @@ def chuan_hoa_danh_gia(van_ban):
     van_ban = danh_gia_wer.chuan_hoa(van_ban)
     for mau, thay in BIEN_THE_SO:
         van_ban = re.sub(mau, thay, van_ban)
+    van_ban = MAU_I_Y.sub(lambda m: I_Y[m[1]], van_ban)
+    van_ban = MAU_DAU_KIEU_CU.sub(lambda m: DAU_KIEU_CU[m[1]], van_ban)
     return van_ban
 
 
@@ -240,7 +260,7 @@ def wer_cua(so_lieu):
 
 def dong_so_lieu(ten, s):
     toc_do = s["thoi_gian"] / s["do_dai"] if s["do_dai"] else 0.0
-    return (f"{ten:<16} {s['doan']:>4} đoạn {s['tu']:>6} từ | sai {s['sai']:>4} | thiếu {s['thieu']:>4} "
+    return (f"{ten[:24]:<24} {s['doan']:>4} đoạn {s['tu']:>6} từ | sai {s['sai']:>4} | thiếu {s['thieu']:>4} "
             f"| thừa {s['thua']:>4} | WER {wer_cua(s):6.1%} | xử lý {toc_do:.2f}x độ dài")
 
 
