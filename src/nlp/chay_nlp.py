@@ -1,11 +1,10 @@
-# Chạy toàn bộ pipeline NLP và lưu kết quả ra outputs/
+# Chạy toàn bộ pipeline NLP trên văn bản sạch (data/processed/) và lưu kết quả ra outputs/
 import json
 import sys
 import time
 from pathlib import Path
 
-from doc_transcript import doc_transcript
-from tien_xu_ly import tien_xu_ly
+from doc_van_ban_sach import doc_van_ban_sach
 from tom_tat import tom_tat
 from trich_xuat import trich_xuat
 
@@ -62,8 +61,7 @@ def tao_markdown(ket_qua):
 
 def chay_nlp(duong_dan):
     """Chạy đầy đủ pipeline NLP cho một transcript và trả về dict kết quả."""
-    bai_doc = doc_transcript(duong_dan)
-    du_lieu = tien_xu_ly(bai_doc)
+    du_lieu = doc_van_ban_sach(duong_dan)
     trich = trich_xuat(du_lieu)
     tong_ket = tom_tat(du_lieu, [muc["text"] for muc in trich["decisions"]])
 
@@ -83,17 +81,16 @@ def chay_nlp(duong_dan):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        sys.exit("Cách dùng: python src/nlp/chay_nlp.py <đường dẫn file transcript JSON>")
+        sys.exit("Cách dùng: python src/nlp/chay_nlp.py <file văn bản sạch, vd data/processed/thu_nghiem.json>")
 
     duong_dan = Path(sys.argv[1])
     if not duong_dan.exists():
         sys.exit(f"Không tìm thấy file: {duong_dan}")
 
     bat_dau = time.time()
-    print("Bước 1: đọc transcript...")
-    print("Bước 2: tiền xử lý văn bản...")
-    print("Bước 3: trích xuất thông tin...")
-    print("Bước 4: tóm tắt...")
+    print("Bước 1: đọc văn bản sạch...")
+    print("Bước 2: trích xuất thông tin...")
+    print("Bước 3: tóm tắt...")
     ket_qua, tep_json, tep_md = chay_nlp(duong_dan)
     print(f"Đã lưu JSON: {tep_json}")
     print(f"Đã lưu Markdown: {tep_md}")

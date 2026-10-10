@@ -9,7 +9,7 @@
 
 | Thành viên  | MSSV     | Phụ trách                                                                            |
 | ----------- | -------- | ------------------------------------------------------------------------------------ |
-| Tô Tiểu Hân | B2308354 | Nhận dạng giọng nói (`src/asr`), ghép nối hệ thống, giao diện demo, đánh giá kết quả |
+| Tô Tiểu Hân | B2308354 | Nhận dạng giọng nói (`src/asr`), tiền xử lý văn bản (`src/tien_xu_ly`), ghép nối hệ thống, giao diện demo, đánh giá kết quả |
 | Lê Tuấn Anh | B2308345 | Xử lý văn bản (`src/nlp`): chuẩn hóa, tách từ, tóm tắt, trích xuất thông tin         |
 
 ## Luồng xử lý
@@ -18,7 +18,9 @@
 File ghi âm (.mp3)
    → [src/asr] faster-whisper: chuyển giọng nói thành văn bản
    → File JSON trong data/transcripts/
-   → [src/nlp] Regex → PyVi → TextRank → Trích xuất
+   → [src/tien_xu_ly] sửa lỗi nghe nhầm, bỏ từ đệm, đánh dấu câu xã giao, tách từ PyVi   (Hân)
+   → File văn bản sạch trong data/processed/   ← ranh giới giữa hai phần
+   → [src/nlp] đọc văn bản sạch → TextRank → Trích xuất                                    (Anh)
    → Bản tóm tắt + danh sách việc cần làm
 ```
 
@@ -28,9 +30,11 @@ File ghi âm (.mp3)
 | ----------------------- | --------------------------------------------------------------------------------- |
 | `data/audio/`           | File ghi âm (không đưa lên GitHub vì nặng)                                        |
 | `data/transcripts/`     | File JSON do phần ASR xuất ra, là **đầu vào của phần NLP**                        |
+| `data/processed/`       | Văn bản sạch do `src/tien_xu_ly` ghi ra, là **đầu vào của phần NLP**                |
 | `data/dap_an/`          | Văn bản gốc của từng file ghi âm, dùng để đánh giá                                |
 | `data/nhan_dap_an.json` | Đáp án mẫu (người, việc, hạn, quyết định, lịch họp) để đo độ chính xác trích xuất |
 | `src/asr/`              | Code nhận dạng giọng nói                                                          |
+| `src/tien_xu_ly/`       | Code làm sạch văn bản (transcript → văn bản sạch)                                 |
 | `src/nlp/`              | Code xử lý văn bản                                                                |
 | `outputs/`              | Kết quả cuối cùng (`.json` và `.md` cho từng transcript)                          |
 
@@ -100,7 +104,8 @@ Kết quả được lưu vào `data/transcripts/ten_file.json`.
 **Xử lý văn bản** (JSON → tóm tắt, quyết định, việc cần làm, lịch họp):
 
 ```powershell
-python src/nlp/chay_nlp.py data/transcripts/thu_nghiem2.json
+python src/tien_xu_ly/tien_xu_ly.py data/transcripts/thu_nghiem2.json   # làm sạch trước
+python src/nlp/chay_nlp.py data/processed/thu_nghiem2.json
 ```
 
 Kết quả được ghi vào `outputs/ten_file.json` và `outputs/ten_file.md`.
@@ -130,15 +135,73 @@ python src/nlp/kiem_cau.py
 | File                    | Vai trò                                                      |
 | ----------------------- | ------------------------------------------------------------ |
 | `chuyen_giong_noi.py`   | **Code chính**: file ghi âm → JSON                           |
+| `danh_gia_wer.py`       | Đo tỷ lệ lỗi từ (WER) so với văn bản gốc trong `data/dap_an/` |
+| `kiem_thu_asr.py`       | Kiểm thử tự động (không cần tải model)                       |
 | `thu_faster_whisper.py` | Chỉ dùng để thử nghiệm chọn model, không dùng trong hệ thống |
+
+Lần đầu chạy cần **internet** để tải model `medium` (khoảng 1,5 GB); các lần sau dùng bản đã lưu trên máy.
+
+```powershell
+python src/asr/chuyen_giong_noi.py data/audio/ten_file.mp3      # một file
+python src/asr/chuyen_giong_noi.py data/audio/                  # cả thư mục
+python src/asr/danh_gia_wer.py thu_nghiem hop_01 hop_02         # đo WER, nhiều file thì ra WER gộp
+python src/asr/kiem_thu_asr.py                                  # kiểm thử
+```
+
+**Tiền xử lý âm thanh đang BẬT mặc định** (lọc tiếng ù dưới 90 Hz + chuẩn hóa âm lượng); giảm tạp âm (`--loc-nhieu`) thì TẮT mặc định. Hai lựa chọn này mới chỉ kiểm tra trên âm thanh tổng hợp, **chưa có số đo WER trên bản ghi thật**. Cách so sánh trên một file có đáp án trong `data/dap_an/`:
+
+```powershell
+python src/asr/chuyen_giong_noi.py data/audio/hop_01.mp3 --khong-tien-xu-ly   # tắt tiền xử lý
+python src/asr/danh_gia_wer.py hop_01                                         # ghi lại WER
+python src/asr/chuyen_giong_noi.py data/audio/hop_01.mp3                      # mặc định
+python src/asr/danh_gia_wer.py hop_01
+python src/asr/chuyen_giong_noi.py data/audio/hop_01.mp3 --loc-nhieu          # thêm giảm tạp âm
+python src/asr/danh_gia_wer.py hop_01
+```
+
+Mỗi lần chạy ghi đè `data/transcripts/hop_01.json`, nên đo WER ngay sau từng lần. Các dòng `[LOẠI - ...]` in ra khi chạy là đoạn bị bỏ vì nghi Whisper "bịa chữ"; nên đọc lại để đếm câu thật bị loại oan.
+
+## Văn bản sạch: src/tien_xu_ly (Hân)
+
+Làm sạch transcript do ASR xuất ra: sửa chữ máy nghe nhầm (vd "bích link" → deadline), bỏ từ đệm (ừm, à, nhé...), dọn dấu câu, tách từ bằng PyVi, đánh dấu câu chào hỏi/cảm ơn. Giữ nguyên từ tiếng Anh, không dịch.
+
+```powershell
+python src/tien_xu_ly/tien_xu_ly.py data/transcripts/ten_file.json   # một file
+python src/tien_xu_ly/tien_xu_ly.py data/transcripts/                # cả thư mục
+python src/tien_xu_ly/kiem_thu_tien_xu_ly.py                         # kiểm thử
+```
+
+Kết quả nằm trong `data/processed/<tên>.json`, mỗi câu gồm:
+
+| Trường    | Ý nghĩa                                                                  |
+| --------- | ------------------------------------------------------------------------ |
+| `stt`     | Số thứ tự câu, đánh liên tục (câu chỉ có từ đệm như "Ừm." đã bị bỏ)      |
+| `speaker`, `start`, `end` | Giữ nguyên từ transcript                                  |
+| `goc`     | Nguyên văn ASR                                                           |
+| `sach`    | Đã sửa lỗi nghe nhầm, bỏ từ đệm, dọn dấu câu                             |
+| `tach_tu` | Bản `sach` đã tách từ bằng PyVi (vd `hạn_chót`, `phụ_trách`)             |
+| `xa_giao` | `true` nếu câu ngắn chỉ là chào hỏi, cảm ơn, hỏi ý kiến, chào kết thúc. `false` nếu có vế giao việc, kể cả khi Whisper bỏ dấu phẩy làm câu chào dính vào câu giao việc ("Hello team bạn Tuấn sẽ làm phần API"), có động từ giao việc (sẽ, làm, nhận, gửi...) hoặc có mốc thời gian |
+
+Phần NLP **chỉ đọc** các file này (qua `src/nlp/doc_van_ban_sach.py`), không tự làm sạch văn bản nữa. Sửa cách làm sạch thì sửa ở `src/tien_xu_ly`, rồi chạy lại lệnh trên cho cả thư mục và commit `data/processed/`; nếu quên, kiểm thử sẽ báo file đã cũ.
+
+| File                     | Vai trò                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `lam_sach.py`            | **Code chính**: hàm `tien_xu_ly()` làm sạch danh sách câu (không đọc/ghi file) |
+| `tien_xu_ly.py`          | Chạy từ dòng lệnh: transcript → `data/processed/<tên>.json`                   |
+| `doc_transcript.py`      | Đọc và kiểm tra file transcript JSON (đọc được file có BOM)                   |
+| `tu_dien_tien_xu_ly.py`  | Bảng sửa lỗi nghe nhầm, từ đệm, mẫu câu xã giao, cụm từ cần nối khi tách từ   |
+| `kiem_thu_tien_xu_ly.py` | Kiểm thử: câu làm sạch, câu đúng không được đổi, tách từ, đọc/ghi file, phần NLP đọc được mọi file `data/processed`, `data/processed` khớp với code |
+
+**Tên dễ nhầm:** thư mục `src/tien_xu_ly/` là toàn bộ phần làm sạch của Hân; trong đó `lam_sach.py` chứa code làm sạch, còn `tien_xu_ly.py` là lệnh chạy để ghi ra `data/processed/`.
+
+Bảng sửa lỗi nghe nhầm hiện được viết theo các lỗi gặp khi chạy thử, chưa thống kê trên nhiều bản ghi thật; luật nào có thể đụng tên người hoặc từ có thật thì chỉ áp dụng khi có ngữ cảnh (xem ghi chú trong `tu_dien_tien_xu_ly.py`).
 
 ## Các file trong src/nlp
 
 | Nhóm       | File                                             | Vai trò                                                                   |
 | ---------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
-| Chuẩn hóa  | `doc_transcript.py`                              | Đọc và kiểm tra file transcript JSON                                      |
-| Chuẩn hóa  | `tien_xu_ly.py`                                  | Sửa lỗi nhận dạng, bỏ từ đệm, nhận diện câu xã giao, tách từ bằng PyVi    |
-| Chuẩn hóa  | `tu_dien.py`                                     | Hằng số dùng chung (động từ, mẫu câu, từ điển lỗi nhận dạng)              |
+| Đầu vào    | `doc_van_ban_sach.py`                            | Đọc và kiểm tra file văn bản sạch trong `data/processed/` (do Hân xuất ra) |
+| Cấu hình   | `tu_dien.py`                                     | Hằng số dùng chung của tóm tắt và trích xuất (động từ, mẫu câu). Bảng của phần tiền xử lý nằm ở `src/tien_xu_ly/tu_dien_tien_xu_ly.py` |
 | Tóm tắt    | `tom_tat.py`                                     | Tách câu, TextRank có điểm cộng/phạt, chọn câu kiểu MMR, rút gọn          |
 | Trích xuất | `nhan_dien_ten.py`                               | Nhận diện tên người phụ trách                                             |
 | Trích xuất | `nhan_dien_han.py`                               | Tìm hạn chót trong câu                                                    |
@@ -146,7 +209,7 @@ python src/nlp/kiem_cau.py
 | Trích xuất | `trich_quyet_dinh.py`                            | Trích các quyết định                                                      |
 | Trích xuất | `trich_lich_hop.py`                              | Trích thời gian và địa điểm cuộc họp tiếp theo                            |
 | Trích xuất | `trich_xuat.py`                                  | Ghép các bước trích xuất thành kết quả cuối                               |
-| Chạy       | `chay_nlp.py`                                    | **Code chính**: chạy cả luồng NLP trên một transcript, ghi vào `outputs/` |
+| Chạy       | `chay_nlp.py`                                    | **Code chính**: chạy cả luồng NLP trên một file văn bản sạch, ghi vào `outputs/` |
 | Kiểm thử   | `kiem_thu.py`, `kiem_cau.py`, `do_chat_luong.py` | Kiểm tra trên transcript mẫu, 14 ca mức câu, đo độ chính xác trích xuất   |
 | Kiểm thử   | `vet.py`, `bat_bien.py`, `dap_an.py`             | Xem vết xử lý, kiểm định dạng đầu ra, đáp án mẫu                          |
 
@@ -179,7 +242,7 @@ Hướng mở rộng: gắn hạn theo vị trí (hạn đứng trước việc,
 
 ## Quy ước làm việc với Git
 
-- Không code trực tiếp trên `main`. Hân code trên nhánh `asr`, Anh code trên nhánh `nlp`.
+- Không code trực tiếp trên `main`. Hân code trên nhánh `han-asr-tien-xu-ly`, Anh code trên nhánh `nlp`.
 - Xong một phần chạy được thì mới gộp vào `main`.
 - Commit message ghi tiếng Việt, nói rõ đã làm gì.
 

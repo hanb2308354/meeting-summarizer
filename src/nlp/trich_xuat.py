@@ -3,9 +3,8 @@ import re
 import sys
 from pathlib import Path
 
-from doc_transcript import doc_transcript
+from doc_van_ban_sach import doc_van_ban_sach
 from nhan_dien_ten import tim_ten_biet
-from tien_xu_ly import tien_xu_ly
 from trich_lich_hop import lay_lich_hop
 from trich_quyet_dinh import trich_quyet_dinh
 from trich_viec import lay_viec, lam_sach_mo_ta
@@ -38,7 +37,7 @@ def trich_xuat(cac_cau):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        sys.exit("Cách dùng: python src/nlp/trich_xuat.py <đường dẫn file transcript JSON>")
+        sys.exit("Cách dùng: python src/nlp/trich_xuat.py <file văn bản sạch trong data/processed/>")
 
     che_do_vet = "--vet" in sys.argv[1:]
     if che_do_vet:
@@ -47,7 +46,7 @@ if __name__ == "__main__":
     if not duong_dan.exists():
         sys.exit(f"Không tìm thấy file: {duong_dan}")
 
-    du_lieu = tien_xu_ly(doc_transcript(duong_dan))
+    du_lieu = doc_van_ban_sach(duong_dan)
     ket_qua = trich_xuat(du_lieu)
     if che_do_vet:
         vet_theo_cau = {}

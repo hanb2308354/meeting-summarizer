@@ -1,0 +1,402 @@
+[
+  {
+    "stt": 0,
+    "speaker": "SPEAKER_00",
+    "start": 0,
+    "end": 38,
+    "goc": "Rồi, mình bắt đầu nhé, hôm nay anh muốn nhìn lại mấy ngày cuối tuần vì lượng khách tăng mà kệ trống vẫn có. Anh nghe ở quầy thanh toán khách hỏi giá vài lần, có người đứng chờ lâu, nhưng chưa chắc do nhân viên hay tem bị khuất. Mình cứ rà từng phần, đừng vội kết luận từ một buổi đông.",
+    "sach": "Rồi, mình bắt đầu, hôm nay anh muốn nhìn lại mấy ngày cuối tuần vì lượng khách tăng mà kệ trống vẫn có. Anh nghe ở quầy thanh toán khách hỏi giá vài lần, có người đứng chờ lâu, nhưng chưa chắc do nhân viên hay tem bị khuất. Mình cứ rà từng phần, đừng vội kết luận từ một buổi đông.",
+    "tach_tu": "Rồi , mình bắt_đầu , hôm_nay anh muốn nhìn lại mấy ngày cuối tuần vì lượng khách tăng mà kệ trống vẫn có . Anh nghe ở quầy thanh_toán khách hỏi giá vài lần , có người đứng chờ lâu , nhưng chưa chắc do nhân_viên hay tem bị khuất . Mình cứ rà từng phần , đừng vội kết_luận từ một buổi đông .",
+    "xa_giao": false
+  },
+  {
+    "stt": 1,
+    "speaker": "SPEAKER_00",
+    "start": 38,
+    "end": 76,
+    "goc": "Tuần rồi ngân dọn đầu kệ xong trước giờ mở cửa, nhìn gọn hơn hẳn, anh thấy khách lấy hàng cũng dễ. chuyện đó xong rồi, chỉ nhắc để mình so sánh cách trưng bày thôi. còn mấy thùng hàng phía trong, có lúc nhân viên tưởng đã lên kệ nhưng thực ra vẫn nằm cạnh kho, thành ra số trên giấy với mắt nhìn không giống nhau.",
+    "sach": "Tuần rồi ngân dọn đầu kệ xong trước giờ mở cửa, nhìn gọn hơn hẳn, anh thấy khách lấy hàng cũng dễ. chuyện đó xong rồi, chỉ nhắc để mình so sánh cách trưng bày thôi. còn mấy thùng hàng phía trong, có lúc nhân viên tưởng đã lên kệ nhưng thực ra vẫn nằm cạnh kho, thành ra số trên giấy với mắt nhìn không giống nhau.",
+    "tach_tu": "Tuần rồi ngân dọn đầu kệ xong trước giờ mở_cửa , nhìn gọn hơn hẳn , anh thấy khách lấy hàng cũng dễ . chuyện đó xong rồi , chỉ nhắc để mình so_sánh cách trưng_bày thôi . còn mấy thùng hàng phía trong , có lúc nhân_viên tưởng đã lên kệ nhưng thực_ra vẫn nằm cạnh kho , thành_ra số trên giấy với mắt nhìn không giống nhau .",
+    "xa_giao": false
+  },
+  {
+    "stt": 2,
+    "speaker": "SPEAKER_00",
+    "start": 76,
+    "end": 114,
+    "goc": "Hạn phiếu chênh lệch là thứ Ba nhé, anh nhắc sớm để mọi người nhớ mốc. Ngân, em đối chiếu tồn kho ở khu hàng bán nhanh, ghi lại món nào lệch giữa sổ và kệ, rồi lập phiếu chênh lệch cho anh. Không cần làm đẹp biểu mẫu trước, cứ để số liệu rõ ràng, nếu chưa tìm ra nguyên nhân thì ghi đúng là chưa rõ; nhớ soátlại cả dòng hàng đổi trả, tránh gộp vào tồn kệ.",
+    "sach": "Hạn phiếu chênh lệch là thứ Ba, anh nhắc sớm để mọi người nhớ mốc. Ngân, em đối chiếu tồn kho ở khu hàng bán nhanh, ghi lại món nào lệch giữa sổ và kệ, rồi lập phiếu chênh lệch cho anh. Không cần làm đẹp biểu mẫu trước, cứ để số liệu rõ ràng, nếu chưa tìm ra nguyên nhân thì ghi đúng là chưa rõ; nhớ soátlại cả dòng hàng đổi trả, tránh gộp vào tồn kệ.",
+    "tach_tu": "Hạn phiếu chênh_lệch là thứ Ba , anh nhắc sớm để mọi người nhớ mốc . Ngân , em đối_chiếu tồn_kho ở khu hàng bán nhanh , ghi lại món nào lệch giữa sổ và kệ , rồi lập phiếu chênh_lệch cho anh . Không cần làm_đẹp biểu_mẫu trước , cứ để số_liệu rõ_ràng , nếu chưa tìm ra nguyên_nhân thì ghi đúng là chưa rõ ; nhớ soátlại cả dòng hàng đổi trả , tránh gộp vào tồn kệ .",
+    "xa_giao": false
+  },
+  {
+    "stt": 3,
+    "speaker": "SPEAKER_00",
+    "start": 114,
+    "end": 152,
+    "goc": "Về lịch ca tuần tới, Bách nhận phần này giúp anh, xếp sao cho khung tan học với tối thứ Sáu đừng bị thiếu người. Tạm thời gửi lịch ca tuần tới vào thứ Sáu, như mọi lần. Anh biết lịch xe buýt đổi giờ gần đây, nên nhìn kỹ ca đóng cửa; chuyện đổi ca cá nhân thì mình vẫn trao đổi trước, chứ đừng sửa lên bảng rồi mọi người mới biết, ở bảngca giấy hôm trước hai nét mực chồng lên nhau.",
+    "sach": "Về lịch ca tuần tới, Bách nhận phần này giúp anh, xếp sao cho khung tan học với tối thứ Sáu đừng bị thiếu người. Tạm thời gửi lịch ca tuần tới vào thứ Sáu, như mọi lần. Anh biết lịch xe buýt đổi giờ gần đây, nên nhìn kỹ ca đóng cửa; chuyện đổi ca cá nhân thì mình vẫn trao đổi trước, chứ đừng sửa lên bảng rồi mọi người mới biết, ở bảngca giấy hôm trước hai nét mực chồng lên nhau.",
+    "tach_tu": "Về lịch ca tuần tới , Bách_nhận phần này giúp anh , xếp sao cho khung tan học với tối thứ Sáu đừng bị thiếu người . Tạm_thời gửi lịch ca tuần tới vào thứ Sáu , như mọi lần . Anh biết lịch xe_buýt đổi giờ gần đây , nên nhìn kỹ ca đóng_cửa ; chuyện đổi ca cá_nhân thì mình vẫn trao_đổi trước , chứ đừng sửa lên bảng rồi mọi người mới biết , ở bảngca giấy hôm trước hai nét mực chồng lên nhau .",
+    "xa_giao": false
+  },
+  {
+    "stt": 4,
+    "speaker": "SPEAKER_00",
+    "start": 152,
+    "end": 190,
+    "goc": "Mấy tuần gần đây anh nghe phàn nàn tem giá ở đầu kệ bị khuất bởi miếng quảng cáo, khách nhìn nhầm giá thường với giá giảm. Mỹ Linh, em xem cách đặt lại bảng cho thoáng, nhưng đừng kéo cả quầy sang vị trí khác vì lối đi vốn hẹp. Mình thử nhìn từ hướng khách bước vào, chỗ nào đọc được thì giữ, chỗ nào rối thì tính sau.",
+    "sach": "Mấy tuần gần đây anh nghe phàn nàn tem giá ở đầu kệ bị khuất bởi miếng quảng cáo, khách nhìn nhầm giá thường với giá giảm. Mỹ Linh, em xem cách đặt lại bảng cho thoáng, nhưng đừng kéo cả quầy sang vị trí khác vì lối đi vốn hẹp. Mình thử nhìn từ hướng khách bước vào, chỗ nào đọc được thì giữ, chỗ nào rối thì tính sau.",
+    "tach_tu": "Mấy tuần gần đây anh nghe phàn_nàn tem giá ở đầu kệ bị khuất bởi miếng quảng_cáo , khách nhìn nhầm giá thường với giá giảm . Mỹ_Linh , em xem cách đặt lại bảng cho thoáng , nhưng đừng kéo cả quầy sang vị_trí khác vì lối đi vốn hẹp . Mình thử nhìn từ hướng khách bước vào , chỗ nào đọc được thì giữ , chỗ nào rối thì tính sau .",
+    "xa_giao": false
+  },
+  {
+    "stt": 5,
+    "speaker": "SPEAKER_00",
+    "start": 190,
+    "end": 228,
+    "goc": "Còn một việc liên quan tồn kho, hôm trước số trong máy hiện ba gói nhưng trên kệ anh chỉ thấy hai. có thể đã bán sát lúc kiểm, cũng có thể chưa quét mã, mình chưa biết. anh không muốn vì một lần lệch mà đổi quy trình ngay; trước tiên cần nhìn đủ các ngày và hỏi ca trước xem họ có ghi nhận gì không.",
+    "sach": "Còn một việc liên quan tồn kho, hôm trước số trong máy hiện ba gói nhưng trên kệ anh chỉ thấy hai. có thể đã bán sát lúc kiểm, cũng có thể chưa quét mã, mình chưa biết. anh không muốn vì một lần lệch mà đổi quy trình ngay; trước tiên cần nhìn đủ các ngày và hỏi ca trước xem họ có ghi nhận gì không.",
+    "tach_tu": "Còn một việc liên_quan tồn_kho , hôm trước số trong máy hiện ba gói nhưng trên kệ anh chỉ thấy hai . có_thể đã bán sát lúc kiểm , cũng có_thể chưa quét mã , mình chưa biết . anh không muốn vì một lần lệch mà đổi quy_trình ngay ; trước_tiên cần nhìn đủ các ngày và hỏi ca trước xem họ có ghi_nhận gì không .",
+    "xa_giao": false
+  },
+  {
+    "stt": 6,
+    "speaker": "SPEAKER_00",
+    "start": 228,
+    "end": 266,
+    "goc": "Từ tuần này, cửa hàng mình kiểm quầy hai lượt, một lượt trước khi mở cửa và một lượt lúc đổi ca chiều. Như vậy lúc có chênh lệch mình biết nó phát sinh trong khoảng nào, thay vì cuối tuần mới lần lại. Anh thấy làm đều tay dễ hơn là kiểm thật kỹ một hôm rồi bỏ những hôm sau, nhất là khi khách đông.",
+    "sach": "Từ tuần này, cửa hàng mình kiểm quầy hai lượt, một lượt trước khi mở cửa và một lượt lúc đổi ca chiều. Như vậy lúc có chênh lệch mình biết nó phát sinh trong khoảng nào, thay vì cuối tuần mới lần lại. Anh thấy làm đều tay dễ hơn là kiểm thật kỹ một hôm rồi bỏ những hôm sau, nhất là khi khách đông.",
+    "tach_tu": "Từ tuần này , cửa_hàng mình kiểm quầy hai lượt , một lượt trước khi mở_cửa và một lượt lúc đổi ca chiều . Như_vậy lúc có chênh_lệch mình biết nó phát_sinh trong khoảng nào , thay_vì cuối tuần mới lần lại . Anh thấy làm đều tay dễ hơn là kiểm thật kỹ một hôm rồi bỏ những hôm sau , nhất_là khi khách đông .",
+    "xa_giao": false
+  },
+  {
+    "stt": 7,
+    "speaker": "SPEAKER_00",
+    "start": 266,
+    "end": 304,
+    "goc": "Mọi người nhớ kiểm quầy hai lượt vào đầu và giữa ngày, nhưng mình đừng làm kiểu chỉ nhìn thoáng qua rồi đánh dấu xong, nếu có khách đang cần hỗ trợ thì ưu tiên khách trước, quay lại kiểm sau, hôm qua một người hỏi đúng mã hàng ở tầng dưới, còn nhân viên đứng xa không nghe rõ, chuyện nhỏ vậy thôi nhưng làm khách phải gọi hai lần.",
+    "sach": "Mọi người nhớ kiểm quầy hai lượt vào đầu và giữa ngày, nhưng mình đừng làm kiểu chỉ nhìn thoáng qua rồi đánh dấu xong, nếu có khách đang cần hỗ trợ thì ưu tiên khách trước, quay lại kiểm sau, hôm qua một người hỏi đúng mã hàng ở tầng dưới, còn nhân viên đứng xa không nghe rõ, chuyện nhỏ vậy thôi nhưng làm khách phải gọi hai lần.",
+    "tach_tu": "Mọi người nhớ kiểm quầy hai lượt vào đầu và giữa ngày , nhưng mình đừng làm kiểu chỉ nhìn thoáng qua rồi đánh_dấu xong , nếu có khách đang cần hỗ_trợ thì ưu_tiên khách trước , quay lại kiểm sau , hôm_qua một người hỏi đúng mã hàng ở tầng dưới , còn nhân_viên đứng xa không nghe rõ , chuyện nhỏ vậy thôi nhưng làm_khách phải gọi hai lần .",
+    "xa_giao": false
+  },
+  {
+    "stt": 8,
+    "speaker": "SPEAKER_00",
+    "start": 304,
+    "end": 342,
+    "goc": "Anh cũng muốn nói thêm về luồng khách, lối bên phải thường đông hơn vì gần cửa vào, còn phía trái lại có giỏ hàng lớn chắn một phần. Không cần di chuyển gì ngay trong buổi họp, mình cứ quan sát thêm vài ngày đã. Oanh từng góp ý là khách hay dừng ở góc đó, anh nhớ vậy, nhưng chưa rõ lúc nào đông nhất.",
+    "sach": "Anh cũng muốn nói thêm về luồng khách, lối bên phải thường đông hơn vì gần cửa vào, còn phía trái lại có giỏ hàng lớn chắn một phần. Không cần di chuyển gì ngay trong buổi họp, mình cứ quan sát thêm vài ngày đã. Oanh từng góp ý là khách hay dừng ở góc đó, anh nhớ vậy, nhưng chưa rõ lúc nào đông nhất.",
+    "tach_tu": "Anh cũng muốn nói thêm về luồng khách , lối bên phải thường đông hơn vì gần cửa vào , còn phía trái_lại có giỏ hàng lớn chắn một phần . Không cần di_chuyển gì ngay trong buổi họp , mình cứ quan_sát thêm vài ngày đã . Oanh từng góp_ý là khách hay dừng ở góc đó , anh nhớ vậy , nhưng chưa rõ lúc_nào đông nhất .",
+    "xa_giao": false
+  },
+  {
+    "stt": 9,
+    "speaker": "SPEAKER_00",
+    "start": 342,
+    "end": 380,
+    "goc": "Hôm trước có mấy người hỏi chương trình mua kèm, nhưng anh chưa có số bán đủ để biết có đáng làm hay không, nếu ghép một món ăn nhẹ với đồ uống thì nghe cũng được, song giá vốn và ngày sử dụng khác nhau, mình còn phải nghĩ, anh không muốn treo bảng rồi mới phát hiện khách chẳng hiểu ưu đãi tính thế nào.",
+    "sach": "Hôm trước có mấy người hỏi chương trình mua kèm, nhưng anh chưa có số bán đủ để biết có đáng làm hay không, nếu ghép một món ăn nhẹ với đồ uống thì nghe cũng được, song giá vốn và ngày sử dụng khác nhau, mình còn phải nghĩ, anh không muốn treo bảng rồi mới phát hiện khách chẳng hiểu ưu đãi tính thế nào.",
+    "tach_tu": "Hôm trước có mấy người hỏi chương_trình mua kèm , nhưng anh chưa có số bán đủ để biết có đáng làm hay không , nếu ghép một món ăn nhẹ với đồ uống thì nghe cũng được , song giá_vốn và ngày sử_dụng khác nhau , mình còn phải nghĩ , anh không muốn treo bảng rồi mới phát_hiện khách chẳng hiểu ưu_đãi tính thế_nào .",
+    "xa_giao": false
+  },
+  {
+    "stt": 10,
+    "speaker": "SPEAKER_00",
+    "start": 380,
+    "end": 418,
+    "goc": "Mỹ Linh, phần tem giá khuyến mại giao cho em chỉnh lại theo cùng một cỡ chữ, để giá thường với giá giảm nhìn tách bạch. Đừng bỏ mã hàng ở góc dưới, vì bên thu ngân đôi lúc phải dò lại khi máy quét không nhận. Anh biết mẫu cũ có vài chỗ chật, mình giữ nội dung cần thiết rồi sắp lại khoảng cách cho dễ đọc.",
+    "sach": "Mỹ Linh, phần tem giá khuyến mại giao cho em chỉnh lại theo cùng một cỡ chữ, để giá thường với giá giảm nhìn tách bạch. Đừng bỏ mã hàng ở góc dưới, vì bên thu ngân đôi lúc phải dò lại khi máy quét không nhận. Anh biết mẫu cũ có vài chỗ chật, mình giữ nội dung cần thiết rồi sắp lại khoảng cách cho dễ đọc.",
+    "tach_tu": "Mỹ_Linh , phần tem giá khuyến_mại giao cho em chỉnh lại theo cùng một cỡ chữ , để giá thường với giá giảm nhìn tách_bạch . Đừng bỏ mã hàng ở góc dưới , vì bên thu_ngân đôi lúc phải dò lại khi máy_quét không nhận . Anh biết mẫu cũ có vài chỗ chật , mình giữ nội_dung cần_thiết rồi sắp lại khoảng_cách cho dễ đọc .",
+    "xa_giao": false
+  },
+  {
+    "stt": 11,
+    "speaker": "SPEAKER_00",
+    "start": 418,
+    "end": 456,
+    "goc": "Về hạn của phần tem, em gửi bản mới vào thứ Tư trước khi cửa hàng nhận đợt hàng tiếp theo. anh nói riêng mốc này để em chủ động, còn nếu cần in thử một tờ thì lấy giấy thường trước, đừng đặt thêm cuộn tem chỉ để xem kích thước. hôm nọ máy in kéo lệch mép giấy, mà chưa chắc do cuộn hay do nắp.",
+    "sach": "Về hạn của phần tem, em gửi bản mới vào thứ Tư trước khi cửa hàng nhận đợt hàng tiếp theo. anh nói riêng mốc này để em chủ động, còn nếu cần in thử một tờ thì lấy giấy thường trước, đừng đặt thêm cuộn tem chỉ để xem kích thước. hôm nọ máy in kéo lệch mép giấy, mà chưa chắc do cuộn hay do nắp.",
+    "tach_tu": "Về hạn của phần tem , em gửi bản mới vào thứ Tư trước khi cửa_hàng nhận đợt hàng tiếp_theo . anh nói_riêng mốc này để em chủ_động , còn nếu cần in thử một tờ thì lấy giấy thường trước , đừng đặt thêm cuộn tem chỉ để xem kích_thước . hôm nọ máy_in kéo lệch mép giấy , mà chưa chắc do cuộn hay do nắp .",
+    "xa_giao": false
+  },
+  {
+    "stt": 12,
+    "speaker": "SPEAKER_00",
+    "start": 456,
+    "end": 494,
+    "goc": "Mọi người nói máy quét bên quầy phụ đôi lúc kêu chậm, anh cũng thấy một lần nhưng lúc đó khách chen khá nhiều, có thể do mã bị bóng, cũng có thể do góc cầm, Tín bảo lần trước đã thử lau mặt kính rồi, nhưng anh chưa nghe thấy lỗi lặp lại bao nhiêu lần; mình đừng vội gọi sửa nếu chưa tái hiện được.",
+    "sach": "Mọi người nói máy quét bên quầy phụ đôi lúc kêu chậm, anh cũng thấy một lần nhưng lúc đó khách chen khá nhiều, có thể do mã bị bóng, cũng có thể do góc cầm, Tín bảo lần trước đã thử lau mặt kính rồi, nhưng anh chưa nghe thấy lỗi lặp lại bao nhiêu lần; mình đừng vội gọi sửa nếu chưa tái hiện được.",
+    "tach_tu": "Mọi người nói máy_quét bên quầy phụ đôi lúc kêu chậm , anh cũng thấy một lần nhưng lúc đó khách chen khá nhiều , có_thể do mã bị bóng , cũng có_thể do góc cầm , Tín bảo lần trước đã thử lau mặt kính rồi , nhưng anh chưa nghe thấy lỗi lặp lại bao_nhiêu lần ; mình đừng vội gọi sửa nếu chưa tái_hiện được .",
+    "xa_giao": false
+  },
+  {
+    "stt": 13,
+    "speaker": "SPEAKER_00",
+    "start": 494,
+    "end": 532,
+    "goc": "Tín, phần phiếu nhận hàng anh giao em xem lại, bổ sung chỗ ghi số thùng móp và số món thiếu trước khi ký nhận. Bên giao đôi khi để hàng sát cửa, ca sau mới phát hiện, đến lúc đó khó nhớ ai đã thấy gì. Em thử làm mẫu ngắn, chữ đủ lớn để ghi tại chỗ, không cần trang trí hay thêm mục chưa dùng.\n\n",
+    "sach": "Tín, phần phiếu nhận hàng anh giao em xem lại, bổ sung chỗ ghi số thùng móp và số món thiếu trước khi ký nhận. Bên giao đôi khi để hàng sát cửa, ca sau mới phát hiện, đến lúc đó khó nhớ ai đã thấy gì. Em thử làm mẫu ngắn, chữ đủ lớn để ghi tại chỗ, không cần trang trí hay thêm mục chưa dùng.",
+    "tach_tu": "Tín , phần phiếu nhận hàng anh giao em xem_lại , bổ_sung chỗ ghi số thùng móp và số món thiếu trước khi ký nhận . Bên giao đôi_khi để hàng sát cửa , ca sau mới phát_hiện , đến lúc đó khó nhớ ai đã thấy gì . Em thử làm mẫu ngắn , chữ đủ lớn để ghi tại_chỗ , không cần trang_trí hay thêm mục chưa dùng .",
+    "xa_giao": false
+  },
+  {
+    "stt": 14,
+    "speaker": "SPEAKER_00",
+    "start": 532,
+    "end": 570,
+    "goc": "Anh nghe trong lần giao gần nhất, có một thùng bị ướt ở đáy mà giấy kê vẫn khô, nên chưa biết nước đến từ xe hay từ kho. Mình đừng suy đoán ai làm đổ; cứ kiểm lúc mở cửa thùng và ghi tình trạng vào phiếu. Nếu hàng bên trong nguyên vẹn thì vẫn nhận, còn chuyện bao bì thì để riêng cho bên giao xem.",
+    "sach": "Anh nghe trong lần giao gần nhất, có một thùng bị ướt ở đáy mà giấy kê vẫn khô, nên chưa biết nước đến từ xe hay từ kho. Mình đừng suy đoán ai làm đổ; cứ kiểm lúc mở cửa thùng và ghi tình trạng vào phiếu. Nếu hàng bên trong nguyên vẹn thì vẫn nhận, còn chuyện bao bì thì để riêng cho bên giao xem.",
+    "tach_tu": "Anh nghe trong lần giao gần nhất , có một thùng bị ướt ở đáy mà giấy kê vẫn khô , nên chưa biết nước đến từ xe hay từ kho . Mình đừng suy_đoán ai làm đổ ; cứ kiểm lúc mở_cửa thùng và ghi tình_trạng vào phiếu . Nếu hàng bên trong nguyên_vẹn thì vẫn nhận , còn chuyện bao_bì thì để riêng cho bên giao xem .",
+    "xa_giao": false
+  },
+  {
+    "stt": 15,
+    "speaker": "SPEAKER_00",
+    "start": 570,
+    "end": 608,
+    "goc": "Phiếu nhận hàng sửa xong trước thứ Năm nhé Tín, vì chiều hôm đó có lô bổ sung và anh muốn dùng thử ngay. nếu mẫu chưa vừa thì ghi chú bằng bút cũng được, không cần đợi in màu. anh chỉ cần nhìn thấy số thùng, giờ nhận, tình trạng bề ngoài và người kiểm, mấy phần còn lại mình đã có trong sổ kho.",
+    "sach": "Phiếu nhận hàng sửa xong trước thứ Năm Tín, vì chiều hôm đó có lô bổ sung và anh muốn dùng thử ngay. nếu mẫu chưa vừa thì ghi chú bằng bút cũng được, không cần đợi in màu. anh chỉ cần nhìn thấy số thùng, giờ nhận, tình trạng bề ngoài và người kiểm, mấy phần còn lại mình đã có trong sổ kho.",
+    "tach_tu": "Phiếu nhận hàng sửa xong trước thứ Năm_Tín , vì chiều hôm đó có lô bổ_sung và anh muốn dùng thử ngay . nếu mẫu chưa vừa thì ghi_chú bằng bút cũng được , không cần đợi in màu . anh chỉ cần nhìn thấy số thùng , giờ nhận , tình_trạng bề_ngoài và người kiểm , mấy phần còn lại mình đã có trong sổ kho .",
+    "xa_giao": false
+  },
+  {
+    "stt": 16,
+    "speaker": "SPEAKER_00",
+    "start": 608,
+    "end": 646,
+    "goc": "Anh đã hỏi hiếu về phần hàng bỏ đi tháng trước chưa, anh thấy tổng con số tăng nhưng không rõ do hàng hỏng hay do nhập nhầm ngày. Đừng chỉ nhìn tổng, chia theo nhóm hàng thì có khi ra nguyên nhân, nhất là đồ để lạnh. Mình cũng nên so với tuần có lễ, vì lượng khách tăng khiến hàng mở nhiều hơn và phần dư cuối ngày cũng cao.",
+    "sach": "Anh đã hỏi hiếu về phần hàng bỏ đi tháng trước chưa, anh thấy tổng con số tăng nhưng không rõ do hàng hỏng hay do nhập nhầm ngày. Đừng chỉ nhìn tổng, chia theo nhóm hàng thì có khi ra nguyên nhân, nhất là đồ để lạnh. Mình cũng nên so với tuần có lễ, vì lượng khách tăng khiến hàng mở nhiều hơn và phần dư cuối ngày cũng cao.",
+    "tach_tu": "Anh đã hỏi hiếu về phần hàng bỏ đi tháng trước chưa , anh thấy tổng_con_số tăng nhưng không rõ do hàng hỏng hay do nhập nhầm ngày . Đừng chỉ nhìn tổng , chia theo nhóm hàng thì có khi ra nguyên_nhân , nhất là đồ để lạnh . Mình cũng_nên so với tuần có lễ , vì lượng khách tăng khiến hàng mở nhiều hơn và phần dư cuối ngày cũng cao .",
+    "xa_giao": false
+  },
+  {
+    "stt": 17,
+    "speaker": "SPEAKER_00",
+    "start": 646,
+    "end": 684,
+    "goc": "Hiếu, để em lo báo cáo hao hụt theo từng nhóm hàng, ghi thêm nguyên nhân nếu phiếu có nói rõ, còn chưa biết thì để trống chứ đừng tự đoán. Anh cần cả số món và giá trị ước tính, nhưng tách hai cột riêng. Đợt trước có dòng bị cộng hai lần vì đơn vị tính lẫn lộn, nên lần này xem kỹ gói với cái.",
+    "sach": "Hiếu, để em lo báo cáo hao hụt theo từng nhóm hàng, ghi thêm nguyên nhân nếu phiếu có nói rõ, còn chưa biết thì để trống chứ đừng tự đoán. Anh cần cả số món và giá trị ước tính, nhưng tách hai cột riêng. Đợt trước có dòng bị cộng hai lần vì đơn vị tính lẫn lộn, nên lần này xem kỹ gói với cái.",
+    "tach_tu": "Hiếu , để em lo báo_cáo hao_hụt theo từng nhóm hàng , ghi thêm nguyên_nhân nếu phiếu có nói rõ , còn chưa biết thì để trống chứ đừng tự đoán . Anh cần cả số món và giá_trị ước_tính , nhưng tách hai cột riêng . Đợt trước có dòng bị cộng hai lần vì đơn_vị tính lẫn_lộn , nên lần này xem kỹ gói với cái .",
+    "xa_giao": false
+  },
+  {
+    "stt": 18,
+    "speaker": "SPEAKER_00",
+    "start": 684,
+    "end": 722,
+    "goc": "Báo cáo hao hụt gửi anh vào thứ Sáu nhé, không cần chờ đủ cả tháng vì mình đang nhìn theo tuần, nếu có nhóm nào chưa ra số thì đánh dấu đang kiểm, sau đó bổ sung, anh biết phần này hơi tốn công, bởi phiếu cũ viết tay có lúc khó đọc; cứ lấy số rõ trước, rồi mình mới bàn xem quy trình có cần thay.",
+    "sach": "Báo cáo hao hụt gửi anh vào thứ Sáu, không cần chờ đủ cả tháng vì mình đang nhìn theo tuần, nếu có nhóm nào chưa ra số thì đánh dấu đang kiểm, sau đó bổ sung, anh biết phần này hơi tốn công, bởi phiếu cũ viết tay có lúc khó đọc; cứ lấy số rõ trước, rồi mình mới bàn xem quy trình có cần thay.",
+    "tach_tu": "Báo_cáo hao_hụt gửi anh vào thứ Sáu , không cần chờ đủ cả tháng vì mình đang nhìn theo tuần , nếu có nhóm nào chưa ra số thì đánh_dấu đang kiểm , sau đó bổ_sung , anh biết phần này hơi tốn công , bởi phiếu cũ viết_tay có lúc khó đọc ; cứ lấy số rõ trước , rồi mình mới bàn xem quy_trình có cần thay .",
+    "xa_giao": false
+  },
+  {
+    "stt": 19,
+    "speaker": "SPEAKER_00",
+    "start": 722,
+    "end": 760,
+    "goc": "hôm qua anh xem lại khu hàng lạnh, thấy một khay bị đẩy ra sau nên gần tới hạn mới phát hiện. không phải lô nào cũng như vậy, nên đừng biến một ví dụ thành quy định cho cả cửa hàng. Hiếu có nói hôm đó khách trả nhiều hộp do nắp lỏng, nhưng anh chưa tìm được phiếu đổi trả tương ứng để nối hai chuyện.",
+    "sach": "hôm qua anh xem lại khu hàng lạnh, thấy một khay bị đẩy ra sau nên gần tới hạn mới phát hiện. không phải lô nào cũng như vậy, nên đừng biến một ví dụ thành quy định cho cả cửa hàng. Hiếu có nói hôm đó khách trả nhiều hộp do nắp lỏng, nhưng anh chưa tìm được phiếu đổi trả tương ứng để nối hai chuyện.",
+    "tach_tu": "hôm_qua anh xem_lại khu hàng lạnh , thấy một khay bị đẩy ra sau nên gần tới hạn mới phát_hiện . không phải lô nào cũng như_vậy , nên đừng biến một ví_dụ thành quy_định cho cả cửa_hàng . Hiếu có nói hôm đó khách trả nhiều hộp do nắp lỏng , nhưng anh chưa tìm được phiếu đổi trả tương_ứng để nối hai chuyện .",
+    "xa_giao": false
+  },
+  {
+    "stt": 20,
+    "speaker": "SPEAKER_00",
+    "start": 760,
+    "end": 798,
+    "goc": "Trong tuần này cũng có chuyện ca sáng báo thiếu túi giấy, còn ca tối nói vẫn còn nguyên một bó. Có lẽ hai bên đang gọi hai loại túi bằng cùng một tên, hoặc bó hàng để nhầm vị trí. Anh không muốn thêm một bảng kiểm riêng chỉ vì thế; mình đợi Ngân đối chiếu xong rồi xem có cùng một món không.",
+    "sach": "Trong tuần này cũng có chuyện ca sáng báo thiếu túi giấy, còn ca tối nói vẫn còn nguyên một bó. Có lẽ hai bên đang gọi hai loại túi bằng cùng một tên, hoặc bó hàng để nhầm vị trí. Anh không muốn thêm một bảng kiểm riêng chỉ vì thế; mình đợi Ngân đối chiếu xong rồi xem có cùng một món không.",
+    "tach_tu": "Trong tuần này cũng có chuyện ca sáng báo thiếu túi giấy , còn ca tối nói vẫn còn nguyên một bó . Có_lẽ hai bên đang gọi hai loại túi bằng cùng một tên , hoặc bó hàng để nhầm vị_trí . Anh không muốn thêm một bảng kiểm riêng chỉ vì_thế ; mình đợi Ngân đối_chiếu xong rồi xem có cùng một món không .",
+    "xa_giao": false
+  },
+  {
+    "stt": 21,
+    "speaker": "SPEAKER_00",
+    "start": 798,
+    "end": 836,
+    "goc": "Anh tính thử combo bữa trưa, ghép một món nhẹ với đồ uống rồi nhìn phản ứng khách, nhưng giá vốn chưa rõ và quầy cũng đang chật. Nếu phải in bảng riêng thì chi phí lại phát sinh, nên để xem đã, chưa nói là sẽ làm. Có thể khách thích mua từng món hơn, mình cũng chưa hỏi đủ người để biết.",
+    "sach": "Anh tính thử combo bữa trưa, ghép một món nhẹ với đồ uống rồi nhìn phản ứng khách, nhưng giá vốn chưa rõ và quầy cũng đang chật. Nếu phải in bảng riêng thì chi phí lại phát sinh, nên để xem đã, chưa nói là sẽ làm. Có thể khách thích mua từng món hơn, mình cũng chưa hỏi đủ người để biết.",
+    "tach_tu": "Anh tính thử combo bữa trưa , ghép một món nhẹ với đồ uống rồi nhìn phản_ứng khách , nhưng giá vốn chưa rõ và quầy cũng đang chật . Nếu phải in bảng riêng thì chi_phí lại phát_sinh , nên để xem đã , chưa nói là sẽ làm . Có_thể khách thích mua từng món hơn , mình cũng chưa hỏi đủ người để biết .",
+    "xa_giao": false
+  },
+  {
+    "stt": 22,
+    "speaker": "SPEAKER_00",
+    "start": 836,
+    "end": 874,
+    "goc": "Bách, anh đổi hạn lịch ca tuần tới từ thứ Sáu sang thứ Năm, vì cuối tuần phòng nhân sự cần xem trước để bổ sung ca trống. Nội dung vẫn là xếp ca như đã nói, không thay việc khác. Anh biết đổi mốc giữa chừng sẽ làm em phải tính lại, nên lịch ca tuần tới chỉ cần bản dự kiến, chưa cần chữ ký từng người.",
+    "sach": "Bách, anh đổi hạn lịch ca tuần tới từ thứ Sáu sang thứ Năm, vì cuối tuần phòng nhân sự cần xem trước để bổ sung ca trống. Nội dung vẫn là xếp ca như đã nói, không thay việc khác. Anh biết đổi mốc giữa chừng sẽ làm em phải tính lại, nên lịch ca tuần tới chỉ cần bản dự kiến, chưa cần chữ ký từng người.",
+    "tach_tu": "Bách , anh đổi hạn lịch ca tuần tới từ thứ Sáu sang thứ Năm , vì cuối tuần_phòng nhân_sự cần xem trước để bổ_sung ca trống . Nội_dung vẫn là xếp ca như đã nói , không thay việc khác . Anh biết đổi mốc giữa_chừng sẽ làm em phải tính lại , nên lịch ca tuần tới chỉ cần bản dự_kiến , chưa cần chữ_ký từng người .",
+    "xa_giao": false
+  },
+  {
+    "stt": 23,
+    "speaker": "SPEAKER_00",
+    "start": 874,
+    "end": 912,
+    "goc": "Từ giờ đến lúc có lịch, nếu ai xin đổi ca thì cứ nhắn vào nhóm cửa hàng, đừng ghi chồng lên bản giấy treo ở quầy. Hôm trước hai người cùng tưởng mình trực tối, tới lúc mở cửa mới nhận ra tên bị sửa bằng hai màu bút. Chuyện đó đã xử lý xong rồi, nhưng anh muốn hiểu vì sao thông tin không tới ca sau.",
+    "sach": "Từ giờ đến lúc có lịch, nếu ai xin đổi ca thì cứ nhắn vào nhóm cửa hàng, đừng ghi chồng lên bản giấy treo ở quầy. Hôm trước hai người cùng tưởng mình trực tối, tới lúc mở cửa mới nhận ra tên bị sửa bằng hai màu bút. Chuyện đó đã xử lý xong rồi, nhưng anh muốn hiểu vì sao thông tin không tới ca sau.",
+    "tach_tu": "Từ giờ đến lúc có lịch , nếu ai xin đổi ca thì cứ nhắn vào nhóm cửa_hàng , đừng ghi chồng lên bản giấy treo ở quầy . Hôm trước hai người cùng tưởng mình trực tối , tới lúc mở_cửa mới nhận ra tên bị sửa bằng hai màu bút . Chuyện đó đã xử_lý xong rồi , nhưng anh muốn hiểu vì_sao thông_tin không tới ca sau .",
+    "xa_giao": false
+  },
+  {
+    "stt": 24,
+    "speaker": "SPEAKER_00",
+    "start": 912,
+    "end": 950,
+    "goc": "Anh rà lại mấy phản hồi khách, nhiều người khen nhân viên hướng dẫn tìm hàng, nhưng có hai góp ý nói bảng chỉ khu vực hơi cao. Chưa chắc phải làm bảng mới; nếu hạ thấp thì có thể bị che bởi xe đẩy. Mình cứ để ý thêm, nhất là lúc trẻ con đi cùng người lớn và phải nhìn qua giỏ hàng.",
+    "sach": "Anh rà lại mấy phản hồi khách, nhiều người khen nhân viên hướng dẫn tìm hàng, nhưng có hai góp ý nói bảng chỉ khu vực hơi cao. Chưa chắc phải làm bảng mới; nếu hạ thấp thì có thể bị che bởi xe đẩy. Mình cứ để ý thêm, nhất là lúc trẻ con đi cùng người lớn và phải nhìn qua giỏ hàng.",
+    "tach_tu": "Anh rà lại mấy phản_hồi khách , nhiều người khen nhân_viên hướng_dẫn tìm hàng , nhưng có hai góp_ý nói bảng chỉ khu_vực hơi cao . Chưa chắc phải làm bảng mới ; nếu hạ thấp thì có_thể bị che bởi xe đẩy . Mình cứ để_ý thêm , nhất là lúc trẻ_con đi cùng người_lớn và phải nhìn qua giỏ hàng .",
+    "xa_giao": false
+  },
+  {
+    "stt": 25,
+    "speaker": "SPEAKER_00",
+    "start": 950,
+    "end": 988,
+    "goc": "Có người nói chữ sale off trên bảng cũ nghe như sên ốp khi đọc nhanh, anh cũng không biết khách có để ý hay chỉ đang hỏi giá. mình nên ưu tiên con số dễ đọc, không chạy theo thuật ngữ. nhân tiện, máy tính tiền vẫn mở được lịch sử giao dịch, nhưng mất vài nhịp mới tải, có thể do mạng lúc ấy đông.",
+    "sach": "Có người nói chữ sale off trên bảng cũ nghe như sên ốp khi đọc nhanh, anh cũng không biết khách có để ý hay chỉ đang hỏi giá. mình nên ưu tiên con số dễ đọc, không chạy theo thuật ngữ. nhân tiện, máy tính tiền vẫn mở được lịch sử giao dịch, nhưng mất vài nhịp mới tải, có thể do mạng lúc ấy đông.",
+    "tach_tu": "Có người nói_chữ sale off trên bảng cũ nghe như sên ốp khi đọc nhanh , anh cũng không biết khách có để_ý hay chỉ đang hỏi giá . mình nên ưu_tiên con_số dễ đọc , không chạy theo thuật_ngữ . nhân_tiện , máy_tính tiền vẫn mở được lịch_sử giao_dịch , nhưng mất vài nhịp mới tải , có_thể do mạng lúc ấy đông .",
+    "xa_giao": false
+  },
+  {
+    "stt": 26,
+    "speaker": "SPEAKER_00",
+    "start": 988,
+    "end": 1026,
+    "goc": "Anh muốn xem biên lợi nhuận tuần, tự anh tổng hợp doanh thu với phần hàng giảm giá và gửi mọi người trước thứ Năm. Mình đừng lấy mỗi tổng tiền làm kết luận, vì có hôm doanh thu cao nhưng khuyến mại cũng nhiều. Anh sẽ đối chiếu hai tuần gần nhất trước, nếu cách tính chưa thống nhất thì ghi rõ giả định để lần sau dùng cùng một kiểu.\n\n",
+    "sach": "Anh muốn xem biên lợi nhuận tuần, tự anh tổng hợp doanh thu với phần hàng giảm giá và gửi mọi người trước thứ Năm. Mình đừng lấy mỗi tổng tiền làm kết luận, vì có hôm doanh thu cao nhưng khuyến mại cũng nhiều. Anh sẽ đối chiếu hai tuần gần nhất trước, nếu cách tính chưa thống nhất thì ghi rõ giả định để lần sau dùng cùng một kiểu.",
+    "tach_tu": "Anh muốn xem biên lợi_nhuận tuần , tự anh tổng_hợp_doanh_thu với phần hàng giảm_giá và gửi mọi người trước thứ Năm . Mình đừng lấy mỗi tổng_tiền làm kết_luận , vì có hôm doanh_thu cao nhưng khuyến_mại cũng nhiều . Anh sẽ đối_chiếu hai tuần gần nhất trước , nếu cách tính chưa thống_nhất thì ghi rõ giả_định để lần sau dùng cùng một kiểu .",
+    "xa_giao": false
+  },
+  {
+    "stt": 27,
+    "speaker": "SPEAKER_00",
+    "start": 1026,
+    "end": 1064,
+    "goc": "Mọi người cập nhật sổ bàn giao cuối ca, nhất là hàng thiếu, đồ hỏng và việc gì còn chờ ca sau xem tiếp. Mốc hoàn thành là thứ Bảy, trước khi đóng cửa; không cần chép lại những dòng đã được xử lý. Một dòng ngắn, có giờ và vị trí cụ thể, sẽ giúp người nhận ca đỡ phải hỏi vòng quanh.",
+    "sach": "Mọi người cập nhật sổ bàn giao cuối ca, nhất là hàng thiếu, đồ hỏng và việc gì còn chờ ca sau xem tiếp. Mốc hoàn thành là thứ Bảy, trước khi đóng cửa; không cần chép lại những dòng đã được xử lý. Một dòng ngắn, có giờ và vị trí cụ thể, sẽ giúp người nhận ca đỡ phải hỏi vòng quanh.",
+    "tach_tu": "Mọi người cập_nhật sổ bàn_giao cuối ca , nhất là hàng thiếu , đồ hỏng và việc gì còn chờ ca sau xem tiếp . Mốc hoàn_thành là thứ Bảy , trước khi đóng_cửa ; không cần chép lại những dòng đã được xử_lý . Một dòng ngắn , có giờ và vị_trí cụ_thể , sẽ giúp người nhận ca đỡ phải hỏi vòng_quanh .",
+    "xa_giao": false
+  },
+  {
+    "stt": 28,
+    "speaker": "SPEAKER_00",
+    "start": 1064,
+    "end": 1102,
+    "goc": "Cách ghi sổ bàn giao cuối ca hiện mỗi người một kiểu, có người viết tên quầy, có người chỉ ghi số kệ. Anh muốn dùng tên khu vực như nhau, nhưng mình chưa có sơ đồ mới nên đừng tự đặt ký hiệu. Tín có thể xem lại bản cũ, còn hôm nay cứ ghi chữ bình thường để ca khác hiểu ngay.",
+    "sach": "Cách ghi sổ bàn giao cuối ca hiện mỗi người một kiểu, có người viết tên quầy, có người chỉ ghi số kệ. Anh muốn dùng tên khu vực như nhau, nhưng mình chưa có sơ đồ mới nên đừng tự đặt ký hiệu. Tín có thể xem lại bản cũ, còn hôm nay cứ ghi chữ bình thường để ca khác hiểu ngay.",
+    "tach_tu": "Cách ghi sổ bàn_giao cuối ca hiện mỗi người một kiểu , có người viết tên quầy , có người chỉ ghi số kệ . Anh muốn dùng tên khu_vực như nhau , nhưng mình chưa có sơ_đồ mới nên đừng tự đặt ký_hiệu . Tín có_thể xem_lại bản cũ , còn hôm_nay cứ ghi chữ bình_thường để ca khác hiểu ngay .",
+    "xa_giao": false
+  },
+  {
+    "stt": 29,
+    "speaker": "SPEAKER_00",
+    "start": 1102,
+    "end": 1140,
+    "goc": "Từ nay, mọi chương trình giảm sâu trên hai mươi phần trăm phải được anh duyệt trước khi treo bảng, để tránh hai mức giá khác nhau ở quầy với kệ. Mức giảm nhỏ đang chạy thì cứ theo quy trình hiện tại. Anh nói rõ phần này vì tuần rồi có tờ giấy được dán trước khi quản lý xem, khách cầm tới tính tiền mới phát hiện.",
+    "sach": "Từ nay, mọi chương trình giảm sâu trên hai mươi phần trăm phải được anh duyệt trước khi treo bảng, để tránh hai mức giá khác nhau ở quầy với kệ. Mức giảm nhỏ đang chạy thì cứ theo quy trình hiện tại. Anh nói rõ phần này vì tuần rồi có tờ giấy được dán trước khi quản lý xem, khách cầm tới tính tiền mới phát hiện.",
+    "tach_tu": "Từ nay , mọi chương_trình giảm sâu trên hai_mươi phần_trăm phải được anh duyệt trước khi treo bảng , để tránh hai mức giá khác nhau ở quầy với kệ . Mức giảm nhỏ đang chạy thì cứ theo quy_trình hiện_tại . Anh nói rõ phần này vì tuần rồi có tờ giấy được dán trước khi quản_lý xem , khách cầm tới tính tiền mới phát_hiện .",
+    "xa_giao": false
+  },
+  {
+    "stt": 30,
+    "speaker": "SPEAKER_00",
+    "start": 1140,
+    "end": 1178,
+    "goc": "Không phải cứ có bảng giảm là sai, nhiều đợt đã chạy ổn và khách hiểu rất nhanh. Chuyện tuần trước là một tờ ghi giá cũ chưa được gỡ, nằm phía sau tờ mới, nên nhân viên nhìn từ bên cạnh vẫn thấy. Anh nghĩ cần bình tĩnh phân biệt lỗi nội dung với lỗi sắp bảng, chứ thay cả quy trình sẽ làm ca nào cũng thêm thao tác.",
+    "sach": "Không phải cứ có bảng giảm là sai, nhiều đợt đã chạy ổn và khách hiểu rất nhanh. Chuyện tuần trước là một tờ ghi giá cũ chưa được gỡ, nằm phía sau tờ mới, nên nhân viên nhìn từ bên cạnh vẫn thấy. Anh nghĩ cần bình tĩnh phân biệt lỗi nội dung với lỗi sắp bảng, chứ thay cả quy trình sẽ làm ca nào cũng thêm thao tác.",
+    "tach_tu": "Không phải cứ có bảng giảm là sai , nhiều đợt đã chạy ổn và khách hiểu rất nhanh . Chuyện tuần trước là một tờ ghi giá cũ chưa được gỡ , nằm phía sau tờ mới , nên nhân_viên nhìn từ bên cạnh vẫn thấy . Anh nghĩ cần bình_tĩnh phân_biệt lỗi nội_dung với lỗi sắp bảng , chứ thay cả quy_trình sẽ làm ca nào cũng thêm thao_tác .",
+    "xa_giao": false
+  },
+  {
+    "stt": 31,
+    "speaker": "SPEAKER_00",
+    "start": 1178,
+    "end": 1216,
+    "goc": "Lúc nhận hàng, bên giao có khi báo giờ sớm nhưng xe lại tới muộn, nên mình khó bố trí người ở cửa sau. Tín vừa nói lần gần nhất xe tới trước giờ hẹn khoảng hai mươi phút, còn tuần trước thì muộn gần một tiếng. Anh không rõ lịch nào mới là thường lệ, để xem thêm vài chuyến rồi tính chuyện gọi xác nhận.",
+    "sach": "Lúc nhận hàng, bên giao có khi báo giờ sớm nhưng xe lại tới muộn, nên mình khó bố trí người ở cửa sau. Tín vừa nói lần gần nhất xe tới trước giờ hẹn khoảng hai mươi phút, còn tuần trước thì muộn gần một tiếng. Anh không rõ lịch nào mới là thường lệ, để xem thêm vài chuyến rồi tính chuyện gọi xác nhận.",
+    "tach_tu": "Lúc nhận hàng , bên giao có khi báo giờ sớm nhưng xe lại tới muộn , nên mình khó bố_trí người ở cửa sau . Tín vừa nói lần gần nhất xe tới trước giờ hẹn khoảng hai mươi phút , còn tuần trước thì muộn gần một tiếng . Anh không rõ lịch nào mới là thường_lệ , để xem thêm vài chuyến rồi tính_chuyện gọi xác_nhận .",
+    "xa_giao": false
+  },
+  {
+    "stt": 32,
+    "speaker": "SPEAKER_00",
+    "start": 1216,
+    "end": 1254,
+    "goc": "Ngân còn nhớ đợt kiểm trước không, có mấy món thiếu nhưng cuối cùng tìm thấy trong thùng trả hàng. Lần này nhớ tách hàng chờ trả khỏi hàng bán được, nếu không tổng trên kệ lại lệch. Anh nói để thống nhất cách hiểu thôi, còn hiện giờ khu trả hàng đã được dọn và nhãn cũ không còn treo, xem mãkệ có bị che bởi giấy giảm giá không.",
+    "sach": "Ngân còn nhớ đợt kiểm trước không, có mấy món thiếu nhưng cuối cùng tìm thấy trong thùng trả hàng. Lần này nhớ tách hàng chờ trả khỏi hàng bán được, nếu không tổng trên kệ lại lệch. Anh nói để thống nhất cách hiểu thôi, còn hiện giờ khu trả hàng đã được dọn và nhãn cũ không còn treo, xem mãkệ có bị che bởi giấy giảm giá không.",
+    "tach_tu": "Ngân còn nhớ đợt kiểm trước không , có mấy món thiếu nhưng cuối_cùng tìm thấy trong thùng trả hàng . Lần này nhớ tách hàng chờ trả khỏi hàng bán được , nếu không tổng trên kệ lại lệch . Anh nói để thống_nhất cách hiểu thôi , còn hiện_giờ khu trả hàng đã được dọn và nhãn cũ không còn treo , xem mãkệ có bị che bởi giấy giảm_giá không .",
+    "xa_giao": false
+  },
+  {
+    "stt": 33,
+    "speaker": "SPEAKER_00",
+    "start": 1254,
+    "end": 1292,
+    "goc": "Cái planôgram trên máy tính bảng hiển thị chậm, anh không chắc là do mạng hay do bản vẽ nặng. Nhân viên mới nhìn vào cũng hỏi đâu là tầng trên, nên hình ảnh chưa thật trực quan. Chưa cần mua thiết bị khác; mình đang có ảnh chụp từng kệ, xem lại bằng ảnh có nhanh hơn không thì để hôm khác bàn.",
+    "sach": "Cái planôgram trên máy tính bảng hiển thị chậm, anh không chắc là do mạng hay do bản vẽ nặng. Nhân viên mới nhìn vào cũng hỏi đâu là tầng trên, nên hình ảnh chưa thật trực quan. Chưa cần mua thiết bị khác; mình đang có ảnh chụp từng kệ, xem lại bằng ảnh có nhanh hơn không thì để hôm khác bàn.",
+    "tach_tu": "Cái planôgram trên máy_tính bảng hiển_thị chậm , anh không chắc là do mạng hay do bản_vẽ nặng . Nhân_viên mới nhìn vào cũng hỏi đâu là tầng trên , nên hình_ảnh chưa thật trực_quan . Chưa cần mua thiết_bị khác ; mình đang có ảnh chụp từng kệ , xem_lại bằng ảnh có nhanh hơn không thì để hôm khác bàn .",
+    "xa_giao": false
+  },
+  {
+    "stt": 34,
+    "speaker": "SPEAKER_00",
+    "start": 1292,
+    "end": 1330,
+    "goc": "Anh nghe có người gọi mã SKU là ét kiu, người khác lại đọc từng chữ cái, khách thì chỉ cần tên trên bao bì. Chỗ nào máy quét nhận tốt thì dùng mã, còn khi không nhận thì hỏi khách trước khi đoán. Một lần nhập nhầm có thể làm tồn kho rối cả tuần, nên anh thà chậm một chút mà đúng; cuối ca mình đốisoát số máy với sổ tay.",
+    "sach": "Anh nghe có người gọi mã SKU là ét kiu, người khác lại đọc từng chữ cái, khách thì chỉ cần tên trên bao bì. Chỗ nào máy quét nhận tốt thì dùng mã, còn khi không nhận thì hỏi khách trước khi đoán. Một lần nhập nhầm có thể làm tồn kho rối cả tuần, nên anh thà chậm một chút mà đúng; cuối ca mình đốisoát số máy với sổ tay.",
+    "tach_tu": "Anh nghe có người gọi mã SKU là ét kiu , người khác lại đọc từng chữ_cái , khách thì chỉ cần tên trên bao_bì . Chỗ nào máy_quét nhận tốt thì dùng mã , còn khi không nhận thì hỏi khách trước khi đoán . Một lần nhập nhầm có_thể làm tồn_kho rối cả tuần , nên anh thà chậm một_chút mà đúng ; cuối ca mình đốisoát số máy với sổ_tay .",
+    "xa_giao": false
+  },
+  {
+    "stt": 35,
+    "speaker": "SPEAKER_00",
+    "start": 1330,
+    "end": 1368,
+    "goc": "rồi, chuyện ca chiều hôm qua cũng đã ổn, nhân viên đổi với nhau và không ai phải ở lại quá giờ. Anh chỉ muốn nhắc là khi nói chuyện trong nhóm thì ghi rõ ngày, vì chữ mai dễ hiểu khác nhau nếu đọc lại sau hai hôm. Mình thường nhắn nhanh lúc bận, thành ra thiếu mất bối cảnh.",
+    "sach": "rồi, chuyện ca chiều hôm qua cũng đã ổn, nhân viên đổi với nhau và không ai phải ở lại quá giờ. Anh chỉ muốn nhắc là khi nói chuyện trong nhóm thì ghi rõ ngày, vì chữ mai dễ hiểu khác nhau nếu đọc lại sau hai hôm. Mình thường nhắn nhanh lúc bận, thành ra thiếu mất bối cảnh.",
+    "tach_tu": "rồi , chuyện ca chiều hôm_qua cũng đã ổn , nhân_viên đổi với nhau và không ai phải ở lại quá giờ . Anh chỉ muốn nhắc là khi nói_chuyện trong nhóm thì ghi rõ ngày , vì chữ mai dễ hiểu khác nhau nếu đọc lại sau hai hôm . Mình thường nhắn nhanh lúc bận , thành_ra thiếu mất bối_cảnh .",
+    "xa_giao": false
+  },
+  {
+    "stt": 36,
+    "speaker": "SPEAKER_00",
+    "start": 1368,
+    "end": 1406,
+    "goc": "Anh thấy tín nhắn rằng mặt kính máy quét đã được lau, nhưng một hộp vẫn không nhận mã, có lẽ nhãn bị nhăn ở góc. Chuyện đó chưa thành việc sửa máy, vì lần thử thứ hai đọc được. Nếu lặp lại nhiều lần thì ghi mẫu mã sản phẩm, còn hiện tại đừng dừng cả quầy để kiểm tra.",
+    "sach": "Anh thấy tín nhắn rằng mặt kính máy quét đã được lau, nhưng một hộp vẫn không nhận mã, có lẽ nhãn bị nhăn ở góc. Chuyện đó chưa thành việc sửa máy, vì lần thử thứ hai đọc được. Nếu lặp lại nhiều lần thì ghi mẫu mã sản phẩm, còn hiện tại đừng dừng cả quầy để kiểm tra.",
+    "tach_tu": "Anh thấy tín nhắn rằng mặt kính máy_quét đã được lau , nhưng một hộp vẫn không nhận mã , có_lẽ nhãn bị nhăn ở góc . Chuyện đó chưa thành việc sửa máy , vì lần thử thứ hai đọc được . Nếu_lặp lại nhiều lần thì ghi mẫu_mã sản_phẩm , còn hiện_tại đừng dừng cả quầy để kiểm_tra .",
+    "xa_giao": false
+  },
+  {
+    "stt": 37,
+    "speaker": "SPEAKER_00",
+    "start": 1406,
+    "end": 1444,
+    "goc": "Mấy từ bên phần mềm như cash flow có người đọc thành két phờ lô, anh nghe lần đầu còn tưởng đang nói tên một loại hàng. Mình cứ dùng cách gọi tiếng Việt trong trao đổi hằng ngày, khỏi mất thời gian giải thích. Cũng có chữ xì cờan trên màn hình, nhưng thao tác thực tế là quét mã, ai mới vào cũng hiểu cách đó.",
+    "sach": "Mấy từ bên phần mềm như cash flow có người đọc thành két phờ lô, anh nghe lần đầu còn tưởng đang nói tên một loại hàng. Mình cứ dùng cách gọi tiếng Việt trong trao đổi hằng ngày, khỏi mất thời gian giải thích. Cũng có chữ xì cờan trên màn hình, nhưng thao tác thực tế là quét mã, ai mới vào cũng hiểu cách đó.",
+    "tach_tu": "Mấy từ bên phần_mềm như cash flow có người đọc thành két phờ lô , anh nghe lần đầu còn tưởng đang nói tên một loại hàng . Mình cứ dùng cách gọi tiếng Việt trong trao_đổi hằng ngày , khỏi mất thời_gian giải_thích . Cũng có chữ xì cờan trên màn_hình , nhưng thao_tác thực_tế là quét mã , ai mới vào cũng hiểu cách đó .",
+    "xa_giao": false
+  },
+  {
+    "stt": 38,
+    "speaker": "SPEAKER_00",
+    "start": 1444,
+    "end": 1482,
+    "goc": "Anh nhắc lại cho khỏi sót: Ngân làm phiếu chênh lệch, Bách gửi lịch ca tuần tới vào thứ Năm, Mỹ Linh sửa tem giá, Tín cập nhật phiếu nhận hàng, Hiếu làm báo cáo hao hụt. Anh tự làm biên lợi nhuận tuần, mọi người ghi sổ bàn giao cuối ca trước thứ Bảy. Các mốc này mình đã nói rõ, không cần chép thêm bảng khác.",
+    "sach": "Anh nhắc lại cho khỏi sót: Ngân làm phiếu chênh lệch, Bách gửi lịch ca tuần tới vào thứ Năm, Mỹ Linh sửa tem giá, Tín cập nhật phiếu nhận hàng, Hiếu làm báo cáo hao hụt. Anh tự làm biên lợi nhuận tuần, mọi người ghi sổ bàn giao cuối ca trước thứ Bảy. Các mốc này mình đã nói rõ, không cần chép thêm bảng khác.",
+    "tach_tu": "Anh nhắc lại cho khỏi sót : Ngân làm phiếu chênh_lệch , Bách gửi lịch ca tuần tới vào thứ Năm , Mỹ_Linh sửa tem giá , Tín_cập_nhật phiếu nhận hàng , Hiếu làm báo_cáo hao_hụt . Anh tự làm biên lợi_nhuận tuần , mọi người ghi sổ bàn_giao cuối ca trước thứ Bảy . Các mốc này mình đã nói rõ , không cần chép thêm bảng khác .",
+    "xa_giao": false
+  },
+  {
+    "stt": 39,
+    "speaker": "SPEAKER_00",
+    "start": 1482,
+    "end": 1520,
+    "goc": "Buổi tiếp theo mình gặp thứ Ba 9 giờ 30 ở phòng họp tầng hai. Anh sẽ mang phần tổng hợp tuần, còn mọi người cứ ghi lại điều gì thật sự vướng trong ca, nhất là trường hợp khách hỏi giá hoặc hàng không khớp. Thôi, tới đây mình dừng, ai đang còn ca thì quay lại quầy, nhớ bàn giao gọn cho người sau.",
+    "sach": "Buổi tiếp theo mình gặp thứ Ba 9 giờ 30 ở phòng họp tầng hai. Anh sẽ mang phần tổng hợp tuần, còn mọi người cứ ghi lại điều gì thật sự vướng trong ca, nhất là trường hợp khách hỏi giá hoặc hàng không khớp. Thôi, tới đây mình dừng, ai đang còn ca thì quay lại quầy, nhớ bàn giao gọn cho người sau.",
+    "tach_tu": "Buổi tiếp_theo mình gặp thứ Ba 9 giờ 30 ở phòng_họp tầng hai . Anh sẽ mang phần tổng_hợp tuần , còn mọi người cứ ghi lại điều gì thật_sự vướng trong ca , nhất là trường_hợp khách hỏi giá hoặc hàng không khớp . Thôi , tới đây mình dừng , ai đang còn ca thì quay lại quầy , nhớ bàn_giao gọn cho người sau .",
+    "xa_giao": false
+  }
+]

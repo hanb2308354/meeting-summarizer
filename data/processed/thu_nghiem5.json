@@ -1,0 +1,92 @@
+[
+  {
+    "stt": 0,
+    "speaker": "SPEAKER_00",
+    "start": 0.0,
+    "end": 2.5,
+    "goc": "ờm chào mọi người nha, mình bắt đầu buổi họp spring mới.",
+    "sach": "chào mọi người, mình bắt đầu buổi họp Sprint mới.",
+    "tach_tu": "chào mọi người , mình bắt_đầu buổi họp Sprint mới .",
+    "xa_giao": true
+  },
+  {
+    "stt": 1,
+    "speaker": "SPEAKER_00",
+    "start": 3.0,
+    "end": 6.2,
+    "goc": "đầu tiên là phần giao diện. hôm trước chốt là team mình dùng view rồi nhé.",
+    "sach": "đầu tiên là phần giao diện. hôm trước chốt là team mình dùng Vue rồi.",
+    "tach_tu": "đầu_tiên là phần giao_diện . hôm trước chốt là team mình dùng Vue rồi .",
+    "xa_giao": false
+  },
+  {
+    "stt": 2,
+    "speaker": "SPEAKER_00",
+    "start": 6.5,
+    "end": 9.0,
+    "goc": "thì phần này bạn long sẽ phụ trách update lại cái trang chủ nha.",
+    "sach": "thì phần này bạn long sẽ phụ trách update lại cái trang chủ.",
+    "tach_tu": "thì phần này bạn long sẽ phụ_trách update lại cái trang_chủ .",
+    "xa_giao": false
+  },
+  {
+    "stt": 3,
+    "speaker": "SPEAKER_00",
+    "start": 9.5,
+    "end": 11.0,
+    "goc": "deadline là thứ 5 tuần này.",
+    "sach": "deadline là thứ 5 tuần này.",
+    "tach_tu": "deadline là thứ 5 tuần này .",
+    "xa_giao": false
+  },
+  {
+    "stt": 4,
+    "speaker": "SPEAKER_00",
+    "start": 11.5,
+    "end": 15.0,
+    "goc": "thứ 2 là về tính năng đăng nhập. phần back-end khi bạn nam sẽ làm api đăng nhập.",
+    "sach": "thứ 2 là về tính năng đăng nhập. phần backend khi bạn nam sẽ làm API đăng nhập.",
+    "tach_tu": "thứ 2 là về tính_năng đăng_nhập . phần backend khi bạn nam sẽ làm API đăng_nhập .",
+    "xa_giao": false
+  },
+  {
+    "stt": 5,
+    "speaker": "SPEAKER_00",
+    "start": 15.5,
+    "end": 19.5,
+    "goc": "hạn chót là 20 tháng 11, kèm theo việc viết luôn document nha nam.",
+    "sach": "hạn chót là 20 tháng 11, kèm theo việc viết luôn document nam.",
+    "tach_tu": "hạn_chót là 20 tháng 11 , kèm theo việc viết luôn document nam .",
+    "xa_giao": false
+  },
+  {
+    "stt": 6,
+    "speaker": "SPEAKER_00",
+    "start": 20.0,
+    "end": 23.0,
+    "goc": "ok phần database để mình làm, mình sẽ rà soát lại trước ngày mai.",
+    "sach": "phần database để mình làm, mình sẽ rà soát lại trước ngày mai.",
+    "tach_tu": "phần database để mình làm , mình sẽ rà_soát lại trước ngày_mai .",
+    "xa_giao": false
+  },
+  {
+    "stt": 7,
+    "speaker": "SPEAKER_00",
+    "start": 23.5,
+    "end": 26.0,
+    "goc": "thống nhất là thêm cột sđt vào bảng user nhé.",
+    "sach": "thống nhất là thêm cột sđt vào bảng user.",
+    "tach_tu": "thống_nhất là thêm cột sđt vào bảng user .",
+    "xa_giao": false
+  },
+  {
+    "stt": 8,
+    "speaker": "SPEAKER_00",
+    "start": 26.5,
+    "end": 30.0,
+    "goc": "có ai có câu hỏi gì không. buổi họp tiếp theo là 9h sáng thứ 2 tuần sau tại phòng họp lớn.",
+    "sach": "có ai có câu hỏi gì không. buổi họp tiếp theo là 9h sáng thứ 2 tuần sau tại phòng họp lớn.",
+    "tach_tu": "có ai có câu hỏi gì không . buổi họp tiếp_theo là 9h sáng thứ 2 tuần sau tại phòng_họp lớn .",
+    "xa_giao": false
+  }
+]

@@ -150,7 +150,7 @@ def la_cum_viec_cung_chu_ke_nhau(tasks, cac_cau):
         if i is None or task.get("start") is None:
             return False
         vi_tri.append(i)
-        van_ban = chuan_hoa(cac_cau[i].get("text") or cac_cau[i].get("sach") or "")
+        van_ban = chuan_hoa(cac_cau[i].get("goc") or cac_cau[i].get("text") or cac_cau[i].get("sach") or "")
         chu.add(chuan_hoa_chu(task.get("owner"), van_ban))
     if len(chu) != 1 or "" in chu:
         return False
@@ -168,7 +168,7 @@ def la_cung_menh_de_liet_ke_trong_cau(tasks, cac_cau):
     if cau is None:
         return False
 
-    van_ban = chuan_hoa(cau.get("text") or cau.get("sach") or "")
+    van_ban = chuan_hoa(cau.get("goc") or cau.get("text") or cau.get("sach") or "")
     chu = {
         chuan_hoa_chu(task.get("owner"), van_ban)
         for task in tasks
@@ -211,7 +211,7 @@ def la_cung_menh_de_liet_ke(tasks, cac_cau):
 
 def kiem_tra_file(ten_file):
     """Kiểm tra một file transcript theo đáp án mẫu."""
-    duong_dan = Path("data/transcripts") / ten_file
+    duong_dan = Path(__file__).resolve().parents[2] / "data" / "processed" / ten_file
     with duong_dan.open(encoding="utf-8") as tep:
         cac_cau_goc = json.load(tep)
     ket_qua, _, _ = chay_nlp(duong_dan)
@@ -221,7 +221,7 @@ def kiem_tra_file(ten_file):
     def cau_nguon(task):
         return next(
             (
-                item.get("text") or item.get("sach") or ""
+                item.get("goc") or item.get("text") or item.get("sach") or ""
                 for item in cac_cau_goc
                 if item.get("start") == task.get("start")
             ),
@@ -469,7 +469,7 @@ def kiem_tra_file(ten_file):
 
 def main():
     parser = argparse.ArgumentParser(description="Kiểm tra kết quả NLP trên transcript mẫu.")
-    parser.add_argument("files", nargs="*", help="Tên transcript trong data/transcripts/")
+    parser.add_argument("files", nargs="*", help="Tên file văn bản sạch trong data/processed/")
     parser.add_argument(
         "--chi-tiet",
         action="store_true",

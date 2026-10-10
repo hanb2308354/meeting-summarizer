@@ -2,9 +2,14 @@
 # chạy lõi đường xử lý mà kiem_thu.py dùng cho một file (tách phần ghi,
 # không đụng outputs/), so việc thực tế với mong_doi.
 import sys
+from pathlib import Path
 
-from doc_transcript import CAC_TRUONG_BAT_BUOC
-from tien_xu_ly import tien_xu_ly
+# Ca kiểm thử dựng câu THÔ trong bộ nhớ (chưa có file văn bản sạch), nên riêng file
+# kiểm thử này gọi thẳng phần làm sạch của Hân để có văn bản sạch, giống hệt khi chạy
+# src/tien_xu_ly/tien_xu_ly.py. Code chính của NLP chỉ đọc file data/processed/.
+sys.path.append(str(Path(__file__).resolve().parents[1] / "tien_xu_ly"))
+from doc_transcript import CAC_TRUONG_BAT_BUOC  # noqa: E402
+from lam_sach import tien_xu_ly  # noqa: E402
 from tom_tat import tom_tat
 from trich_xuat import trich_xuat
 
@@ -138,8 +143,12 @@ def tao_transcript(cac_cau):
 
 
 def chay_loi(danh_sach_cau):
-    """Chạy lõi pipeline như chay_nlp nhưng tách phần ghi, không đụng outputs/."""
-    du_lieu = tien_xu_ly(danh_sach_cau)
+    """Câu thô -> làm sạch -> lõi NLP (dùng cho ca dựng trong bộ nhớ)."""
+    return chay_loi_sach(tien_xu_ly(danh_sach_cau))
+
+
+def chay_loi_sach(du_lieu):
+    """Chạy lõi pipeline trên văn bản sạch như chay_nlp nhưng không đụng outputs/."""
     trich = trich_xuat(du_lieu)
     tong_ket = tom_tat(du_lieu, [muc["text"] for muc in trich["decisions"]])
     return {

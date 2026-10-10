@@ -1,5 +1,10 @@
 ﻿# Phần nhận dạng giọng nói 
 faster-whisper==1.2.1
+# av bản 19 trở lên làm faster-whisper 1.2.1 lỗi khi đọc file ghi âm
+av<19
+numpy
+# Đo tỷ lệ lỗi từ (WER) cho phần nhận dạng giọng nói
+jiwer==4.0.0
 
 # Phần xử lý văn bản (NLP)
 pyvi==0.1.1

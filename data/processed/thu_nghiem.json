@@ -1,0 +1,52 @@
+[
+  {
+    "stt": 0,
+    "speaker": "SPEAKER_00",
+    "start": 0.0,
+    "end": 2.14,
+    "goc": "Ok, mình bắt đầu meeting nha.",
+    "sach": "mình bắt đầu meeting.",
+    "tach_tu": "mình bắt_đầu meeting .",
+    "xa_giao": true
+  },
+  {
+    "stt": 1,
+    "speaker": "SPEAKER_00",
+    "start": 2.3,
+    "end": 10.2,
+    "goc": "Tuần trước thầy có feedback là phần giao diện còn dối, nên tuần này nhóm mình phải update lại, phần front-end thì giao cho bạn Tuấn phụ trách, làm lại trang chủ với trang đăng nhập.",
+    "sach": "Tuần trước thầy có feedback là phần giao diện còn dối, nên tuần này nhóm mình phải update lại, phần frontend thì giao cho bạn Tuấn phụ trách, làm lại trang chủ với trang đăng nhập.",
+    "tach_tu": "Tuần trước thầy có feedback là phần giao_diện còn dối , nên tuần này nhóm mình phải update lại , phần frontend thì giao cho bạn Tuấn phụ_trách , làm lại trang_chủ với trang đăng_nhập .",
+    "xa_giao": false
+  },
+  {
+    "stt": 2,
+    "speaker": "SPEAKER_00",
+    "start": 10.46,
+    "end": 18.96,
+    "goc": "Deadline là thứ 4 tuần sau, phần back-end, khi bạn Ngọc sẽ fix lỗi đăng ký tài khoản, hạn chót là ngày 20 tháng 10, còn file báo cáo thì mọi người upload lên Google Drive.",
+    "sach": "Deadline là thứ 4 tuần sau, phần backend, khi bạn Ngọc sẽ fix lỗi đăng ký tài khoản, hạn chót là ngày 20 tháng 10, còn file báo cáo thì mọi người upload lên Google Drive.",
+    "tach_tu": "Deadline là thứ 4 tuần sau , phần backend , khi bạn Ngọc sẽ fix lỗi đăng_ký tài_khoản , hạn_chót là ngày 20 tháng 10 , còn file báo_cáo thì mọi người upload lên Google_Drive .",
+    "xa_giao": false
+  },
+  {
+    "stt": 3,
+    "speaker": "SPEAKER_00",
+    "start": 19.22,
+    "end": 23.2,
+    "goc": "Mình sẽ gửi link trong group Messenger, họp tiếp theo là tối chủ nhật lúc 9h ok.",
+    "sach": "Mình sẽ gửi link trong group Messenger, họp tiếp theo là tối chủ nhật lúc 9h.",
+    "tach_tu": "Mình sẽ gửi link trong group Messenger , họp tiếp_theo là tối chủ_nhật lúc 9h .",
+    "xa_giao": false
+  },
+  {
+    "stt": 4,
+    "speaker": "SPEAKER_00",
+    "start": 23.5,
+    "end": 24.76,
+    "goc": "Vậy thôi, cảm ơn mọi người.",
+    "sach": "Vậy thôi, cảm ơn mọi người.",
+    "tach_tu": "Vậy thôi , cảm_ơn mọi người .",
+    "xa_giao": true
+  }
+]

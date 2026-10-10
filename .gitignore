@@ -2,4 +2,12 @@ venv/
 __pycache__/
 *.wav
 *.mp3
+*.m4a
+*.aac
+*.ogg
+*.flac
+*.tmp
 .env
+# File ghi âm cuộc họp không đưa lên GitHub
+data/audio/*
+!data/audio/.gitkeep

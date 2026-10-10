@@ -1,0 +1,202 @@
+[
+  {
+    "stt": 0,
+    "speaker": "SPEAKER_00",
+    "start": 0.0,
+    "end": 3.04,
+    "goc": "Ok, mọi người vào đủ rồi thì mình bắt đầu nha.",
+    "sach": "mọi người vào đủ rồi thì mình bắt đầu.",
+    "tach_tu": "mọi người vào đủ rồi thì mình bắt_đầu .",
+    "xa_giao": true
+  },
+  {
+    "stt": 1,
+    "speaker": "SPEAKER_00",
+    "start": 3.14,
+    "end": 6.64,
+    "goc": "Hôm nay mình họp để chia việc cho Spring tiếp theo của project quản lý thư viện.",
+    "sach": "Hôm nay mình họp để chia việc cho Sprint tiếp theo của project quản lý thư viện.",
+    "tach_tu": "Hôm_nay mình họp để chia việc cho Sprint tiếp_theo của project quản_lý thư_viện .",
+    "xa_giao": false
+  },
+  {
+    "stt": 2,
+    "speaker": "SPEAKER_00",
+    "start": 6.76,
+    "end": 8.14,
+    "goc": "Đầu tiên là phần database.",
+    "sach": "Đầu tiên là phần database.",
+    "tach_tu": "Đầu_tiên là phần database .",
+    "xa_giao": false
+  },
+  {
+    "stt": 3,
+    "speaker": "SPEAKER_00",
+    "start": 8.44,
+    "end": 13.72,
+    "goc": "Tuần trước bạn Khoa đã thiết kế xong sơ đồ, nhưng thầy review thì nói bảng mượn sách, còn thiếu cột ngày trả.",
+    "sach": "Tuần trước bạn Khoa đã thiết kế xong sơ đồ, nhưng thầy review thì nói bảng mượn sách, còn thiếu cột ngày trả.",
+    "tach_tu": "Tuần trước bạn Khoa đã thiết_kế xong sơ_đồ , nhưng thầy review thì nói bảng mượn sách , còn thiếu cột ngày trả .",
+    "xa_giao": false
+  },
+  {
+    "stt": 4,
+    "speaker": "SPEAKER_00",
+    "start": 13.86,
+    "end": 15.44,
+    "goc": "Nên bạn Khoa update lại database.",
+    "sach": "Nên bạn Khoa update lại database.",
+    "tach_tu": "Nên bạn Khoa update lại database .",
+    "xa_giao": false
+  },
+  {
+    "stt": 5,
+    "speaker": "SPEAKER_00",
+    "start": 15.76,
+    "end": 17.14,
+    "goc": "Deadline là thứ 3 tuần sau.",
+    "sach": "Deadline là thứ 3 tuần sau.",
+    "tach_tu": "Deadline là thứ 3 tuần sau .",
+    "xa_giao": false
+  },
+  {
+    "stt": 6,
+    "speaker": "SPEAKER_00",
+    "start": 17.34,
+    "end": 18.44,
+    "goc": "Tiếp theo là phần API.",
+    "sach": "Tiếp theo là phần API.",
+    "tach_tu": "Tiếp_theo là phần API.",
+    "xa_giao": false
+  },
+  {
+    "stt": 7,
+    "speaker": "SPEAKER_00",
+    "start": 18.6,
+    "end": 22.64,
+    "goc": "Phần này giao cho bạn Vi phụ trách, làm các API thêm sách, sửa sách với xóa sách.",
+    "sach": "Phần này giao cho bạn Vi phụ trách, làm các API thêm sách, sửa sách với xóa sách.",
+    "tach_tu": "Phần này giao cho bạn Vi phụ_trách , làm các API thêm sách , sửa sách với xóa_sách .",
+    "xa_giao": false
+  },
+  {
+    "stt": 8,
+    "speaker": "SPEAKER_00",
+    "start": 22.84,
+    "end": 26.7,
+    "goc": "Vi nhớ viết document cho từng API luôn nha, để bên frontend biết đường gọi.",
+    "sach": "Vi nhớ viết document cho từng API luôn, để bên frontend biết đường gọi.",
+    "tach_tu": "Vi nhớ viết document cho từng API luôn , để bên frontend biết đường gọi .",
+    "xa_giao": false
+  },
+  {
+    "stt": 9,
+    "speaker": "SPEAKER_00",
+    "start": 26.84,
+    "end": 28.66,
+    "goc": "Hạn chót là ngày 25 tháng 10.",
+    "sach": "Hạn chót là ngày 25 tháng 10.",
+    "tach_tu": "Hạn_chót là ngày 25 tháng 10 .",
+    "xa_giao": false
+  },
+  {
+    "stt": 10,
+    "speaker": "SPEAKER_00",
+    "start": 28.66,
+    "end": 31.66,
+    "goc": "Còn phần giao diện, bạn Phúc sẽ làm trang tìm kiếm sách.",
+    "sach": "Còn phần giao diện, bạn Phúc sẽ làm trang tìm kiếm sách.",
+    "tach_tu": "Còn phần giao_diện , bạn Phúc sẽ làm trang tìm_kiếm sách .",
+    "xa_giao": false
+  },
+  {
+    "stt": 11,
+    "speaker": "SPEAKER_00",
+    "start": 31.86,
+    "end": 35.48,
+    "goc": "Mình đã chốt là dùng react chứ không dùng view nữa vì cả nhóm quen react hơn.",
+    "sach": "Mình đã chốt là dùng React chứ không dùng Vue nữa vì cả nhóm quen React hơn.",
+    "tach_tu": "Mình đã chốt là dùng React chứ không dùng Vue nữa vì cả nhóm quen React hơn .",
+    "xa_giao": false
+  },
+  {
+    "stt": 12,
+    "speaker": "SPEAKER_00",
+    "start": 35.8,
+    "end": 38.72,
+    "goc": "Phúc cố gắng xong trước chủ nhật, để thứ 2 mình test chung.",
+    "sach": "Phúc cố gắng xong trước chủ nhật, để thứ 2 mình test chung.",
+    "tach_tu": "Phúc cố_gắng xong trước chủ_nhật , để thứ 2 mình test chung .",
+    "xa_giao": false
+  },
+  {
+    "stt": 13,
+    "speaker": "SPEAKER_00",
+    "start": 38.98,
+    "end": 40.96,
+    "goc": "À còn một việc nữa là viết báo cáo chương 1.",
+    "sach": "còn một việc nữa là viết báo cáo chương 1.",
+    "tach_tu": "còn một việc nữa là viết báo_cáo chương 1 .",
+    "xa_giao": false
+  },
+  {
+    "stt": 14,
+    "speaker": "SPEAKER_00",
+    "start": 41.3,
+    "end": 44.92,
+    "goc": "Việc này để mình làm, mình sẽ gửi bản draft lên Google Drive trước thứ 6.",
+    "sach": "Việc này để mình làm, mình sẽ gửi bản draft lên Google Drive trước thứ 6.",
+    "tach_tu": "Việc này để mình làm , mình sẽ gửi bản draft lên Google_Drive trước thứ 6 .",
+    "xa_giao": false
+  },
+  {
+    "stt": 15,
+    "speaker": "SPEAKER_00",
+    "start": 45.14,
+    "end": 46.34,
+    "goc": "Có ai có câu hỏi gì không?",
+    "sach": "Có ai có câu hỏi gì không?",
+    "tach_tu": "Có ai có câu hỏi gì không ?",
+    "xa_giao": true
+  },
+  {
+    "stt": 16,
+    "speaker": "SPEAKER_00",
+    "start": 46.88,
+    "end": 50.22,
+    "goc": "Khoa làm database, Vi làm API, Phúc làm giao diện.",
+    "sach": "Khoa làm database, Vi làm API, Phúc làm giao diện.",
+    "tach_tu": "Khoa làm database , Vi làm API , Phúc làm giao_diện .",
+    "xa_giao": false
+  },
+  {
+    "stt": 17,
+    "speaker": "SPEAKER_00",
+    "start": 50.42,
+    "end": 53.28,
+    "goc": "Mình viết báo cáo buổi họp sau là tối thứ 4 lúc 8 giờ.",
+    "sach": "Mình viết báo cáo buổi họp sau là tối thứ 4 lúc 8 giờ.",
+    "tach_tu": "Mình viết báo_cáo buổi họp sau là tối thứ 4 lúc 8 giờ .",
+    "xa_giao": false
+  },
+  {
+    "stt": 18,
+    "speaker": "SPEAKER_00",
+    "start": 53.52,
+    "end": 54.76,
+    "goc": "Họp online trên Google Meet.",
+    "sach": "Họp online trên Google Meet.",
+    "tach_tu": "Họp online trên Google_Meet .",
+    "xa_giao": false
+  },
+  {
+    "stt": 19,
+    "speaker": "SPEAKER_00",
+    "start": 55.16,
+    "end": 56.4,
+    "goc": "Ok, cảm ơn mọi người.",
+    "sach": "cảm ơn mọi người.",
+    "tach_tu": "cảm_ơn mọi người .",
+    "xa_giao": true
+  }
+]

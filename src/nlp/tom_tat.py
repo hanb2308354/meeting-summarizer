@@ -8,8 +8,7 @@ import networkx as nx
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from doc_transcript import doc_transcript
-from tien_xu_ly import tien_xu_ly
+from doc_van_ban_sach import doc_van_ban_sach
 from trich_quyet_dinh import MAU_MUC_DICH_TRUOC, MAU_PHU_DINH_TRUOC
 from tu_dien import DIEM_BO_SUNG
 
@@ -246,13 +245,13 @@ def tom_tat(cac_cau, cau_da_co=()):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        sys.exit("Cách dùng: python src/nlp/tom_tat.py <đường dẫn file transcript JSON>")
+        sys.exit("Cách dùng: python src/nlp/tom_tat.py <file văn bản sạch trong data/processed/>")
 
     duong_dan = Path(sys.argv[1])
     if not duong_dan.exists():
         sys.exit(f"Không tìm thấy file: {duong_dan}")
 
     bat_dau = time.time()
-    ket_qua = tom_tat(tien_xu_ly(doc_transcript(duong_dan)))
+    ket_qua = tom_tat(doc_van_ban_sach(duong_dan))
     print(ket_qua)
     print(f"\nThời gian: {time.time() - bat_dau:.2f} giây")
