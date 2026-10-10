@@ -673,14 +673,21 @@ def lay_viec(cac_cau, ten_biet):
                 if han and last_task and last_task["deadline"] is None:
                     ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, f"gắn {han[0]}")
                     last_task["deadline"] = han[0]
-                    # Hạn nói một lần cho cả cụm việc cùng chủ liền trước (chưa có hạn, trong 3 câu)
+                    # Hạn nói một lần cho cả cụm việc cùng chủ liền trước (chưa có hạn, trong 3 câu);
+                    # khác chủ chỉ lan khi cùng đoạn và không có dấu kết câu ở giữa
                     for viec_truoc in reversed(tasks):
                         if viec_truoc is last_task:
                             continue
-                        if viec_truoc["owner"] != last_task["owner"] or viec_truoc["deadline"] is not None:
+                        if viec_truoc["deadline"] is not None:
                             break
                         if chi_so - vi_tri_viec.get(id(viec_truoc), -99) > 3:
                             break
+                        if viec_truoc["owner"] != last_task["owner"]:
+                            if vi_tri_viec.get(id(viec_truoc), -99) != chi_so:
+                                break
+                            tam = re.sub(r"[.!?\s]+$", "", text.strip())
+                            if re.search(r"[.!?]", tam):
+                                break
                         ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, f"gắn {han[0]} cho cả việc trước của {viec_truoc['owner']}")
                         viec_truoc["deadline"] = han[0]
                 else:

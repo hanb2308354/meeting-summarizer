@@ -52,7 +52,7 @@ DANH_SACH_CA = (
             ("Hùng", "đăng nhập", "thứ 6"),
             ("Lan", "thanh toán", "thứ 6"),
         ],
-        "dang_loi_da_biet": True,
+        "dang_loi_da_biet": False,
     },
     {
         "ten": "Hạn 'ngày mai'",
@@ -120,6 +120,33 @@ DANH_SACH_CA = (
         ],
         "mong_doi": [("Phúc", "tổng hợp báo cáo kiểm kê", "thứ Ba")],
         "dang_loi_da_biet": False,
+    },
+    {
+        "ten": "Hai việc khác chủ, hạn nói một lần ở cuối",
+        "cau": ["Bạn Quang làm phần mở đầu, bạn Trang làm phần kết luận, hạn là chủ nhật."],
+        "mong_doi": [
+            ("Quang", "mở đầu", "chủ nhật"),
+            ("Trang", "kết luận", "chủ nhật"),
+        ],
+        "dang_loi_da_biet": True,
+    },
+    {
+        "ten": "Hai đoạn riêng, hạn câu sau không lan sang câu trước",
+        "cau": ["Anh Khoa viết dàn ý.", "Chị Dung gửi sơ đồ, hạn là thứ 5."],
+        "mong_doi": [("Khoa", "dàn ý", None), ("Dung", "sơ đồ", "thứ 5")],
+        "dang_loi_da_biet": False,
+    },
+    {
+        "ten": "Một câu liệt kê cùng chủ, hạn nói một lần ở cuối",
+        "cau": ["Chị Dung viết sơ đồ, tổng hợp tài liệu, hạn là thứ 5."],
+        "mong_doi": [("Dung", "sơ đồ", "thứ 5"), ("Dung", "tài liệu", "thứ 5")],
+        "dang_loi_da_biet": False,
+    },
+    {
+        "ten": "Cùng đoạn, hạn câu sau không lan sang câu trước",
+        "cau": ["Anh Khoa viết dàn ý. Chị Dung gửi sơ đồ, hạn là thứ 5."],
+        "mong_doi": [("Khoa", "dàn ý", None), ("Dung", "sơ đồ", "thứ 5")],
+        "dang_loi_da_biet": True,
     },
 )
 
