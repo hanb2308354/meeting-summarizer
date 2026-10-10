@@ -1,19 +1,23 @@
 # Quy tắc cho AI làm việc trong repo này
 
 ## Dự án
+
 Hệ thống tóm tắt cuộc họp tiếng Việt, hoàn toàn rule-based: ASR (faster-whisper) → tiền xử lý (`src/tien_xu_ly`) → NLP bằng TextRank + regex (`src/nlp`).
 Không có API hay LLM. Không đề xuất FastAPI, OpenRouter hay đổi cấu trúc thư mục.
 
 ## Nguyên tắc làm việc
+
 1. Nghĩ trước khi code: yêu cầu chưa rõ thì hỏi một câu, không tự đoán.
 2. Đơn giản trước: viết ít code nhất giải quyết được việc, không thêm tính năng chưa được yêu cầu.
 3. Sửa đúng chỗ: chỉ đụng vào dòng cần sửa.
 4. Có tiêu chí xong: nêu lệnh kiểm tra trước khi sửa, chạy và báo kết quả sau khi sửa.
 
 ## Trước khi viết code
+
 Liệt kê: file nào, hàm nào, khoảng bao nhiêu dòng sẽ đổi. Chờ người dùng đồng ý rồi mới viết.
 
 ## Không được làm
+
 - Đổi tên hàm hoặc biến có sẵn, di chuyển hoặc đổi tên file.
 - Thêm thư viện vào `requirements.txt`, hoặc thêm tham số cho hàm đang chạy.
 - Sửa file ngoài file được nêu trong yêu cầu.
@@ -24,6 +28,7 @@ Liệt kê: file nào, hàm nào, khoảng bao nhiêu dòng sẽ đổi. Chờ n
 - Tự commit hoặc push khi chưa được yêu cầu.
 
 ## Quy ước của repo
+
 - Tên hàm, biến, commit message bằng tiếng Việt.
 - Import dạng phẳng (ví dụ `from doc_van_ban_sach import ...`), không đổi thành package.
 - Không đổi định dạng file transcript và văn bản sạch (đã thống nhất với Hân).
@@ -31,6 +36,7 @@ Liệt kê: file nào, hàm nào, khoảng bao nhiêu dòng sẽ đổi. Chờ n
 - Làm việc trên nhánh `nlp`, không code trực tiếp trên `main`.
 
 ## Kiểm tra trước khi báo "xong"
+
 Chạy từ thư mục gốc repo và dán kết quả:
 
 ```
@@ -40,11 +46,13 @@ python src/nlp/do_chat_luong.py
 python src/tien_xu_ly/kiem_thu_tien_xu_ly.py   # chỉ khi có sửa src/tien_xu_ly
 ```
 
-Số liệu mốc (đo ngày 10/10/2026), không được tụt:
+Số liệu mốc (đo ngày 11/10/2026, sau nhóm D), không được tụt:
+
 - `kiem_thu.py`: 4/4 file OK.
-- `kiem_cau.py`: 13/14 ca đạt; ca 6 là lỗi đã biết.
-- `do_chat_luong.py`: tập phát triển P=1.00, R=1.00; tập `giu_rieng_*` P=0.46, R=0.50.
+- `kiem_cau.py`: 14/15 ca đạt; ca 6 là lỗi đã biết.
+- `do_chat_luong.py`: tập phát triển P=1.00, R=1.00; tập `giu_rieng_*` P=0.54, R=0.58.
 - `kiem_thu_tien_xu_ly.py`: 9/9 nhóm đạt.
 
 ## Khi kiểm thử vẫn đỏ
+
 Thử sửa tối đa 2 lần. Sau đó dừng, báo dòng lỗi cụ thể và nguyên nhân nghi ngờ, không vá lan sang chỗ khác.
