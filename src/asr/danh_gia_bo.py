@@ -36,6 +36,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import chuyen_giong_noi as asr  # noqa: E402
 import danh_gia_wer  # noqa: E402
 
+# Phần sửa lỗi nhận dạng của bước tiền xử lý văn bản (src/tien_xu_ly), để đo nó có giúp không
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tien_xu_ly"))
+from lam_sach import chuan_hoa_unicode, sua_loi_nhan_dang  # noqa: E402
+
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
@@ -371,6 +375,60 @@ def so_sanh_cau_hinh(ten_bo, cac_cau_hinh):
     return "\n".join(d)
 
 
+def so_loi(dap_an, du_doan):
+    do = jiwer.process_words(dap_an, du_doan) if dap_an else None
+    return (do.substitutions + do.deletions + do.insertions) if do else 0
+
+
+def kiem_sua_loi(ten_bo, cau_hinh):
+    """Đo bảng sửa lỗi (src/tien_xu_ly SUA_LOI) trên chữ máy nghe được: sửa đúng hay sửa sai.
+
+    Không chạy ASR: dùng kết quả đã lưu của cấu hình cau_hinh.
+    """
+    thu_muc = THU_MUC_BO / ten_bo
+    cac_muc = doc_json(thu_muc / "nhan.json", [])
+    ket_qua = doc_json(thu_muc / f"ket_qua__{cau_hinh}.json", {})
+    d = [f"KIỂM BẢNG SỬA LỖI (src/tien_xu_ly): bộ {ten_bo}, kết quả ASR của cấu hình {cau_hinh}",
+         "=" * 100]
+    if not ket_qua:
+        d.append(f"Chưa có kết quả cấu hình {cau_hinh}. Chạy danh_gia_bo.py trước.")
+        return "\n".join(d)
+    tong_tu = tong_truoc = tong_sau = 0
+    tot, xau, doi_khong_anh_huong = [], [], []
+    for muc in cac_muc:
+        kq = ket_qua.get(muc["id"])
+        if not kq or "loi" in kq:
+            continue
+        dap_an = chuan_hoa_danh_gia(muc["text"])
+        truoc = kq["du_doan"]
+        sau = sua_loi_nhan_dang(chuan_hoa_unicode(truoc))
+        loi_truoc = so_loi(dap_an, chuan_hoa_danh_gia(truoc))
+        loi_sau = so_loi(dap_an, chuan_hoa_danh_gia(sau))
+        tong_tu += len(dap_an.split())
+        tong_truoc += loi_truoc
+        tong_sau += loi_sau
+        if chuan_hoa_danh_gia(truoc) != chuan_hoa_danh_gia(sau):
+            nhom = tot if loi_sau < loi_truoc else xau if loi_sau > loi_truoc else doi_khong_anh_huong
+            nhom.append((muc, truoc, sau, loi_truoc, loi_sau))
+    if not tong_tu:
+        d.append("Không có đoạn nào để đo.")
+        return "\n".join(d)
+    d.append(f"WER trước khi sửa: {tong_truoc / tong_tu:.1%} | sau khi sửa: {tong_sau / tong_tu:.1%} "
+             f"({tong_tu} từ)")
+    d.append(f"Đoạn bị bảng sửa lỗi đổi chữ: {len(tot) + len(xau) + len(doi_khong_anh_huong)} "
+             f"(sửa đúng {len(tot)}, sửa SAI {len(xau)}, đổi nhưng không ảnh hưởng {len(doi_khong_anh_huong)})")
+    for tieu_de, cac in (("SỬA SAI (luật sửa lỗi bắt nhầm, cần thu hẹp)", xau),
+                         ("SỬA ĐÚNG", tot), ("ĐỔI NHƯNG KHÔNG ẢNH HƯỞNG WER", doi_khong_anh_huong)):
+        if cac:
+            d.append(f"\n{tieu_de}:")
+            for muc, truoc, sau, a, b in cac:
+                d.append(f"  {muc['id']} (lỗi {a} -> {b})")
+                d.append(f"      Đáp án : {muc['text'][:150]}")
+                d.append(f"      Trước  : {truoc[:150]}")
+                d.append(f"      Sau    : {sau[:150]}")
+    return "\n".join(d)
+
+
 # ======================================================================
 # CHƯƠNG TRÌNH CHÍNH
 # ======================================================================
@@ -387,6 +445,9 @@ def main():
     parser.add_argument("--khong-tien-xu-ly", action="store_true", help="Tắt tiền xử lý âm thanh")
     parser.add_argument("--loc-nhieu", action="store_true", help="Bật giảm tạp âm")
     parser.add_argument("--chay-lai", action="store_true", help="Bỏ kết quả cũ, nhận dạng lại từ đầu")
+    parser.add_argument("--kiem-sua-loi", metavar="CAU_HINH", nargs="?", const="",
+                        help="Không chạy ASR: đo bảng sửa lỗi của src/tien_xu_ly trên kết quả đã có "
+                             "(mặc định: cấu hình hiện tại)")
     parser.add_argument("--so-sanh", nargs="+", metavar="CAU_HINH",
                         help="Không chạy ASR, chỉ so các cấu hình đã chạy "
                              "(vd: --so-sanh medium medium_khong_goi_y)")
@@ -400,6 +461,16 @@ def main():
     thieu = [b for b in cac_bo if b not in co_san]
     if thieu:
         sys.exit(f"Chưa tải bộ: {', '.join(thieu)}. Đã có: {', '.join(co_san)}")
+
+    if args.kiem_sua_loi is not None:
+        THU_MUC_BAO_CAO.mkdir(parents=True, exist_ok=True)
+        cau_hinh = args.kiem_sua_loi or ten_cau_hinh(args)
+        for ten_bo in cac_bo:
+            bao_cao = kiem_sua_loi(ten_bo, cau_hinh)
+            tep = THU_MUC_BAO_CAO / f"{ten_bo}__kiem_sua_loi.txt"
+            tep.write_text(bao_cao + "\n", encoding="utf-8")
+            print("\n" + bao_cao + f"\n\nĐã lưu: {asr.hien_thi(tep)}")
+        return
 
     if args.so_sanh:
         THU_MUC_BAO_CAO.mkdir(parents=True, exist_ok=True)

@@ -840,6 +840,32 @@ def so_sanh_cau_hinh_va_bao_doan_bi_ket():
         return "không báo đoạn bị kẹt:\n" + bao_cao_a[-500:]
 
 
+@ca
+def kiem_bang_sua_loi_phan_biet_sua_dung_sua_sai():
+    import danh_gia_bo as dg
+    cac_muc = [
+        {"id": "a", "tep": "a.wav", "nhom": "x", "nguon": "a", "row_idx": 0,
+         "text": "bạn lan làm phần frontend trước thứ sáu"},
+        {"id": "b", "tep": "b.wav", "nhom": "x", "nguon": "b", "row_idx": 1,
+         "text": "bạn lan làm phần backend"},
+    ]
+    kq = {"a": {"du_doan": "Bạn Lan làm phần phôn thên trước thứ sáu.", "bi_loai": [], "do_dai": 3, "thoi_gian": 9},
+          "b": {"du_doan": "Bạn Lan làm phần backend.", "bi_loai": [], "do_dai": 3, "thoi_gian": 9}}
+    goc = dg.THU_MUC_BO
+    with tempfile.TemporaryDirectory() as tm:
+        thu_muc = Path(tm) / "bo"
+        thu_muc.mkdir()
+        (thu_muc / "nhan.json").write_text(json.dumps(cac_muc, ensure_ascii=False), encoding="utf-8")
+        (thu_muc / "ket_qua__thu.json").write_text(json.dumps(kq, ensure_ascii=False), encoding="utf-8")
+        try:
+            dg.THU_MUC_BO = Path(tm)
+            bao_cao = dg.kiem_sua_loi("bo", "thu")
+        finally:
+            dg.THU_MUC_BO = goc
+    if "sửa đúng 1, sửa SAI 0" not in bao_cao or "frontend" not in bao_cao:
+        return "không đo đúng tác dụng bảng sửa lỗi:\n" + bao_cao
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))
