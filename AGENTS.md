@@ -46,11 +46,11 @@ python src/nlp/do_chat_luong.py
 python src/tien_xu_ly/kiem_thu_tien_xu_ly.py   # chỉ khi có sửa src/tien_xu_ly
 ```
 
-Số liệu mốc (đo ngày 11/10/2026, sau nhóm D và G), không được tụt:
+Số liệu mốc (đo ngày 11/10/2026, sau nhóm D, G và C), không được tụt:
 
 - `kiem_thu.py`: 4/4 file OK.
-- `kiem_cau.py`: 18/19 ca đạt; ca 19 (đoạn chứa hai câu bị gộp thành một việc) là lỗi đã biết, xử lý ở nhóm H.
-- `do_chat_luong.py`: tập phát triển P=1.00, R=1.00; tập `giu_rieng_*` P=0.54, R=0.58.
+- `kiem_cau.py`: 22/23 ca đạt; ca 19 (đoạn chứa hai câu bị gộp thành một việc) là lỗi đã biết, xử lý ở nhóm H.
+- `do_chat_luong.py`: tập phát triển P=1.00, R=1.00; tập `giu_rieng_*` P=0.62, R=0.67.
 - `kiem_thu_tien_xu_ly.py`: 9/9 nhóm đạt.
 
 ## Khi kiểm thử vẫn đỏ
