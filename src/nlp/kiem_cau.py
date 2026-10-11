@@ -148,6 +148,30 @@ DANH_SACH_CA = (
         "mong_doi": [("Khoa", "dàn ý", None), ("Dung", "sơ đồ", "thứ 5")],
         "dang_loi_da_biet": True,
     },
+    {
+        "ten": "Hạn đứng trước một đoạn, việc sau nhắc lại nội dung",
+        "cau": ["Chào chị Quyên, chào cả nhà.", "Hạn báo cáo kiểm kê là thứ Hai nhé, anh nhắc sớm để mọi người nhớ mốc. Quyên, em đối chiếu tồn kho ở khu hàng bán nhanh, ghi lại món nào lệch giữa sổ và kệ, rồi lập báo cáo kiểm kê cho anh."],
+        "mong_doi": [("Quyên", "báo cáo kiểm kê", "thứ Hai")],
+        "dang_loi_da_biet": False,
+    },
+    {
+        "ten": "Hạn đứng trước hai đoạn, việc sau nhắc lại nội dung",
+        "cau": ["Chào chị Quyên, chào cả nhà.", "Hạn báo cáo kiểm kê là thứ Hai nhé, anh nhắc sớm để mọi người nhớ mốc.", "Quyên, em đối chiếu tồn kho ở khu hàng bán nhanh, ghi lại món nào lệch giữa sổ và kệ, rồi lập báo cáo kiểm kê cho anh."],
+        "mong_doi": [("Quyên", "báo cáo kiểm kê", "thứ Hai")],
+        "dang_loi_da_biet": False,
+    },
+    {
+        "ten": "Hạn đứng trước nhưng nội dung không trùng việc",
+        "cau": ["Chào chị Quyên, chào cả nhà.", "Hạn hợp đồng là thứ Hai nhé, anh nhắc sớm để mọi người nhớ mốc.", "Quyên, em đối chiếu tồn kho ở khu hàng bán nhanh, ghi lại món nào lệch giữa sổ và kệ, rồi làm slide cho anh."],
+        "mong_doi": [("Quyên", "slide", None)],
+        "dang_loi_da_biet": False,
+    },
+    {
+        "ten": "Hạn đứng trước, việc chỉ trùng một phần nội dung",
+        "cau": ["Chào chị Quyên, chào cả nhà.", "Hạn báo cáo kiểm kê là thứ Hai nhé, anh nhắc sớm để mọi người nhớ mốc.", "Quyên, em đối chiếu tồn kho ở khu hàng bán nhanh, ghi lại món nào lệch giữa sổ và kệ, rồi lập báo cáo doanh thu cho anh."],
+        "mong_doi": [("Quyên", "báo cáo doanh thu", None)],
+        "dang_loi_da_biet": False,
+    },
 )
 
 

@@ -565,7 +565,11 @@ def lay_viec(cac_cau, ten_biet):
     last_task = None
     viec_cho_chu = None
     vi_tri_viec = {}  # id(việc) -> chỉ số câu nhắc gần nhất (để giới hạn khoảng cách cập nhật hạn)
+    han_cho = None
+    chi_so_han_cho = -99
     for chi_so, cau in enumerate(cac_cau):
+        if han_cho is not None and chi_so - chi_so_han_cho > 2:
+            han_cho = None
         text = cau["sach"].strip()
         stt_cau = cau.get("stt", None)
 
@@ -691,7 +695,16 @@ def lay_viec(cac_cau, ten_biet):
                         ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, f"gắn {han[0]} cho cả việc trước của {viec_truoc['owner']}")
                         viec_truoc["deadline"] = han[0]
                 else:
-                    ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, "loại")
+                    phan_han_cho = re.sub(r"^(?:deadline|hạn chót|hạn)\s+", "", clause, flags=re.IGNORECASE)
+                    if han:
+                        phan_han_cho = re.sub(re.escape(han[0]) + r"\W*$", "", phan_han_cho, flags=re.IGNORECASE)
+                    phan_han_cho = phan_han_cho.strip(" .,;:!?")
+                    if han and tu_noi_dung(phan_han_cho):
+                        han_cho = (han[0], phan_han_cho, chi_so)
+                        chi_so_han_cho = chi_so
+                        ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, f"chờ {han[0]}")
+                    else:
+                        ghi_vet("GAN_HAN_NGUOC", stt_cau, clause, "loại")
                 continue
 
             if re.search(MAU_Y_DINH_CU, clause, flags=re.IGNORECASE):
@@ -822,4 +835,16 @@ def lay_viec(cac_cau, ten_biet):
                     continue
             if not gan_han_theo_noi_dung(tasks, clause, chi_so, vi_tri_viec, stt_cau):
                 ghi_vet("LOAI_KHONG_CHU_VIEC", stt_cau, clause, "loại")
+        if han_cho is not None:
+            tu_han_cho = tu_noi_dung(han_cho[1])
+            for viec in tasks:
+                if vi_tri_viec.get(id(viec), -99) < chi_so_han_cho:
+                    continue
+                if viec["deadline"] is not None:
+                    continue
+                if tu_han_cho and tu_han_cho <= tu_noi_dung(viec["task"]):
+                    ghi_vet("GAN_HAN_NGUOC", stt_cau, viec["task"], f"gắn {han_cho[0]}")
+                    viec["deadline"] = han_cho[0]
+                    han_cho = None
+                    break
     return tasks
