@@ -138,6 +138,7 @@ python src/nlp/kiem_cau.py
 | `danh_gia_wer.py`       | Đo tỷ lệ lỗi từ (WER) so với văn bản gốc trong `data/dap_an/` |
 | `tai_bo_danh_gia.py`    | Tải mẫu các bộ giọng nói tiếng Việt có lời gốc (ViMD, VietSuperSpeech) |
 | `danh_gia_bo.py`        | Chạy ASR trên các bộ đã tải, đo WER và phân tích lỗi         |
+| `ghep_file_dai.py`      | Ghép đoạn ngắn thành file dài giống cuộc họp để thử ASR      |
 | `kiem_thu_asr.py`       | Kiểm thử tự động (không cần tải model)                       |
 | `thu_faster_whisper.py` | Chỉ dùng để thử nghiệm chọn model, không dùng trong hệ thống |
 
@@ -205,14 +206,28 @@ python src/asr/danh_gia_bo.py --kiem-sua-loi      # không chạy ASR: bảng s�
 
 | **Chỉ câu mở đầu + thử lại tới nhiệt độ 0.4** (mặc định mới) | **25,6%** | **4,0x** | **0** |
 
-| Bộ `phuong_ngu`          | Tổng | Bắc  | Trung | Nam   | Tây Nguyên | Xử lý / độ dài |
-| ------------------------ | ---- | ---- | ----- | ----- | ---------- | -------------- |
-| Cấu hình cũ              | 8,3% | 3,0% | 5,6%  | 11,0% | 13,9%      | 6,2x           |
-| Mặc định mới             | 8,2% | 3,0% | 4,1%  | 13,2% | 13,9%      | 5,4x           |
+| Bộ `phuong_ngu` (30 đoạn) | Tổng | Bắc  | Trung | Nam   | Tây Nguyên | Xử lý / độ dài |
+| ------------------------- | ---- | ---- | ----- | ----- | ---------- | -------------- |
+| Cấu hình cũ               | 8,3% | 3,0% | 5,6%  | 11,0% | 13,9%      | 6,2x           |
+| Mặc định mới              | 8,2% | 3,0% | 4,1%  | 13,2% | 13,9%      | 5,4x           |
+
+**Mặc định mới trên 100 đoạn mỗi bộ** (7.150 từ, số liệu dùng cho báo cáo):
+
+| Bộ                  | Từ    | WER       | Chi tiết                                                                       |
+| ------------------- | ----- | --------- | ------------------------------------------------------------------------------ |
+| `hop_va_dien_thoai` | 4.294 | **25,6%** | Tranh luận 8,8%, hội nghị 12,9%, thuyết trình 16,3%, họp trực tuyến 24,4%, gọi điện 58,1% |
+| `phuong_ngu`        | 2.856 | **10,2%** | Bắc 8,4%, Trung 10,4%, Nam 12,6%, Tây Nguyên 12,6%                              |
 
 Từ khóa gợi ý làm model rút câu thành dạng liệt kê ("check customer, check staff, check row"), bịa câu kiểu YouTube và bị kẹt hàng trăm giây, nên đã bỏ. Mặc định mới giữ câu mở đầu (tốt nhất cho đoạn họp trực tuyến: 23,2%) và chỉ thử lại tới nhiệt độ 0.4 (các đoạn kẹt đều ra chữ bịa hoặc trống): WER họp/gọi điện giảm 28,2% → 25,6%, chạy nhanh hơn khoảng 25%, bộ phương ngữ giữ nguyên (chênh lệch giữa các miền chỉ vài từ, trong mức dao động của 30 đoạn).
 
-Điểm còn yếu (để cải tiến tiếp): gọi điện thoại (~55%, model bịa câu xã giao), giọng Nam / Tây Nguyên ("bả" → "bà", "luật" → "lục"), từ tiếng Anh chen giữa câu ("certificate" → "thiên tế"), đôi khi mất vài từ đầu đoạn; tốc độ khoảng 4 lần độ dài ghi âm trên CPU.
+Điểm còn yếu (để cải tiến tiếp): gọi điện thoại (~58%, âm thanh băng hẹp, model bịa câu xã giao, đã có bộ lọc chặn phần lớn), giọng Nam / Tây Nguyên ("bả" → "bà", "luật" → "lục"), từ tiếng Anh chen giữa câu ("certificate" → "thiên tế"), câu nói hoàn toàn bằng tiếng Anh bị model DỊCH sang tiếng Việt (do cố định language="vi"), đôi khi mất vài từ đầu đoạn; tốc độ khoảng 4-5 lần độ dài ghi âm trên CPU.
+
+**Thử file dài như cuộc họp** (không cần thu âm): ghép các đoạn ngắn thành file 5 phút, xen khoảng lặng ngắn/dài và tiếng ồn nền nhẹ. Lời gốc là lời các đoạn nối lại, nên vẫn đo WER chính xác; báo cáo so luôn với WER khi nghe từng đoạn ngắn.
+
+```powershell
+python src/asr/ghep_file_dai.py hop_va_dien_thoai            # 4 file x 5 phút -> bộ hop_va_dien_thoai_dai
+python src/asr/danh_gia_bo.py hop_va_dien_thoai_dai
+```
 
 ## Văn bản sạch: src/tien_xu_ly (Hân)
 

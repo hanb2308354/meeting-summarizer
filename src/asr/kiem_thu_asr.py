@@ -866,6 +866,47 @@ def kiem_bang_sua_loi_phan_biet_sua_dung_sua_sai():
         return "không đo đúng tác dụng bảng sửa lỗi:\n" + bao_cao
 
 
+@ca
+def ghep_file_dai_va_so_voi_doan_ngan():
+    import danh_gia_bo as dg
+    import ghep_file_dai as gh
+    cau_hinh = f"{asr.TEN_MODEL}_chi_cau_mo_dau_gioi_han_thu_lai"
+    goc = (gh.THU_MUC_BO, dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO)
+    with tempfile.TemporaryDirectory() as tm:
+        tm = Path(tm)
+        nguon = tm / "bo" / "hop"
+        (nguon / "audio").mkdir(parents=True)
+        cac_muc, ket_ngan = [], {}
+        for i in range(6):
+            ghi_wav(nguon / "audio" / f"{i}.wav", tieng_noi_gia(3))
+            cac_muc.append({"id": f"hop_{i}", "tep": f"audio/{i}.wav", "nhom": "x", "nguon": str(i),
+                            "row_idx": i, "text": "bạn lan làm slide"})
+            ket_ngan[f"hop_{i}"] = {"du_doan": "Bạn Lan làm slide.", "bi_loai": [], "do_dai": 3, "thoi_gian": 9}
+        (nguon / "nhan.json").write_text(json.dumps(cac_muc, ensure_ascii=False), encoding="utf-8")
+        (nguon / f"ket_qua__{cau_hinh}.json").write_text(json.dumps(ket_ngan, ensure_ascii=False), encoding="utf-8")
+        try:
+            gh.THU_MUC_BO = dg.THU_MUC_BO = tm / "bo"
+            dg.THU_MUC_BAO_CAO = tm / "bao_cao"
+            with contextlib.redirect_stdout(io.StringIO()):
+                ghep = gh.ghep("hop", so_file=2, so_phut=0.12, hat_giong=1)   # ~7 giây mỗi file
+                asr.WhisperModel = lambda *a, **k: ModelGia([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))])
+                sys.argv = ["danh_gia_bo.py", "hop_dai"]
+                dg.main()
+            bao_cao = (tm / "bao_cao" / f"hop_dai__{cau_hinh}.txt").read_text(encoding="utf-8")
+            with wave.open(str(tm / "bo" / "hop_dai" / ghep[0]["tep"])) as f:
+                giay = f.getnframes() / f.getframerate()
+        finally:
+            gh.THU_MUC_BO, dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO = goc
+    if len(ghep) != 2 or len(ghep[0]["tu_doan"]) < 2:
+        return f"ghép sai: {[(g['id'], g['tu_doan']) for g in ghep]}"
+    if ghep[0]["text"] != " ".join(["bạn lan làm slide"] * len(ghep[0]["tu_doan"])):
+        return "lời gốc file dài không phải lời các đoạn nối theo thứ tự"
+    if not 6.0 <= giay <= 6.0 + 10 * (len(ghep[0]["tu_doan"]) - 1) + 0.1:
+        return f"độ dài file dài sai: {giay:.1f} giây"
+    if "SO VỚI NGHE TỪNG ĐOẠN NGẮN" not in bao_cao or "nghe từng đoạn ngắn 0.0%" not in bao_cao:
+        return "báo cáo không so với đoạn ngắn:\n" + bao_cao[-600:]
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))

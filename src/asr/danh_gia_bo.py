@@ -109,6 +109,8 @@ BIEN_THE_SO = [
     (r"\bngàn\b", "nghìn"),
     (r"\btỉ\b", "tỷ"),
     (r"\btrăm lẻ\b", "trăm linh"),
+    (r"\b(\w+) chục\b", r"\1 mươi"),              # "hai chục" như "20" -> "hai mươi"
+    (r"\b(?:vắc xin|vaccine|vacxin|vắcxin)\b", "vắc xin"),
 ]
 
 
@@ -273,6 +275,40 @@ def dong_so_lieu(ten, s):
             f"| thừa {s['thua']:>4} | WER {wer_cua(s):6.1%} | xử lý {toc_do:.2f}x độ dài")
 
 
+def so_voi_doan_ngan(kq, cau_hinh):
+    """Bộ file dài (ghep_file_dai.py): WER khi nghe từng đoạn ngắn của chính các đoạn đã ghép."""
+    cac_dong = []
+    tong_dai, tong_ngan = Counter(), Counter()
+    for _, muc, ket, dap_an, du_doan in kq["tung_doan"]:
+        if "tu_doan" not in muc:
+            continue
+        thu_muc_nguon = THU_MUC_BO / muc["nguon_bo"]
+        nhan = {m["id"]: m for m in doc_json(thu_muc_nguon / "nhan.json", [])}
+        ket_ngan = doc_json(thu_muc_nguon / f"ket_qua__{cau_hinh}.json", {})
+        if not all(i in ket_ngan and "loi" not in ket_ngan[i] for i in muc["tu_doan"]):
+            cac_dong.append(f"  {muc['id']}: chưa có kết quả nghe từng đoạn ngắn của bộ "
+                            f"{muc['nguon_bo']} (cấu hình {cau_hinh}) để so")
+            continue
+        ngan = Counter()
+        for i in muc["tu_doan"]:
+            goc = chuan_hoa_danh_gia(nhan[i]["text"])
+            ngan.update(tu=len(goc.split()), loi=so_loi(goc, chuan_hoa_danh_gia(ket_ngan[i]["du_doan"])))
+        dai = Counter(tu=len(dap_an.split()), loi=so_loi(dap_an, du_doan))
+        tong_dai.update(dai)
+        tong_ngan.update(ngan)
+        cac_dong.append(f"  {muc['id']} ({ket['do_dai'] / 60:.1f} phút): file dài WER {dai['loi'] / dai['tu']:.1%}"
+                        f" | nghe từng đoạn ngắn {ngan['loi'] / ngan['tu']:.1%}"
+                        f" | đoạn bị [LOẠI] {len(ket['bi_loai'])}")
+    if not cac_dong:
+        return []
+    d = ["\nSO VỚI NGHE TỪNG ĐOẠN NGẮN (cùng lời, cùng cấu hình)  ← file dài tệ hơn nhiều = lỗi riêng của file dài"]
+    d += cac_dong
+    if tong_dai["tu"] and tong_ngan["tu"]:
+        d.append(f"  TỔNG: file dài {tong_dai['loi'] / tong_dai['tu']:.1%} | "
+                 f"từng đoạn ngắn {tong_ngan['loi'] / tong_ngan['tu']:.1%}")
+    return d
+
+
 def viet_bao_cao(ten_bo, cau_hinh, kq):
     d = []
     d.append(f"BÁO CÁO ĐÁNH GIÁ ASR: bộ {ten_bo}, cấu hình {cau_hinh}")
@@ -310,6 +346,8 @@ def viet_bao_cao(ten_bo, cau_hinh, kq):
         d.append(f"  {muc['id']} ({muc['nhom']}) WER {wer:.0%} | data/bo_danh_gia/{ten_bo}/{muc['tep']}")
         d.append(f"      Đáp án : {dap_an[:160]}")
         d.append(f"      Máy nghe: {du_doan[:160]}")
+
+    d += so_voi_doan_ngan(kq, cau_hinh)
 
     # Model bị kẹt (thử lại nhiều lần ở nhiệt độ cao) thì chạy lâu gấp nhiều lần bình thường
     ti_le = [(k["thoi_gian"] / k["do_dai"], m, k) for _, m, k, _, _ in kq["tung_doan"] if k["do_dai"]]
