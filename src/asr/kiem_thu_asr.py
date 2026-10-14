@@ -954,26 +954,13 @@ def che_do_tung_luot_cat_theo_vad_va_doi_moc_thoi_gian():
     finally:
         asr.cat_luot_noi = goc
     cau = asr.tach_cau(cac_tu)
-    if da_nghe != [(3.0, False), (4.0, False)]:
-        return f"phải nghe riêng từng lượt (không VAD lần nữa): {da_nghe}"
+    if da_nghe != [(3.0, True), (4.0, True)]:
+        return f"phải nghe riêng từng lượt, mỗi lượt như một file ngắn (có VAD): {da_nghe}"
     if [c["start"] for c in cau] != [0.2, 10.2]:
         return f"mốc thời gian lượt sau phải cộng thêm vị trí lượt: {[c['start'] for c in cau]}"
     # VAD thật: file im lặng thì không có lượt nào
     if asr.cat_luot_noi(np.zeros(5 * SR, dtype=np.float32)):
         return "file im lặng mà VAD vẫn cắt ra lượt nói"
-
-
-@ca
-def gop_luot_noi_qua_ngan():
-    giay = lambda a, b: (int(a * SR), int(b * SR))   # noqa: E731
-    cac_luot = [giay(0, 0.3), giay(1.0, 6.0),          # lượt 0,3 giây sát lượt sau -> gộp
-                giay(10.0, 15.0), giay(15.5, 16.2),    # lượt 0,7 giây sát lượt trước -> gộp
-                giay(25.0, 26.0),                      # lượt ngắn nhưng cách xa (9 giây) -> giữ riêng
-                giay(26.5, 50.5)]                      # gộp vào thì quá 25 giây -> giữ riêng
-    mong_doi = [giay(0, 6.0), giay(10.0, 16.2), giay(25.0, 26.0), giay(26.5, 50.5)]
-    thuc_te = asr.gop_luot_ngan(cac_luot)
-    if thuc_te != mong_doi:
-        return f"gộp sai: {[(a / SR, b / SR) for a, b in thuc_te]}"
 
 
 if __name__ == "__main__":

@@ -235,8 +235,10 @@ Kết quả lần đầu (4 file x 5 phút, cấu hình mặc định): **file d
 | --------------------------------------------------------- | ------------ | ------- | ------------ |
 | Trượt cửa sổ 30 giây trên cả file (mặc định)              | 36,4%        | 841 từ  | 25,5%        |
 | `--theo-khuc`: theo lô của faster-whisper                 | 47,0% (tệ hơn) | 1.486 từ | 26,8%      |
-| `--tung-luot`: tự cắt từng lượt nói, nghe như file ngắn   | **30,5%** (tốc độ 2,9x) | 568 từ | 27,7% (1 đoạn bị cắt vụn nên bịa câu) |
-| `--tung-luot --gop-luot-ngan`: gộp lượt dưới 2 giây       | đang đo      |         |              |
+| `--tung-luot` (lần 1, tắt VAD trong từng lượt)            | **30,5%** (tốc độ 2,9x) | 568 từ | 27,7%: bằng mặc định, trừ 1 đoạn thuyết trình bị bịa câu ở đầu |
+| `--tung-luot` (lần 2, mỗi lượt xử lý y như file ngắn)     | đang đo      |         |              |
+
+(Đã thử gộp các lượt nói dưới 2 giây: kết quả không đổi 30,4% / 27,8%, nên bỏ.)
 
 ## Văn bản sạch: src/tien_xu_ly (Hân)
 
