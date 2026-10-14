@@ -229,6 +229,8 @@ python src/asr/ghep_file_dai.py hop_va_dien_thoai            # 4 file x 5 phút 
 python src/asr/danh_gia_bo.py hop_va_dien_thoai_dai
 ```
 
+Kết quả lần đầu (4 file x 5 phút, cấu hình mặc định): **file dài WER 36,4%, nghe từng đoạn ngắn 27,0%** trên cùng lời. Lỗi tăng chủ yếu do **mất chữ** (841 từ bị sót so với 494 từ nghe nhầm): khi trượt cửa sổ 30 giây trên cả file, model bỏ qua cả khúc lời. Đang thử chế độ `--theo-khuc` (VAD cắt file thành các khúc lời nói, nhận dạng từng khúc độc lập). Tốc độ trên file dài tốt hơn đoạn ngắn: 1,8 lần độ dài ghi âm.
+
 ## Văn bản sạch: src/tien_xu_ly (Hân)
 
 Làm sạch transcript do ASR xuất ra: sửa chữ máy nghe nhầm (vd "bích link" → deadline), bỏ từ đệm (ừm, à, nhé...), dọn dấu câu, tách từ bằng PyVi, đánh dấu câu chào hỏi/cảm ơn. Giữ nguyên từ tiếng Anh, không dịch.

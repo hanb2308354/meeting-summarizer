@@ -907,6 +907,33 @@ def ghep_file_dai_va_so_voi_doan_ngan():
         return "báo cáo không so với đoạn ngắn:\n" + bao_cao[-600:]
 
 
+@ca
+def che_do_theo_khuc_dung_bo_nhan_dang_theo_lo():
+    from faster_whisper import BatchedInferencePipeline
+    da_goi = []
+
+    class BoTheoLoGia:
+        def __init__(self, model):
+            self.model = model
+
+        def transcribe(self, am_thanh, **tham_so):
+            # Tham số phải hợp lệ với BatchedInferencePipeline thật
+            inspect.signature(BatchedInferencePipeline.transcribe).bind(None, am_thanh, **tham_so)
+            da_goi.append(tham_so)
+            return iter([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))]), None
+
+    goc = asr.BatchedInferencePipeline
+    try:
+        asr.BatchedInferencePipeline = BoTheoLoGia
+        cac_tu, _ = asr.nhan_dang(ModelGia([]), np.zeros(SR, dtype=np.float32), theo_khuc=True)
+    finally:
+        asr.BatchedInferencePipeline = goc
+    if [c["text"] for c in asr.tach_cau(cac_tu)] != ["Bạn Lan làm slide."]:
+        return "chế độ theo khúc không ra chữ"
+    if not da_goi or da_goi[0].get("batch_size") != asr.SO_KHUC_MOI_LO or not da_goi[0].get("word_timestamps"):
+        return f"tham số chế độ theo khúc sai: {da_goi}"
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))

@@ -154,6 +154,8 @@ def ten_cau_hinh(args):
     ten = args.model + HAU_TO_GOI_Y[args.goi_y]
     if args.thu_lai == "gioi_han":
         ten += "_gioi_han_thu_lai"
+    if args.theo_khuc:
+        ten += "_theo_khuc"
     if args.khong_tien_xu_ly:
         ten += "_khong_tien_xu_ly"
     if args.loc_nhieu:
@@ -170,7 +172,8 @@ def nhan_dang_mot_doan(model, duong_dan, args):
     dau_ra = io.StringIO()
     with contextlib.redirect_stdout(dau_ra):  # nhan_dang in từng đoạn: gom lại, chỉ giữ dòng [LOẠI]
         nhiet_do = asr.NHIET_DO_THU_LAI if args.thu_lai == "gioi_han" else None
-        cac_tu, _ = asr.nhan_dang(model, song_am, goi_y=args.goi_y, nhiet_do=nhiet_do)
+        cac_tu, _ = asr.nhan_dang(model, song_am, goi_y=args.goi_y, nhiet_do=nhiet_do,
+                                  theo_khuc=args.theo_khuc)
     return {
         "du_doan": " ".join(cau["text"] for cau in asr.tach_cau(cac_tu)),
         "bi_loai": [d.strip() for d in dau_ra.getvalue().splitlines() if "[LOẠI" in d],
@@ -480,6 +483,8 @@ def main():
     parser.add_argument("--thu-lai", choices=["gioi_han", "day_du"], default="gioi_han",
                         help=f"gioi_han: thử lại ở nhiệt độ {asr.NHIET_DO_THU_LAI} (mặc định); "
                              "day_du: như faster-whisper gốc, thử tới 1.0")
+    parser.add_argument("--theo-khuc", action="store_true",
+                        help="Cắt file theo khúc lời nói (VAD) rồi nhận dạng từng khúc độc lập")
     parser.add_argument("--khong-tien-xu-ly", action="store_true", help="Tắt tiền xử lý âm thanh")
     parser.add_argument("--loc-nhieu", action="store_true", help="Bật giảm tạp âm")
     parser.add_argument("--chay-lai", action="store_true", help="Bỏ kết quả cũ, nhận dạng lại từ đầu")

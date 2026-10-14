@@ -36,7 +36,7 @@ import time
 from pathlib import Path
 
 import numpy as np
-from faster_whisper import WhisperModel, decode_audio
+from faster_whisper import BatchedInferencePipeline, WhisperModel, decode_audio
 from faster_whisper.transcribe import Word, get_compression_ratio
 
 # In tiếng Việt bằng UTF-8, tránh lỗi bảng mã trên PowerShell
@@ -64,6 +64,7 @@ GOI_Y_MAC_DINH = "cau_mo_dau"
 # 1.0; trên bộ đánh giá các đoạn bị kẹt (81-347 giây cho 4 giây âm thanh) đều ra chữ bịa
 # hoặc trống, nên chỉ thử tới 0.4: không đổi WER, nhanh hơn, không còn đoạn kẹt.
 NHIET_DO_THU_LAI = (0.0, 0.2, 0.4)
+SO_KHUC_MOI_LO = 4   # chế độ theo khúc: số khúc nhận dạng cùng lúc (CPU 4 nhân)
 CAU_MO_DAU = "Cuộc họp nhóm, có dùng một số từ tiếng Anh."
 # Cụm 4 từ liền nhau của câu mở đầu, trừ cụm đầu "cuộc họp nhóm có" (người họp nói thật
 # "cuộc họp nhóm có ba người"); gặp các cụm còn lại trong đoạn ngắn là model đọc lại gợi ý
@@ -383,28 +384,36 @@ def ly_do_loai(doan):
     return None
 
 
-def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI):
+def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, theo_khuc=False):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
-    Hai tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
-    goi_y   : "cau_mo_dau" (mặc định) = chỉ câu mở đầu; "day_du" = câu mở đầu + từ khóa;
-              "tu_khoa" = chỉ từ khóa; "khong" = không gợi ý gì
-    nhiet_do: các mức nhiệt độ thử lại; None = mặc định của faster-whisper (thử tới 1.0)
+    Các tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
+    goi_y    : "cau_mo_dau" (mặc định) = chỉ câu mở đầu; "day_du" = câu mở đầu + từ khóa;
+               "tu_khoa" = chỉ từ khóa; "khong" = không gợi ý gì
+    nhiet_do : các mức nhiệt độ thử lại; None = mặc định của faster-whisper (thử tới 1.0)
+    theo_khuc: True = VAD cắt file thành các khúc lời nói <= 30 giây rồi nhận dạng TỪNG KHÚC
+               ĐỘC LẬP (BatchedInferencePipeline), thay vì trượt cửa sổ 30 giây trên cả file
     """
     if goi_y not in ("day_du", "tu_khoa", "cau_mo_dau", "khong"):
         raise ValueError(f"goi_y không hợp lệ: {goi_y!r}")
     dung_cau_mo_dau = goi_y in ("day_du", "cau_mo_dau")
     dung_tu_khoa = goi_y in ("day_du", "tu_khoa")
     them = {"temperature": list(nhiet_do)} if nhiet_do else {}
-    cac_doan, _ = model.transcribe(
+    if theo_khuc:
+        bo_nhan_dang = BatchedInferencePipeline(model)
+        them["batch_size"] = SO_KHUC_MOI_LO
+    else:
+        bo_nhan_dang = model
+        # Không dựa vào chữ của đoạn trước: chặn lỗi lặp vòng ở file dài.
+        # (Chế độ theo khúc luôn nhận dạng từng khúc độc lập nên không cần.)
+        them["condition_on_previous_text"] = False
+    cac_doan, _ = bo_nhan_dang.transcribe(
         song_am,
         language="vi",
         beam_size=5,
         **them,
         initial_prompt=CAU_MO_DAU if dung_cau_mo_dau else None,
         hotwords=TU_KHOA_GOI_Y if dung_tu_khoa else None,
-        # Không dựa vào chữ của đoạn trước: chặn lỗi lặp vòng ở file dài.
-        condition_on_previous_text=False,
         word_timestamps=True,
         vad_filter=True,
         vad_parameters={
