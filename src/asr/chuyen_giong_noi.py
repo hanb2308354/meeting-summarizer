@@ -441,11 +441,10 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
         for bat_dau, ket_thuc in cat_luot_noi(song_am):
             if nhat_ky is not None:
                 nhat_ky.append({"luot": [round(bat_dau / TAN_SO_MAU, 2), round(ket_thuc / TAN_SO_MAU, 2)]})
-            # Mỗi lượt đi qua đúng đường xử lý của một file ngắn, kể cả VAD bên trong:
-            # lần đo trước tắt VAD ở đây thì 1 đoạn thuyết trình bị bịa câu ở đầu lượt
+            # Không chạy VAD lần nữa trong lượt: đã đo bật VAD ở đây thì TỆ HƠN cả hai bộ
+            # (file dài 30,5% -> 31,8%, 30 đoạn ngắn 27,7% -> 29,3%) mà vẫn không hết bịa câu
             doan_luot, _ = model.transcribe(song_am[bat_dau:ket_thuc], **tham_so_chung, **them,
-                                            condition_on_previous_text=False,
-                                            vad_filter=True, vad_parameters=dict(THONG_SO_VAD))
+                                            condition_on_previous_text=False, vad_filter=False)
             cac_doan.extend(doi_moc_thoi_gian(d, bat_dau / TAN_SO_MAU) for d in doan_luot)
         return loc_doan(cac_doan, nhat_ky)
     if theo_khuc:

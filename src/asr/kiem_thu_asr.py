@@ -954,8 +954,8 @@ def che_do_tung_luot_cat_theo_vad_va_doi_moc_thoi_gian():
     finally:
         asr.cat_luot_noi = goc
     cau = asr.tach_cau(cac_tu)
-    if da_nghe != [(3.0, True), (4.0, True)]:
-        return f"phải nghe riêng từng lượt, mỗi lượt như một file ngắn (có VAD): {da_nghe}"
+    if da_nghe != [(3.0, False), (4.0, False)]:
+        return f"phải nghe riêng từng lượt, không chạy VAD lần nữa trong lượt: {da_nghe}"
     if [c["start"] for c in cau] != [0.2, 10.2]:
         return f"mốc thời gian lượt sau phải cộng thêm vị trí lượt: {[c['start'] for c in cau]}"
     # VAD thật: file im lặng thì không có lượt nào
