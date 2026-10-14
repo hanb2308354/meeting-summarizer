@@ -190,6 +190,10 @@ python src/asr/danh_gia_bo.py hop_va_dien_thoai --chi-doan hop_va_dien_thoai_000
                                                   # chạy lại 1 đoạn: lỗi theo vị trí, các lượt VAD, chỉ số từng đoạn model trả về
 ```
 
+- Thử model khác (cùng bộ đánh giá, so bằng `--so-sanh`):
+  `--model large-v3-turbo` (faster-whisper tự tải), hoặc PhoWhisper của VinAI sau khi chuyển đổi 1 lần
+  bằng `python src/asr/chuyen_doi_model.py` rồi `--model models/phowhisper-medium-ct2`.
+  Chế độ từng lượt là mặc định; `--ca-file` để so với cách nhận dạng cả file như trước.
 - Mẫu được chia đều theo nhóm (loại nội dung, phương ngữ, kênh) và giới hạn số đoạn cùng người nói / cùng video. Cùng `--hat-giong` thì lần nào cũng ra cùng tập đoạn, nên kết quả các lần so được với nhau.
 - Chạy lại với `--so-mau` lớn hơn chỉ tải bù; file gốc đã tải giữ trong `data/bo_danh_gia/<bộ>/_tai_ve/` nên không tải lại.
 - Hugging Face giới hạn số lần tải khi không đăng nhập (lỗi 429). Code tự chờ rồi thử lại; nếu vẫn hay bị, tạo token loại Read trên huggingface.co rồi chạy `$env:HF_TOKEN="hf_..."` trước lệnh tải (không đưa token lên git).

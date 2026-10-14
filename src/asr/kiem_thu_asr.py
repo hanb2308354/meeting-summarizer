@@ -29,6 +29,10 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 SR = asr.TAN_SO_MAU
+# Các ca dưới dùng âm thanh giả mà VAD thật không nhận ra là tiếng nói, nên mặc định chạy chế độ
+# cả file; chế độ từng lượt có ca kiểm thử riêng (truyền tung_luot=True)
+TUNG_LUOT_GOC = asr.TUNG_LUOT_MAC_DINH
+asr.TUNG_LUOT_MAC_DINH = False
 CAC_CA = []
 
 
@@ -1118,6 +1122,30 @@ def file_dai_chia_loi_ve_tung_doan_ghep():
         return f"chia lỗi sai: {chia}"
     if "lấy mẫu trên 30 đoạn ngắn đã ghép thành 10 file" not in bao_cao or "bằng nhau 0" not in bao_cao:
         return "so sánh file dài không lấy mẫu theo đoạn ghép:\n" + bao_cao
+
+
+@ca
+def mac_dinh_la_tung_luot_va_ten_model_tu_thu_muc():
+    import danh_gia_bo as dg
+    if TUNG_LUOT_GOC is not True:
+        return "chế độ mặc định phải là từng lượt (đã đo tốt hơn thật ở file dài)"
+    da_goi = []
+    goc = (asr.nhan_dang, asr.TUNG_LUOT_MAC_DINH)
+    try:
+        asr.TUNG_LUOT_MAC_DINH = True
+        asr.nhan_dang = lambda model, song_am, **k: (da_goi.append(k), ([], 0))[1]
+        with tempfile.TemporaryDirectory() as tm:
+            ghi_wav(Path(tm) / "hop.wav", tieng_noi_gia(3))
+            with contextlib.redirect_stdout(io.StringIO()):
+                chay_main(Path(tm), [], [str(Path(tm) / "hop.wav")])
+    finally:
+        asr.nhan_dang, asr.TUNG_LUOT_MAC_DINH = goc
+    if da_goi != [{"tung_luot": True}]:
+        return f"chuyen_giong_noi.py phải nhận dạng từng lượt: {da_goi}"
+    for model, ten in (("medium", "medium"), ("models/phowhisper-medium-ct2", "phowhisper-medium-ct2"),
+                       ("C:\\x\\models\\PhoWhisper-Medium-ct2", "phowhisper-medium-ct2")):
+        if dg.ten_model(model) != ten:
+            return f"tên model {model!r} -> {dg.ten_model(model)!r}, cần {ten!r}"
 
 
 if __name__ == "__main__":

@@ -153,8 +153,13 @@ def chuan_hoa_danh_gia(van_ban):
 # ======================================================================
 # CHẠY ASR
 # ======================================================================
+def ten_model(model):
+    """Tên ngắn của model để đặt tên file kết quả: thư mục models/phowhisper-medium-ct2 -> phowhisper-medium-ct2."""
+    return re.split(r"[\\/]", model.rstrip("\\/"))[-1].lower() if re.search(r"[\\/]", model) else model
+
+
 def ten_cau_hinh(args):
-    ten = args.model + HAU_TO_GOI_Y[args.goi_y]
+    ten = ten_model(args.model) + HAU_TO_GOI_Y[args.goi_y]
     if args.thu_lai == "gioi_han":
         ten += "_gioi_han_thu_lai"
     if args.theo_khuc:
@@ -679,7 +684,9 @@ def main():
     parser.add_argument("--theo-khuc", action="store_true",
                         help="Nhận dạng theo lô của faster-whisper (đã đo: tệ hơn ở file dài)")
     parser.add_argument("--tung-luot", action="store_true",
-                        help="Cắt file theo từng lượt nói rồi nhận dạng từng lượt như file ngắn")
+                        help="Cắt file theo từng lượt nói rồi nhận dạng từng lượt (đã là mặc định)")
+    parser.add_argument("--ca-file", action="store_true",
+                        help="Nhận dạng cả file một lượt như trước (so sánh với chế độ từng lượt)")
     parser.add_argument("--khong-tien-xu-ly", action="store_true", help="Tắt tiền xử lý âm thanh")
     parser.add_argument("--loc-nhieu", action="store_true", help="Bật giảm tạp âm")
     parser.add_argument("--chay-lai", action="store_true", help="Bỏ kết quả cũ, nhận dạng lại từ đầu")
@@ -693,8 +700,10 @@ def main():
                         help="Không chạy ASR, chỉ so các cấu hình đã chạy "
                              "(vd: --so-sanh medium medium_khong_goi_y)")
     args = parser.parse_args()
-    if args.theo_khuc and args.tung_luot:
-        sys.exit("Chọn một trong --theo-khuc hoặc --tung-luot.")
+    if args.theo_khuc + args.tung_luot + args.ca_file > 1:
+        sys.exit("Chọn một trong --theo-khuc, --tung-luot, --ca-file.")
+    if not (args.theo_khuc or args.ca_file):
+        args.tung_luot = asr.TUNG_LUOT_MAC_DINH
 
     co_san = sorted(p.name for p in THU_MUC_BO.iterdir() if (p / "nhan.json").exists()) \
         if THU_MUC_BO.exists() else []

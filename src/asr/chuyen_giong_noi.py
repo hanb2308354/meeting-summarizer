@@ -50,6 +50,12 @@ if hasattr(sys.stdout, "reconfigure"):
 # CẤU HÌNH
 # ======================================================================
 TEN_MODEL = "medium"            # Đã chốt qua thử nghiệm (xem thu_faster_whisper.py)
+# Model khác: --model nhận tên model của faster-whisper (vd large-v3-turbo) hoặc thư mục model
+# CTranslate2 (vd models/phowhisper-medium-ct2, tạo bằng src/asr/chuyen_doi_model.py)
+# Nhận dạng từng lượt nói (nhan_dang tung_luot=True) là MẶC ĐỊNH. Đo trên cùng các đoạn:
+#   4 file dài x 5 phút: 36,4% -> 29,9% (mất chữ 841 -> 507 từ), khoảng tin cậy 95% [-13,9; -0,1]
+#   30 đoạn ngắn: 25,5% -> 25,4% (bằng nhau, [-0,8; +0,5]); đổi lại chậm hơn ở file dài (1,8x -> 3,0x)
+TUNG_LUOT_MAC_DINH = True
 TAN_SO_MAU = 16000              # Whisper làm việc ở 16 kHz, 1 kênh
 # Tính theo vị trí file code (src/asr/ -> lên 2 cấp là thư mục project),
 # nên chạy từ thư mục nào JSON cũng được lưu đúng chỗ phần NLP đọc.
@@ -693,7 +699,7 @@ def xu_ly_mot_file(model, duong_dan, loc_nhieu, tien_xu_ly_bat):
         print("Tiền xử lý: tắt")
 
     print("Đang nhận dạng giọng nói, vui lòng chờ...")
-    cac_tu, so_bi_loai = nhan_dang(model, song_am)
+    cac_tu, so_bi_loai = nhan_dang(model, song_am, tung_luot=TUNG_LUOT_MAC_DINH)
     ket_qua = tach_cau(cac_tu)
     if not ket_qua:
         # Không ghi file rỗng: src/tien_xu_ly/doc_transcript.py coi danh sách rỗng là lỗi
