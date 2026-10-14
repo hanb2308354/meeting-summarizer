@@ -75,6 +75,12 @@ THONG_SO_VAD = {
     "speech_pad_ms": 400,             # chừa lề để không cụt đầu/cuối chữ
 }
 DO_DAI_LUOT_TOI_DA = 25.0   # chế độ từng lượt: lượt nói dài hơn thì VAD cắt nhỏ (Whisper nghe 30 giây/lần)
+# Chế độ từng lượt: lượt dài từ LUOT_XET_MAT_DO giây mà ra ít hơn MAT_DO_TOI_THIEU chữ/giây
+# (sau khi bỏ câu bịa) là model đã nghe hỏng cả lượt -> nhận dạng lại. Người Việt nói
+# ~4-6 tiếng/giây nên 1 chữ/giây là ngưỡng rất thấp, chỉ bắt lượt hỏng thật.
+# Ví dụ đo được (đoạn hop_va_dien_thoai_0000186): lượt 9,7 giây chỉ ra "Cảm ơn các bạn."
+LUOT_XET_MAT_DO = 3.0
+MAT_DO_TOI_THIEU = 1.0
 CAU_MO_DAU = "Cuộc họp nhóm, có dùng một số từ tiếng Anh."
 # Cụm 4 từ liền nhau của câu mở đầu, trừ cụm đầu "cuộc họp nhóm có" (người họp nói thật
 # "cuộc họp nhóm có ba người"); gặp các cụm còn lại trong đoạn ngắn là model đọc lại gợi ý
@@ -422,7 +428,8 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
                nhận dạng theo lô). Đo trên file dài: TỆ HƠN (36,4% -> 47,0%, mất chữ nhiều hơn)
     tung_luot: True = tự cắt file theo từng lượt nói (cat_luot_noi) rồi nhận dạng từng lượt như
                một file ngắn. Đo trên file dài: 36,4% -> 30,5% (mất chữ 841 -> 568 từ),
-               chậm hơn (1,8x -> 2,9x độ dài ghi âm)
+               chậm hơn (1,8x -> 2,9x độ dài ghi âm). Lượt ra quá ít chữ (luot_hong) thì nhận
+               dạng lại (nghe_lai_luot)
     nhat_ky  : truyền vào một list để ghi chi tiết từng đoạn model trả về (mốc thời gian, độ tin cậy,
                xác suất không có tiếng, nhiệt độ đã dùng, có bị loại không) và các lượt VAD cắt ra.
                Dùng để chẩn đoán vì sao một đoạn bị sai (danh_gia_bo.py --chi-doan)
@@ -437,15 +444,24 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
                          hotwords=TU_KHOA_GOI_Y if dung_tu_khoa else None,
                          word_timestamps=True)
     if tung_luot:
-        cac_doan = []
-        for bat_dau, ket_thuc in cat_luot_noi(song_am):
-            if nhat_ky is not None:
-                nhat_ky.append({"luot": [round(bat_dau / TAN_SO_MAU, 2), round(ket_thuc / TAN_SO_MAU, 2)]})
+        cac_luot = cat_luot_noi(song_am)
+
+        def nghe_doan(tu, den, **doi):
             # Không chạy VAD lần nữa trong lượt: đã đo bật VAD ở đây thì TỆ HƠN cả hai bộ
             # (file dài 30,5% -> 31,8%, 30 đoạn ngắn 27,7% -> 29,3%) mà vẫn không hết bịa câu
-            doan_luot, _ = model.transcribe(song_am[bat_dau:ket_thuc], **tham_so_chung, **them,
-                                            condition_on_previous_text=False, vad_filter=False)
-            cac_doan.extend(doi_moc_thoi_gian(d, bat_dau / TAN_SO_MAU) for d in doan_luot)
+            tham_so = dict(tham_so_chung, **them, condition_on_previous_text=False, vad_filter=False)
+            tham_so.update(doi)
+            doan, _ = model.transcribe(song_am[tu:den], **tham_so)
+            return [doi_moc_thoi_gian(d, tu / TAN_SO_MAU) for d in doan]
+
+        cac_doan = []
+        for i, (bat_dau, ket_thuc) in enumerate(cac_luot):
+            if nhat_ky is not None:
+                nhat_ky.append({"luot": [round(bat_dau / TAN_SO_MAU, 2), round(ket_thuc / TAN_SO_MAU, 2)]})
+            doan_luot = nghe_doan(bat_dau, ket_thuc)
+            if luot_hong(doan_luot, bat_dau, ket_thuc):
+                doan_luot = nghe_lai_luot(nghe_doan, cac_luot, i, doan_luot, nhat_ky)
+            cac_doan.extend(doan_luot)
         return loc_doan(cac_doan, nhat_ky)
     if theo_khuc:
         bo_nhan_dang = BatchedInferencePipeline(model)
@@ -466,6 +482,64 @@ def chi_tiet_doan(doan, ly_do):
             "do_tin_cay": round(doan.avg_logprob, 3), "khong_co_tieng": round(doan.no_speech_prob, 3),
             "ty_le_nen": round(doan.compression_ratio, 2), "nhiet_do": getattr(doan, "temperature", None),
             "loai": ly_do}
+
+
+def so_chu_that(cac_doan):
+    """Số chữ còn lại sau khi bỏ các đoạn bộ lọc coi là bịa."""
+    return sum(len(d.text.split()) for d in cac_doan if not ly_do_loai(d))
+
+
+def luot_hong(cac_doan, bat_dau, ket_thuc):
+    """Lượt nói đủ dài mà ra quá ít chữ thật: model đã nghe hỏng (thường là bịa câu kết video)."""
+    giay = (ket_thuc - bat_dau) / TAN_SO_MAU
+    return giay >= LUOT_XET_MAT_DO and so_chu_that(cac_doan) < MAT_DO_TOI_THIEU * giay
+
+
+def cat_theo_khoang(cac_doan, tu_giay, den_giay):
+    """Chỉ giữ các từ có điểm giữa nằm trong [tu_giay, den_giay), dựng lại đoạn từ các từ đó."""
+    ket_qua = []
+    for doan in cac_doan:
+        cac_tu = [t for t in (doan.words or []) if tu_giay <= (t.start + t.end) / 2 < den_giay]
+        if cac_tu:
+            ket_qua.append(dataclasses.replace(doan, start=cac_tu[0].start, end=cac_tu[-1].end, words=cac_tu,
+                                               text="".join(t.word for t in cac_tu)))
+    return ket_qua
+
+
+def nghe_lai_luot(nghe_doan, cac_luot, i, ban_dau, nhat_ky=None):
+    """Nhận dạng lại một lượt bị hỏng, thử lần lượt:
+        1. bỏ câu mở đầu (gợi ý có thể đẩy model sang "giọng" kết video)
+        2. nghe cả lượt trước và lượt sau cho đủ ngữ cảnh (giống chế độ mặc định, vốn nghe đúng
+           đoạn 0000186), rồi chỉ giữ chữ nằm trong lượt này
+    Lấy cách đầu tiên đạt mật độ chữ; không cách nào đạt thì lấy cách ra nhiều chữ thật nhất.
+    """
+    bat_dau, ket_thuc = cac_luot[i]
+    tu = cac_luot[i - 1][0] if i > 0 else bat_dau
+    den = cac_luot[i + 1][1] if i + 1 < len(cac_luot) else ket_thuc
+    if (den - tu) / TAN_SO_MAU > DO_DAI_LUOT_TOI_DA:   # quá 25 giây thì chỉ thêm lượt sau hoặc trước
+        tu, den = (bat_dau, den) if (den - bat_dau) / TAN_SO_MAU <= DO_DAI_LUOT_TOI_DA else (tu, ket_thuc)
+        if (den - tu) / TAN_SO_MAU > DO_DAI_LUOT_TOI_DA:
+            tu, den = bat_dau, ket_thuc
+    cac_cach = [("bỏ câu mở đầu", lambda: nghe_doan(bat_dau, ket_thuc, initial_prompt=None))]
+    if (tu, den) != (bat_dau, ket_thuc):
+        cac_cach.append(("nghe kèm lượt bên cạnh", lambda: cat_theo_khoang(
+            nghe_doan(tu, den), bat_dau / TAN_SO_MAU, ket_thuc / TAN_SO_MAU)))
+    tot_nhat, ten_tot = ban_dau, "giữ kết quả đầu"
+    if nhat_ky is not None:
+        nhat_ky.append({"thu_lai": "lần đầu", "so_chu": so_chu_that(ban_dau),
+                        "chu": " ".join(d.text.strip() for d in ban_dau)[:150]})
+    for ten, cach in cac_cach:
+        thu = cach()
+        if nhat_ky is not None:
+            nhat_ky.append({"thu_lai": ten, "so_chu": so_chu_that(thu),
+                            "chu": " ".join(d.text.strip() for d in thu)[:150]})
+        if not luot_hong(thu, bat_dau, ket_thuc) or so_chu_that(thu) > so_chu_that(tot_nhat):
+            tot_nhat, ten_tot = thu, ten
+        if not luot_hong(thu, bat_dau, ket_thuc):
+            break
+    if nhat_ky is not None:
+        nhat_ky.append({"thu_lai": "chọn", "cach": ten_tot})
+    return tot_nhat
 
 
 def loc_doan(cac_doan, nhat_ky=None):

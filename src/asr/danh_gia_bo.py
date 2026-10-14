@@ -522,7 +522,15 @@ def bao_cao_chi_doan(ten_bo, cau_hinh, muc, kq, kq_cu=None):
     if luot:
         d.append(f"\nCÁC LƯỢT NÓI VAD CẮT RA: {len(luot)}")
         d.append("  " + ", ".join(f"{a:.1f}-{b:.1f}s" for a, b in luot))
-    cac_doan = [c for c in chi_tiet if "luot" not in c]
+    thu_lai = [c for c in chi_tiet if "thu_lai" in c]
+    if thu_lai:
+        d.append("\nLƯỢT BỊ NGHE HỎNG (quá ít chữ so với độ dài) VÀ CÁC LẦN NHẬN DẠNG LẠI")
+        for c in thu_lai:
+            if c["thu_lai"] == "chọn":
+                d.append(f"  => chọn: {c['cach']}")
+            else:
+                d.append(f"  {c['thu_lai']:<24} {c['so_chu']:>3} chữ thật | {c['chu'] or '(trống)'}")
+    cac_doan = [c for c in chi_tiet if "text" in c]
     d.append(f"\nCÁC ĐOẠN MODEL TRẢ VỀ: {len(cac_doan)}"
              "  (tin cậy: gần 0 là chắc chắn; không tiếng: xác suất model nghĩ chỗ đó im lặng)")
     for c in cac_doan:

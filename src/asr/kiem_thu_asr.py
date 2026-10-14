@@ -977,7 +977,7 @@ def nhat_ky_ghi_chi_tiet_tung_doan_va_luot():
         asr.cat_luot_noi = goc
     if nhat_ky[0] != {"luot": [0.0, 5.0]}:
         return f"không ghi lượt VAD: {nhat_ky[:1]}"
-    doan_ghi = [c for c in nhat_ky if "luot" not in c]
+    doan_ghi = [c for c in nhat_ky if "text" in c]
     if len(doan_ghi) != 2 or doan_ghi[0]["loai"] or not doan_ghi[1]["loai"]:
         return f"không ghi đủ đoạn giữ / đoạn bị loại: {doan_ghi}"
     if doan_ghi[1]["khong_co_tieng"] != 0.9 or doan_ghi[1]["do_tin_cay"] != -1.2:
@@ -1038,6 +1038,58 @@ def chi_doan_chay_lai_mot_doan_va_khong_ghi_de_ket_qua():
             return f"báo cáo chẩn đoán thiếu '{can}':\n" + bao_cao
     if "Không tìm thấy đoạn: khong_co" not in ra.getvalue():
         return "không báo id không tồn tại"
+
+
+@ca
+def tung_luot_nghe_lai_luot_hong():
+    """Lượt 10 giây chỉ ra câu kết video -> nhận dạng lại; lượt bình thường không bị nghe lại."""
+    da_goi = []
+    cau_that = "Bạn đi ra và bạn làm chuyên viên thì các bạn biết rằng là ở miền tây mình sẽ bị rất nhiều"
+
+    class ModelHongKhiCoGoiY(ModelGia):
+        def transcribe(self, am_thanh, **tham_so):
+            giay = len(am_thanh) / SR
+            da_goi.append((giay, tham_so.get("initial_prompt") is not None))
+            if giay == 10.0 and tham_so.get("initial_prompt"):
+                self.cac_doan = [doan(chuoi_tu(4.0, "Cảm ơn các bạn."), khong_co_tieng=0.62, do_tin_cay=-0.8)]
+            elif giay == 10.0:
+                self.cac_doan = [doan(chuoi_tu(0.0, cau_that, buoc=0.45))]
+            else:
+                self.cac_doan = [doan(chuoi_tu(0.0, "Chúng ta sẽ xem một tháng làm bao nhiêu video."))]
+            return super().transcribe(am_thanh, **tham_so)
+
+    nhat_ky = []
+    goc = asr.cat_luot_noi
+    try:
+        asr.cat_luot_noi = lambda song_am: [(0, 10 * SR), (11 * SR, 15 * SR)]
+        with contextlib.redirect_stdout(io.StringIO()):
+            cac_tu, _ = asr.nhan_dang(ModelHongKhiCoGoiY([]), np.zeros(16 * SR, dtype=np.float32),
+                                      tung_luot=True, nhat_ky=nhat_ky)
+    finally:
+        asr.cat_luot_noi = goc
+    van_ban = " ".join(c["text"] for c in asr.tach_cau(cac_tu))
+    if "miền tây" not in van_ban or "Cảm ơn các bạn" in van_ban:
+        return f"lượt hỏng không được nhận dạng lại: {van_ban}"
+    if da_goi != [(10.0, True), (10.0, False), (4.0, True)]:
+        return f"phải nghe lại đúng lượt hỏng (bỏ gợi ý), lượt tốt chỉ nghe 1 lần: {da_goi}"
+    if {"thu_lai": "chọn", "cach": "bỏ câu mở đầu"} not in nhat_ky:
+        return f"nhật ký không ghi lần nghe lại: {nhat_ky}"
+
+
+@ca
+def nghe_kem_luot_ben_canh_chi_giu_chu_trong_luot():
+    # Cách 1 (bỏ gợi ý) vẫn hỏng -> cách 2 nghe cả 3 lượt, chỉ giữ chữ của lượt giữa
+    def nghe_doan(tu, den, **doi):
+        if (tu, den) == (0, 20 * SR):
+            return [doan(chuoi_tu(1.0, "lượt một") + chuoi_tu(6.0, "đây là lượt giữa nói khá dài nha")
+                         + chuoi_tu(16.0, "lượt ba"))]
+        return [doan(chuoi_tu(tu / SR + 1, "Cảm ơn."))]
+
+    cac_luot = [(0, 4 * SR), (5 * SR, 10 * SR), (15 * SR, 20 * SR)]
+    ket_qua = asr.nghe_lai_luot(nghe_doan, cac_luot, 1, nghe_doan(5 * SR, 10 * SR))
+    chu = " ".join(d.text.strip() for d in ket_qua)
+    if chu != "đây là lượt giữa nói khá dài nha":
+        return f"phải chỉ giữ chữ nằm trong lượt giữa: {chu!r}"
 
 
 if __name__ == "__main__":
