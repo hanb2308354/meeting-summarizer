@@ -934,6 +934,35 @@ def che_do_theo_khuc_dung_bo_nhan_dang_theo_lo():
         return f"tham số chế độ theo khúc sai: {da_goi}"
 
 
+@ca
+def che_do_tung_luot_cat_theo_vad_va_doi_moc_thoi_gian():
+    da_nghe = []
+
+    cac_cau = iter(["Bạn Lan làm slide.", "Tuấn làm phần API."])
+
+    class ModelGhiLuot(ModelGia):
+        def transcribe(self, am_thanh, **tham_so):
+            da_nghe.append((len(am_thanh) / SR, tham_so.get("vad_filter")))
+            self.cac_doan = [doan(chuoi_tu(0.2, next(cac_cau)))]
+            return super().transcribe(am_thanh, **tham_so)
+
+    goc = asr.cat_luot_noi
+    try:
+        # Hai lượt nói: 0-3 giây và 10-14 giây của file
+        asr.cat_luot_noi = lambda song_am: [(0, 3 * SR), (10 * SR, 14 * SR)]
+        cac_tu, _ = asr.nhan_dang(ModelGhiLuot([]), np.zeros(20 * SR, dtype=np.float32), tung_luot=True)
+    finally:
+        asr.cat_luot_noi = goc
+    cau = asr.tach_cau(cac_tu)
+    if da_nghe != [(3.0, False), (4.0, False)]:
+        return f"phải nghe riêng từng lượt (không VAD lần nữa): {da_nghe}"
+    if [c["start"] for c in cau] != [0.2, 10.2]:
+        return f"mốc thời gian lượt sau phải cộng thêm vị trí lượt: {[c['start'] for c in cau]}"
+    # VAD thật: file im lặng thì không có lượt nào
+    if asr.cat_luot_noi(np.zeros(5 * SR, dtype=np.float32)):
+        return "file im lặng mà VAD vẫn cắt ra lượt nói"
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))
