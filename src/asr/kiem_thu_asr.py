@@ -963,6 +963,83 @@ def che_do_tung_luot_cat_theo_vad_va_doi_moc_thoi_gian():
         return "file im lặng mà VAD vẫn cắt ra lượt nói"
 
 
+@ca
+def nhat_ky_ghi_chi_tiet_tung_doan_va_luot():
+    nhat_ky = []
+    cac_doan = [doan(chuoi_tu(0.0, "Bạn Lan làm slide.")),
+                doan(chuoi_tu(3.0, "Cảm ơn các bạn đã theo dõi"), khong_co_tieng=0.9, do_tin_cay=-1.2)]
+    goc = asr.cat_luot_noi
+    try:
+        asr.cat_luot_noi = lambda song_am: [(0, 5 * SR)]
+        with contextlib.redirect_stdout(io.StringIO()):
+            asr.nhan_dang(ModelGia(cac_doan), np.zeros(6 * SR, dtype=np.float32), tung_luot=True, nhat_ky=nhat_ky)
+    finally:
+        asr.cat_luot_noi = goc
+    if nhat_ky[0] != {"luot": [0.0, 5.0]}:
+        return f"không ghi lượt VAD: {nhat_ky[:1]}"
+    doan_ghi = [c for c in nhat_ky if "luot" not in c]
+    if len(doan_ghi) != 2 or doan_ghi[0]["loai"] or not doan_ghi[1]["loai"]:
+        return f"không ghi đủ đoạn giữ / đoạn bị loại: {doan_ghi}"
+    if doan_ghi[1]["khong_co_tieng"] != 0.9 or doan_ghi[1]["do_tin_cay"] != -1.2:
+        return f"không ghi chỉ số model: {doan_ghi[1]}"
+
+
+@ca
+def khoang_tin_cay_phan_biet_that_va_ngau_nhien():
+    import danh_gia_bo as dg
+    # B ít lỗi hơn A ở mọi đoạn -> tốt hơn thật
+    chenh, duoi, tren = dg.khoang_tin_cay([(10, 3, 1)] * 30)
+    if not (abs(chenh + 0.2) < 1e-9 and tren < 0):
+        return f"B tốt hơn ở mọi đoạn mà khoảng tin cậy không dưới 0: {chenh, duoi, tren}"
+    # Hơn ở nửa này, thua ở nửa kia -> chưa chắc
+    _, duoi, tren = dg.khoang_tin_cay([(10, 3, 1)] * 15 + [(10, 1, 3)] * 15)
+    if not duoi < 0 < tren:
+        return f"chênh lệch ngẫu nhiên mà khoảng tin cậy không chứa 0: {duoi, tren}"
+    cac_muc = [{"id": f"d{i}", "text": "bạn lan làm slide", "nhom": "x"} for i in range(30)]
+    a = {f"d{i}": {"du_doan": "bạn lan làm slai"} for i in range(30)}
+    b = {f"d{i}": {"du_doan": "bạn lan làm slide"} for i in range(30)}
+    bao_cao = "\n".join(dg.khac_biet_that_hay_ngau_nhien(cac_muc, {"a": a, "b": b}))
+    if "TỐT HƠN THẬT" not in bao_cao or "tốt hơn ở 30 đoạn" not in bao_cao:
+        return "báo cáo so sánh không kết luận đúng:\n" + bao_cao
+
+
+@ca
+def chi_doan_chay_lai_mot_doan_va_khong_ghi_de_ket_qua():
+    import danh_gia_bo as dg
+    cau_hinh = f"{asr.TEN_MODEL}_chi_cau_mo_dau_gioi_han_thu_lai"
+    goc = (dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO)
+    cac_doan = [doan(chuoi_tu(0.0, "Bạn Lan làm slai."), khong_co_tieng=0.8, do_tin_cay=-0.9)]
+    with tempfile.TemporaryDirectory() as tm:
+        tm = Path(tm)
+        thu_muc = tm / "bo" / "hop"
+        (thu_muc / "audio").mkdir(parents=True)
+        ghi_wav(thu_muc / "audio" / "0.wav", tieng_noi_gia(3))
+        muc = {"id": "hop_0", "tep": "audio/0.wav", "nhom": "x", "nguon": "0", "row_idx": 0,
+               "text": "bạn lan làm slide cho nhóm"}
+        (thu_muc / "nhan.json").write_text(json.dumps([muc], ensure_ascii=False), encoding="utf-8")
+        cu = {"hop_0": {"du_doan": "Bạn Lan làm slide cho nhóm.", "bi_loai": [], "do_dai": 3, "thoi_gian": 9}}
+        tep_kq = thu_muc / f"ket_qua__{cau_hinh}.json"
+        tep_kq.write_text(json.dumps(cu, ensure_ascii=False), encoding="utf-8")
+        try:
+            dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO = tm / "bo", tm / "bao_cao"
+            asr.WhisperModel = lambda *a, **k: ModelGia(cac_doan)
+            sys.argv = ["danh_gia_bo.py", "--chi-doan", "hop_0", "khong_co"]
+            with contextlib.redirect_stdout(io.StringIO()) as ra:
+                dg.main()
+            bao_cao = (tm / "bao_cao" / f"hop_0__{cau_hinh}__chi_tiet.txt").read_text(encoding="utf-8")
+            sau = json.loads(tep_kq.read_text(encoding="utf-8"))
+        finally:
+            dg.THU_MUC_BO, dg.THU_MUC_BAO_CAO = goc
+    if sau != cu:
+        return "--chi-doan đã ghi đè kết quả đã lưu"
+    for can in ("[nghe nhầm] slide  ->  slai", "[bỏ sót]    cho nhóm", "trước đó (cùng cấu hình): WER 0.0%",
+                "nghi bịa", "CÁC ĐOẠN MODEL TRẢ VỀ: 1"):
+        if can not in bao_cao:
+            return f"báo cáo chẩn đoán thiếu '{can}':\n" + bao_cao
+    if "Không tìm thấy đoạn: khong_co" not in ra.getvalue():
+        return "không báo id không tồn tại"
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))

@@ -183,8 +183,11 @@ python src/asr/danh_gia_bo.py --goi-y khong       # so sánh cách gợi ý: day
 python src/asr/danh_gia_bo.py --thu-lai day_du    # so sánh: thử lại tới nhiệt độ 1.0 như faster-whisper gốc
 python src/asr/danh_gia_bo.py --khong-tien-xu-ly  # so sánh: tắt tiền xử lý âm thanh
 python src/asr/danh_gia_bo.py hop_va_dien_thoai --so-sanh medium medium_chi_cau_mo_dau_gioi_han_thu_lai
+                                                  # không chạy ASR: so các cấu hình đã chạy, kèm khoảng tin cậy 95%
+                                                  # (khoảng chứa 0 = chênh lệch có thể chỉ do ngẫu nhiên, chưa đủ để đổi mặc định)
 python src/asr/danh_gia_bo.py --kiem-sua-loi      # không chạy ASR: bảng sửa lỗi của src/tien_xu_ly sửa đúng hay sai
-                                                  # không chạy ASR: bảng so các cấu hình đã chạy
+python src/asr/danh_gia_bo.py hop_va_dien_thoai --chi-doan hop_va_dien_thoai_0000186
+                                                  # chạy lại 1 đoạn: lỗi theo vị trí, các lượt VAD, chỉ số từng đoạn model trả về
 ```
 
 - Mẫu được chia đều theo nhóm (loại nội dung, phương ngữ, kênh) và giới hạn số đoạn cùng người nói / cùng video. Cùng `--hat-giong` thì lần nào cũng ra cùng tập đoạn, nên kết quả các lần so được với nhau.

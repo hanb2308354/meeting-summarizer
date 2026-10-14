@@ -17,6 +17,8 @@ Cách dùng:
     python src/asr/danh_gia_bo.py --khong-goi-y          (so sánh: tắt câu mở đầu + từ khóa gợi ý)
     python src/asr/danh_gia_bo.py --khong-tien-xu-ly     (so sánh: tắt lọc ù + chuẩn hóa âm lượng)
     python src/asr/danh_gia_bo.py --loc-nhieu            (so sánh: bật giảm tạp âm)
+    python src/asr/danh_gia_bo.py --so-sanh A B          (so 2 cấu hình, có khoảng tin cậy 95%)
+    python src/asr/danh_gia_bo.py --chi-doan ID          (chạy lại 1 đoạn, in chi tiết để chẩn đoán)
 """
 import argparse
 import contextlib
@@ -31,6 +33,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 import jiwer
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import chuyen_giong_noi as asr  # noqa: E402
@@ -172,15 +175,17 @@ def nhan_dang_mot_doan(model, duong_dan, args):
     if not args.khong_tien_xu_ly:
         song_am, _ = asr.tien_xu_ly_am_thanh(song_am, args.loc_nhieu)
     dau_ra = io.StringIO()
+    nhat_ky = []
     with contextlib.redirect_stdout(dau_ra):  # nhan_dang in từng đoạn: gom lại, chỉ giữ dòng [LOẠI]
         nhiet_do = asr.NHIET_DO_THU_LAI if args.thu_lai == "gioi_han" else None
         cac_tu, _ = asr.nhan_dang(model, song_am, goi_y=args.goi_y, nhiet_do=nhiet_do,
-                                  theo_khuc=args.theo_khuc, tung_luot=args.tung_luot)
+                                  theo_khuc=args.theo_khuc, tung_luot=args.tung_luot, nhat_ky=nhat_ky)
     return {
         "du_doan": " ".join(cau["text"] for cau in asr.tach_cau(cac_tu)),
         "bi_loai": [d.strip() for d in dau_ra.getvalue().splitlines() if "[LOẠI" in d],
         "do_dai": round(len(song_am) / asr.TAN_SO_MAU, 2),
         "thoi_gian": round(time.time() - bat_dau, 2),
+        "chi_tiet": nhat_ky,   # từng đoạn model trả về + các lượt VAD: để chẩn đoán, không dùng tính WER
     }
 
 
@@ -402,6 +407,8 @@ def so_sanh_cau_hinh(ten_bo, cac_cau_hinh):
             d.append("  " + f"{nhom[:24]:<24}" + "".join(
                 f"{wer_cua(kq['theo_nhom'][nhom]):>24.1%}" for kq in phan.values()))
 
+    d += khac_biet_that_hay_ngau_nhien(chung, ket)
+
     wer_doan = {ch: {m["id"]: (w, du) for w, m, _, _, du in kq["tung_doan"]} for ch, kq in phan.items()}
     khac = []
     for muc in chung:
@@ -415,6 +422,119 @@ def so_sanh_cau_hinh(ten_bo, cac_cau_hinh):
         for ch in phan:
             w, du = wer_doan[ch][muc["id"]]
             d.append(f"      {ch[:16]:<16} {w:>4.0%}: {du[:130] or '(trống)'}")
+    return "\n".join(d)
+
+
+SO_LAN_LAY_MAU = 2000
+
+
+def khoang_tin_cay(cac_cap, so_lan=SO_LAN_LAY_MAU, hat_giong=0):
+    """Bootstrap ghép cặp: bốc ngẫu nhiên có lặp lại các đoạn, tính lại chênh WER (B - A) nhiều lần.
+
+    cac_cap: [(số từ, lỗi cấu hình A, lỗi cấu hình B)] trên CÙNG các đoạn.
+    Trả về (chênh WER, cận dưới 95%, cận trên 95%) tính bằng tỉ lệ (0.01 = 1 điểm).
+    """
+    tu, a, b = (np.array(c, dtype=float) for c in zip(*cac_cap))
+    chi_so = np.random.default_rng(hat_giong).integers(0, len(tu), (so_lan, len(tu)))
+    tong_tu = tu[chi_so].sum(axis=1)
+    chenh = (b[chi_so].sum(axis=1) - a[chi_so].sum(axis=1)) / np.maximum(tong_tu, 1)
+    return (b.sum() - a.sum()) / tu.sum(), float(np.percentile(chenh, 2.5)), float(np.percentile(chenh, 97.5))
+
+
+def khac_biet_that_hay_ngau_nhien(chung, ket):
+    """So từng cấu hình với cấu hình ĐẦU TIÊN: chênh WER kèm khoảng tin cậy 95%.
+
+    Khoảng tin cậy chứa 0 nghĩa là chênh lệch có thể chỉ do may rủi của các đoạn được chọn:
+    chưa đủ bằng chứng để đổi mặc định.
+    """
+    cac_ch = list(ket)
+    goc = cac_ch[0]
+    d = [f"\nKHÁC BIỆT THẬT HAY NGẪU NHIÊN? (so với {goc}, khoảng tin cậy 95%, bootstrap theo đoạn)"]
+    for ch in cac_ch[1:]:
+        cac_cap, tot, te = [], 0, 0
+        for muc in chung:
+            ka, kb = ket[goc][muc["id"]], ket[ch][muc["id"]]
+            dap_an = chuan_hoa_danh_gia(muc["text"])
+            if "loi" in ka or "loi" in kb or not dap_an:
+                continue
+            la = so_loi(dap_an, chuan_hoa_danh_gia(ka["du_doan"]))
+            lb = so_loi(dap_an, chuan_hoa_danh_gia(kb["du_doan"]))
+            cac_cap.append((len(dap_an.split()), la, lb))
+            tot += lb < la
+            te += lb > la
+        if not cac_cap:
+            continue
+        chenh, duoi, tren = khoang_tin_cay(cac_cap)
+        if duoi > 0:
+            ket_luan = "TỆ HƠN THẬT"
+        elif tren < 0:
+            ket_luan = "TỐT HƠN THẬT"
+        else:
+            ket_luan = "CHƯA CHẮC (có thể chỉ do ngẫu nhiên)"
+        d.append(f"  {ch[:40]:<40} WER {chenh * 100:+.1f} điểm  [95%: {duoi * 100:+.1f} .. {tren * 100:+.1f}]"
+                 f"  -> {ket_luan} | tốt hơn ở {tot} đoạn, tệ hơn ở {te}, bằng nhau {len(cac_cap) - tot - te}")
+        if len(cac_cap) < 20:
+            d.append(f"      (chỉ có {len(cac_cap)} đoạn: khoảng tin cậy kém chính xác, nên đo thêm)")
+    return d
+
+
+DAU_HIEU = [
+    (lambda c: c["khong_co_tieng"] > 0.6 and c["do_tin_cay"] < -0.7,
+     "model nghĩ chỗ này KHÔNG có tiếng mà vẫn ra chữ -> nghi bịa"),
+    (lambda c: c["ty_le_nen"] > 2.4, "chữ lặp nhiều (tỉ lệ nén cao) -> nghi kẹt vòng lặp"),
+    (lambda c: (c["nhiet_do"] or 0) > 0, "model phải thử lại ở nhiệt độ cao -> lần đầu ra kết quả tệ"),
+    (lambda c: c["do_tin_cay"] < -1.0, "độ tin cậy rất thấp -> nghe không rõ / giọng khó"),
+]
+
+
+def bao_cao_chi_doan(ten_bo, cau_hinh, muc, kq, kq_cu=None):
+    """Mọi thứ cần để biết VÌ SAO một đoạn sai: lỗi theo vị trí, các lượt VAD, chỉ số từng đoạn."""
+    d = [f"CHẨN ĐOÁN ĐOẠN {muc['id']} (bộ {ten_bo}, nhóm {muc['nhom']}, cấu hình {cau_hinh})",
+         f"File: data/bo_danh_gia/{ten_bo}/{muc['tep']}", "=" * 100]
+    if "loi" in kq:
+        return "\n".join(d + [f"Không đọc được: {kq['loi']}"])
+    dap_an, du_doan = chuan_hoa_danh_gia(muc["text"]), chuan_hoa_danh_gia(kq["du_doan"])
+    do = jiwer.process_words(dap_an, du_doan)
+    so_tu = len(dap_an.split())
+    d.append(f"WER {so_loi(dap_an, du_doan) / max(so_tu, 1):.1%} ({so_tu} từ: sai {do.substitutions}, "
+             f"thiếu {do.deletions}, thừa {do.insertions}) | {kq['do_dai']:.1f}s âm thanh, xử lý {kq['thoi_gian']:.1f}s")
+    if kq_cu and "loi" not in kq_cu:
+        d.append(f"Kết quả đã lưu trước đó (cùng cấu hình): WER "
+                 f"{so_loi(dap_an, chuan_hoa_danh_gia(kq_cu['du_doan'])) / max(so_tu, 1):.1%}"
+                 "  ← khác nhiều = code đã đổi hành vi ở đoạn này")
+    d.append(f"\nĐáp án : {dap_an}")
+    d.append(f"Máy nghe: {du_doan or '(trống)'}")
+
+    d.append("\nCHỖ SAI (theo thứ tự trong câu)")
+    tu_goc, tu_may = do.references[0], do.hypotheses[0]
+    for khuc in do.alignments[0]:
+        goc = " ".join(tu_goc[khuc.ref_start_idx:khuc.ref_end_idx])
+        may = " ".join(tu_may[khuc.hyp_start_idx:khuc.hyp_end_idx])
+        if khuc.type == "substitute":
+            d.append(f"  [nghe nhầm] {goc}  ->  {may}")
+        elif khuc.type == "delete":
+            d.append(f"  [bỏ sót]    {goc}")
+        elif khuc.type == "insert":
+            d.append(f"  [thêm vào]  {may}")
+
+    chi_tiet = kq.get("chi_tiet", [])
+    luot = [c["luot"] for c in chi_tiet if "luot" in c]
+    if luot:
+        d.append(f"\nCÁC LƯỢT NÓI VAD CẮT RA: {len(luot)}")
+        d.append("  " + ", ".join(f"{a:.1f}-{b:.1f}s" for a, b in luot))
+    cac_doan = [c for c in chi_tiet if "luot" not in c]
+    d.append(f"\nCÁC ĐOẠN MODEL TRẢ VỀ: {len(cac_doan)}"
+             "  (tin cậy: gần 0 là chắc chắn; không tiếng: xác suất model nghĩ chỗ đó im lặng)")
+    for c in cac_doan:
+        d.append(f"  [{c['start']:7.2f} -> {c['end']:7.2f}] tin cậy {c['do_tin_cay']:+.2f} | không tiếng "
+                 f"{c['khong_co_tieng']:.2f} | nén {c['ty_le_nen']:.1f} | nhiệt độ {c['nhiet_do']}"
+                 + (f" | BỊ LOẠI: {c['loai']}" if c["loai"] else ""))
+        d.append(f"      {c['text'][:150]}")
+        for dieu_kien, y_nghia in DAU_HIEU:
+            if dieu_kien(c):
+                d.append(f"      ⚠ {y_nghia}")
+    if not chi_tiet:
+        d.append("  (kết quả này chưa có chi tiết: chạy lại với --chi-doan)")
     return "\n".join(d)
 
 
@@ -475,6 +595,28 @@ def kiem_sua_loi(ten_bo, cau_hinh):
 # ======================================================================
 # CHƯƠNG TRÌNH CHÍNH
 # ======================================================================
+def chay_chi_doan(cac_bo, args, cau_hinh, tai_model):
+    con_lai = list(dict.fromkeys(args.chi_doan))
+    for ten_bo in cac_bo:
+        thu_muc = THU_MUC_BO / ten_bo
+        nhan = {m["id"]: m for m in doc_json(thu_muc / "nhan.json", [])}
+        ket_cu = doc_json(thu_muc / f"ket_qua__{cau_hinh}.json", {})
+        for id_doan in [i for i in con_lai if i in nhan]:
+            con_lai.remove(id_doan)
+            muc = nhan[id_doan]
+            print(f"Đang nhận dạng lại {id_doan}...")
+            try:
+                kq = nhan_dang_mot_doan(tai_model(), thu_muc / muc["tep"], args)
+            except asr.LoiDauVao as loi:
+                kq = {"loi": str(loi)}
+            bao_cao = bao_cao_chi_doan(ten_bo, cau_hinh, muc, kq, ket_cu.get(id_doan))
+            tep = THU_MUC_BAO_CAO / f"{id_doan}__{cau_hinh}__chi_tiet.txt"
+            tep.write_text(bao_cao + "\n", encoding="utf-8")
+            print("\n" + bao_cao + f"\n\nĐã lưu: {asr.hien_thi(tep)}\n")
+    if con_lai:
+        print(f"Không tìm thấy đoạn: {', '.join(con_lai)} (trong các bộ {', '.join(cac_bo)})")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Đo WER của ASR trên các bộ dữ liệu đã tải.")
     parser.add_argument("bo", nargs="*", help="Tên bộ trong data/bo_danh_gia/ (bỏ trống = tất cả)")
@@ -495,6 +637,9 @@ def main():
     parser.add_argument("--kiem-sua-loi", metavar="CAU_HINH", nargs="?", const="",
                         help="Không chạy ASR: đo bảng sửa lỗi của src/tien_xu_ly trên kết quả đã có "
                              "(mặc định: cấu hình hiện tại)")
+    parser.add_argument("--chi-doan", nargs="+", metavar="ID",
+                        help="Chạy lại riêng các đoạn này với cấu hình đang chọn và in chi tiết để chẩn đoán "
+                             "(không ghi đè kết quả đã lưu)")
     parser.add_argument("--so-sanh", nargs="+", metavar="CAU_HINH",
                         help="Không chạy ASR, chỉ so các cấu hình đã chạy "
                              "(vd: --so-sanh medium medium_khong_goi_y)")
@@ -543,6 +688,9 @@ def main():
 
     cau_hinh = ten_cau_hinh(args)
     THU_MUC_BAO_CAO.mkdir(parents=True, exist_ok=True)
+    if args.chi_doan:
+        chay_chi_doan(cac_bo, args, cau_hinh, tai_model)
+        return
     tom_tat = []
     for ten_bo in cac_bo:
         cac_muc, ket_qua = chay_mot_bo(ten_bo, tai_model, args)

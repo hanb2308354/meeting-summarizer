@@ -411,7 +411,7 @@ def doi_moc_thoi_gian(doan, lech):
 
 
 def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, theo_khuc=False,
-              tung_luot=False):
+              tung_luot=False, nhat_ky=None):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
     Các tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
@@ -423,6 +423,9 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
     tung_luot: True = tự cắt file theo từng lượt nói (cat_luot_noi) rồi nhận dạng từng lượt như
                một file ngắn. Đo trên file dài: 36,4% -> 30,5% (mất chữ 841 -> 568 từ),
                chậm hơn (1,8x -> 2,9x độ dài ghi âm)
+    nhat_ky  : truyền vào một list để ghi chi tiết từng đoạn model trả về (mốc thời gian, độ tin cậy,
+               xác suất không có tiếng, nhiệt độ đã dùng, có bị loại không) và các lượt VAD cắt ra.
+               Dùng để chẩn đoán vì sao một đoạn bị sai (danh_gia_bo.py --chi-doan)
     """
     if goi_y not in ("day_du", "tu_khoa", "cau_mo_dau", "khong"):
         raise ValueError(f"goi_y không hợp lệ: {goi_y!r}")
@@ -436,13 +439,15 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
     if tung_luot:
         cac_doan = []
         for bat_dau, ket_thuc in cat_luot_noi(song_am):
+            if nhat_ky is not None:
+                nhat_ky.append({"luot": [round(bat_dau / TAN_SO_MAU, 2), round(ket_thuc / TAN_SO_MAU, 2)]})
             # Mỗi lượt đi qua đúng đường xử lý của một file ngắn, kể cả VAD bên trong:
             # lần đo trước tắt VAD ở đây thì 1 đoạn thuyết trình bị bịa câu ở đầu lượt
             doan_luot, _ = model.transcribe(song_am[bat_dau:ket_thuc], **tham_so_chung, **them,
                                             condition_on_previous_text=False,
                                             vad_filter=True, vad_parameters=dict(THONG_SO_VAD))
             cac_doan.extend(doi_moc_thoi_gian(d, bat_dau / TAN_SO_MAU) for d in doan_luot)
-        return loc_doan(cac_doan)
+        return loc_doan(cac_doan, nhat_ky)
     if theo_khuc:
         bo_nhan_dang = BatchedInferencePipeline(model)
         them["batch_size"] = SO_KHUC_MOI_LO
@@ -453,10 +458,18 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
         them["condition_on_previous_text"] = False
     cac_doan, _ = bo_nhan_dang.transcribe(song_am, **tham_so_chung, **them,
                                           vad_filter=True, vad_parameters=dict(THONG_SO_VAD))
-    return loc_doan(cac_doan)
+    return loc_doan(cac_doan, nhat_ky)
 
 
-def loc_doan(cac_doan):
+def chi_tiet_doan(doan, ly_do):
+    """Các chỉ số model tự báo về một đoạn, để biết đoạn sai vì nghe kém, vì bịa hay vì bị loại."""
+    return {"start": round(doan.start, 2), "end": round(doan.end, 2), "text": doan.text.strip(),
+            "do_tin_cay": round(doan.avg_logprob, 3), "khong_co_tieng": round(doan.no_speech_prob, 3),
+            "ty_le_nen": round(doan.compression_ratio, 2), "nhiet_do": getattr(doan, "temperature", None),
+            "loai": ly_do}
+
+
+def loc_doan(cac_doan, nhat_ky=None):
     """Bỏ các đoạn nghi bịa chữ, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại."""
     cac_tu = []
     so_doan_bi_loai = 0
@@ -474,6 +487,8 @@ def loc_doan(cac_doan):
                       and len(hai_doan_truoc[1].split()) >= SO_TU_TOI_THIEU_LOC_TRUNG)
         if not ly_do and du_dai and (lap_lien_ke or lap_xen_ke):
             ly_do = "lặp lại đoạn trước"
+        if nhat_ky is not None:
+            nhat_ky.append(chi_tiet_doan(doan, ly_do))
         if ly_do:
             so_doan_bi_loai += 1
             # In ra để tự kiểm tra: nếu thấy câu thật bị loại thì báo lại để chỉnh ngưỡng
