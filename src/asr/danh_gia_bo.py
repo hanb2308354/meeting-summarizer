@@ -158,6 +158,8 @@ def ten_cau_hinh(args):
         ten += "_theo_khuc"
     if args.tung_luot:
         ten += "_tung_luot"
+    if args.gop_luot_ngan:
+        ten += "_gop_luot_ngan"
     if args.khong_tien_xu_ly:
         ten += "_khong_tien_xu_ly"
     if args.loc_nhieu:
@@ -175,7 +177,8 @@ def nhan_dang_mot_doan(model, duong_dan, args):
     with contextlib.redirect_stdout(dau_ra):  # nhan_dang in từng đoạn: gom lại, chỉ giữ dòng [LOẠI]
         nhiet_do = asr.NHIET_DO_THU_LAI if args.thu_lai == "gioi_han" else None
         cac_tu, _ = asr.nhan_dang(model, song_am, goi_y=args.goi_y, nhiet_do=nhiet_do,
-                                  theo_khuc=args.theo_khuc, tung_luot=args.tung_luot)
+                                  theo_khuc=args.theo_khuc, tung_luot=args.tung_luot,
+                                  gop_luot=args.gop_luot_ngan)
     return {
         "du_doan": " ".join(cau["text"] for cau in asr.tach_cau(cac_tu)),
         "bi_loai": [d.strip() for d in dau_ra.getvalue().splitlines() if "[LOẠI" in d],
@@ -489,6 +492,8 @@ def main():
                         help="Nhận dạng theo lô của faster-whisper (đã đo: tệ hơn ở file dài)")
     parser.add_argument("--tung-luot", action="store_true",
                         help="Cắt file theo từng lượt nói rồi nhận dạng từng lượt như file ngắn")
+    parser.add_argument("--gop-luot-ngan", action="store_true",
+                        help="(cùng --tung-luot) gộp lượt nói dưới 2 giây với lượt kề bên")
     parser.add_argument("--khong-tien-xu-ly", action="store_true", help="Tắt tiền xử lý âm thanh")
     parser.add_argument("--loc-nhieu", action="store_true", help="Bật giảm tạp âm")
     parser.add_argument("--chay-lai", action="store_true", help="Bỏ kết quả cũ, nhận dạng lại từ đầu")
@@ -501,6 +506,8 @@ def main():
     args = parser.parse_args()
     if args.theo_khuc and args.tung_luot:
         sys.exit("Chọn một trong --theo-khuc hoặc --tung-luot.")
+    if args.gop_luot_ngan and not args.tung_luot:
+        sys.exit("--gop-luot-ngan chỉ dùng cùng --tung-luot.")
 
     co_san = sorted(p.name for p in THU_MUC_BO.iterdir() if (p / "nhan.json").exists()) \
         if THU_MUC_BO.exists() else []

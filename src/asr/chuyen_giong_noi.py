@@ -75,6 +75,8 @@ THONG_SO_VAD = {
     "speech_pad_ms": 400,             # chừa lề để không cụt đầu/cuối chữ
 }
 DO_DAI_LUOT_TOI_DA = 25.0   # chế độ từng lượt: lượt nói dài hơn thì VAD cắt nhỏ (Whisper nghe 30 giây/lần)
+LUOT_NGAN = 2.0             # lượt ngắn hơn (giây) thì gộp với lượt kề bên: quá ít lời, model hay bịa câu
+KHOANG_GOP_TOI_DA = 2.0     # chỉ gộp khi hai lượt cách nhau không quá ngần này (giây)
 CAU_MO_DAU = "Cuộc họp nhóm, có dùng một số từ tiếng Anh."
 # Cụm 4 từ liền nhau của câu mở đầu, trừ cụm đầu "cuộc họp nhóm có" (người họp nói thật
 # "cuộc họp nhóm có ba người"); gặp các cụm còn lại trong đoạn ngắn là model đọc lại gợi ý
@@ -403,6 +405,26 @@ def cat_luot_noi(song_am):
     return [(d["start"], d["end"]) for d in get_speech_timestamps(song_am, vad, sampling_rate=TAN_SO_MAU)]
 
 
+def gop_luot_ngan(cac_luot):
+    """Gộp lượt nói quá ngắn với lượt kề bên (cách nhau <= 2 giây, tổng <= 25 giây).
+
+    Đo trên bộ đánh giá: lượt chỉ vài phần mười giây làm model bịa câu ("Cảm ơn các bạn đã
+    theo dõi") và kéo theo cả lượt sau nghe sai.
+    """
+    ket_qua = []
+    for bat_dau, ket_thuc in cac_luot:
+        if ket_qua:
+            bd_truoc, kt_truoc = ket_qua[-1]
+            co_luot_ngan = (kt_truoc - bd_truoc < LUOT_NGAN * TAN_SO_MAU
+                            or ket_thuc - bat_dau < LUOT_NGAN * TAN_SO_MAU)
+            if (co_luot_ngan and bat_dau - kt_truoc <= KHOANG_GOP_TOI_DA * TAN_SO_MAU
+                    and ket_thuc - bd_truoc <= DO_DAI_LUOT_TOI_DA * TAN_SO_MAU):
+                ket_qua[-1] = (bd_truoc, ket_thuc)
+                continue
+        ket_qua.append((bat_dau, ket_thuc))
+    return ket_qua
+
+
 def doi_moc_thoi_gian(doan, lech):
     """Cộng thêm `lech` giây vào mốc thời gian của đoạn và các từ (lượt nói nằm giữa file)."""
     cac_tu = [dataclasses.replace(t, start=t.start + lech, end=t.end + lech) for t in doan.words] \
@@ -411,7 +433,7 @@ def doi_moc_thoi_gian(doan, lech):
 
 
 def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, theo_khuc=False,
-              tung_luot=False):
+              tung_luot=False, gop_luot=False):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
     Các tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
@@ -421,7 +443,9 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
     theo_khuc: True = BatchedInferencePipeline của faster-whisper (gom lời nói thành khúc 30 giây,
                nhận dạng theo lô). Đo trên file dài: TỆ HƠN (36,4% -> 47,0%, mất chữ nhiều hơn)
     tung_luot: True = tự cắt file theo từng lượt nói (cat_luot_noi) rồi nhận dạng từng lượt như
-               một file ngắn, giống hệt cách đo "nghe từng đoạn ngắn" (27,0% so với 36,4%)
+               một file ngắn, giống hệt cách đo "nghe từng đoạn ngắn". Đo trên file dài:
+               36,4% -> 30,5% (mất chữ 841 -> 568 từ) nhưng chậm hơn (1,8x -> 2,9x)
+    gop_luot : (dùng với tung_luot) gộp lượt quá ngắn với lượt kề bên (gop_luot_ngan)
     """
     if goi_y not in ("day_du", "tu_khoa", "cau_mo_dau", "khong"):
         raise ValueError(f"goi_y không hợp lệ: {goi_y!r}")
@@ -434,7 +458,10 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
                          word_timestamps=True)
     if tung_luot:
         cac_doan = []
-        for bat_dau, ket_thuc in cat_luot_noi(song_am):
+        cac_luot = cat_luot_noi(song_am)
+        if gop_luot:
+            cac_luot = gop_luot_ngan(cac_luot)
+        for bat_dau, ket_thuc in cac_luot:
             doan_luot, _ = model.transcribe(song_am[bat_dau:ket_thuc], **tham_so_chung, **them,
                                             condition_on_previous_text=False, vad_filter=False)
             cac_doan.extend(doi_moc_thoi_gian(d, bat_dau / TAN_SO_MAU) for d in doan_luot)
