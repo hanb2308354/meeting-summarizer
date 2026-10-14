@@ -17,3 +17,6 @@ data/bo_danh_gia/
 
 # Model tự chuyển đổi (src/asr/chuyen_doi_model.py), vài trăm MB tới vài GB
 models/
+
+# Báo cáo đánh giá chứa lời gốc của bộ dữ liệu (giấy phép không cho phát tán lại)
+outputs/danh_gia_asr/

@@ -423,7 +423,7 @@ def doi_moc_thoi_gian(doan, lech):
 
 
 def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, theo_khuc=False,
-              tung_luot=False, nhat_ky=None):
+              tung_luot=False, nhat_ky=None, khong_moc_thoi_gian=False):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
     Các tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
@@ -436,6 +436,10 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
                một file ngắn. Đo trên file dài: 36,4% -> 30,5% (mất chữ 841 -> 568 từ),
                chậm hơn (1,8x -> 2,9x độ dài ghi âm). Lượt ra quá ít chữ (luot_hong) thì nhận
                dạng lại (nghe_lai_luot)
+    khong_moc_thoi_gian: True = model không đoán mốc thời gian theo đoạn (without_timestamps; mốc theo
+               từ vẫn có). Cần cho model tinh chỉnh không kèm mốc thời gian như PhoWhisper: để
+               mặc định thì nó nghe đúng lời nhưng không biết dừng, bịa thêm câu ở cuối
+               ("cảm ơn và hẹn gặp lại", "dự án thứ trung quốc...": thừa 151-217 từ / 30 đoạn)
     nhat_ky  : truyền vào một list để ghi chi tiết từng đoạn model trả về (mốc thời gian, độ tin cậy,
                xác suất không có tiếng, nhiệt độ đã dùng, có bị loại không) và các lượt VAD cắt ra.
                Dùng để chẩn đoán vì sao một đoạn bị sai (danh_gia_bo.py --chi-doan)
@@ -448,7 +452,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
     tham_so_chung = dict(language="vi", beam_size=5,
                          initial_prompt=CAU_MO_DAU if dung_cau_mo_dau else None,
                          hotwords=TU_KHOA_GOI_Y if dung_tu_khoa else None,
-                         word_timestamps=True)
+                         word_timestamps=True, without_timestamps=khong_moc_thoi_gian)
     if tung_luot:
         cac_luot = cat_luot_noi(song_am)
 

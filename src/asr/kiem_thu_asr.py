@@ -1148,6 +1148,23 @@ def mac_dinh_la_tung_luot_va_ten_model_tu_thu_muc():
             return f"tên model {model!r} -> {dg.ten_model(model)!r}, cần {ten!r}"
 
 
+@ca
+def khong_moc_thoi_gian_truyen_without_timestamps():
+    da_goi = []
+
+    class ModelGhi(ModelGia):
+        def transcribe(self, am_thanh, **tham_so):
+            da_goi.append(tham_so.get("without_timestamps"))
+            return super().transcribe(am_thanh, **tham_so)
+
+    with contextlib.redirect_stdout(io.StringIO()):
+        asr.nhan_dang(ModelGhi([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))]), np.zeros(SR, dtype=np.float32))
+        asr.nhan_dang(ModelGhi([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))]), np.zeros(SR, dtype=np.float32),
+                      khong_moc_thoi_gian=True)
+    if da_goi != [False, True]:
+        return f"without_timestamps truyền sai: {da_goi}"
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))
