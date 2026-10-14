@@ -1092,6 +1092,34 @@ def nghe_kem_luot_ben_canh_chi_giu_chu_trong_luot():
         return f"phải chỉ giữ chữ nằm trong lượt giữa: {chu!r}"
 
 
+@ca
+def file_dai_chia_loi_ve_tung_doan_ghep():
+    import danh_gia_bo as dg
+    goc = dg.THU_MUC_BO
+    with tempfile.TemporaryDirectory() as tm:
+        thu_muc = Path(tm) / "hop"
+        thu_muc.mkdir()
+        nhan = [{"id": "a", "text": "bạn lan làm slide"}, {"id": "b", "text": "tuấn làm phần api"},
+                {"id": "c", "text": "nộp trước thứ sáu"}]
+        (thu_muc / "nhan.json").write_text(json.dumps(nhan, ensure_ascii=False), encoding="utf-8")
+        muc = {"id": "hop_dai_01", "tu_doan": ["a", "b", "c"], "nguon_bo": "hop",
+               "text": "bạn lan làm slide tuấn làm phần api nộp trước thứ sáu", "nhom": "file_dai"}
+        try:
+            dg.THU_MUC_BO = Path(tm)
+            # sai "slide" (đoạn a), mất cả đoạn b, thừa "nha" sau đoạn c
+            chia = dg.loi_theo_doan_ghep(muc, "bạn lan làm slai nộp trước thứ sáu nha")
+            cac_muc = [dict(muc, id=f"f{i}") for i in range(10)]
+            a = {f"f{i}": {"du_doan": "bạn lan làm slai nộp trước thứ sáu nha"} for i in range(10)}
+            b = {f"f{i}": {"du_doan": "bạn lan làm slide tuấn làm phần api nộp trước thứ sáu"} for i in range(10)}
+            bao_cao = "\n".join(dg.khac_biet_that_hay_ngau_nhien(cac_muc, {"a": a, "b": b}))
+        finally:
+            dg.THU_MUC_BO = goc
+    if chia != [(4, 1), (4, 4), (4, 1)]:
+        return f"chia lỗi sai: {chia}"
+    if "lấy mẫu trên 30 đoạn ngắn đã ghép thành 10 file" not in bao_cao or "bằng nhau 0" not in bao_cao:
+        return "so sánh file dài không lấy mẫu theo đoạn ghép:\n" + bao_cao
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))

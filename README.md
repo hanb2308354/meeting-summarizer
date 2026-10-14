@@ -240,6 +240,7 @@ Kết quả lần đầu (4 file x 5 phút, cấu hình mặc định): **file d
 | `--theo-khuc`: theo lô của faster-whisper                 | 47,0% (tệ hơn) | 1.486 từ | 26,8%      |
 | `--tung-luot` (lần 1, tắt VAD trong từng lượt)            | **30,5%** (tốc độ 2,9x) | 568 từ | 27,7%: bằng mặc định, trừ 1 đoạn thuyết trình bị bịa câu ở đầu |
 | `--tung-luot` (lần 2, bật VAD lần nữa trong từng lượt)     | 31,8% (2,9x) | 649 từ  | 29,3%: tệ hơn lần 1 ở cả hai bộ, đã bỏ |
+| `--tung-luot` (lần 3, lượt ra quá ít chữ thì nhận dạng lại) | **29,9%** (3,0x) | 507 từ | **25,4%**: bằng mặc định (25,5%), đoạn bịa câu 88% -> 42% |
 
 (Đã thử gộp các lượt nói dưới 2 giây: kết quả không đổi 30,4% / 27,8%, nên bỏ.)
 

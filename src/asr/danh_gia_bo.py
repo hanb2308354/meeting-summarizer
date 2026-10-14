@@ -441,6 +441,38 @@ def khoang_tin_cay(cac_cap, so_lan=SO_LAN_LAY_MAU, hat_giong=0):
     return (b.sum() - a.sum()) / tu.sum(), float(np.percentile(chenh, 2.5)), float(np.percentile(chenh, 97.5))
 
 
+def loi_theo_doan_ghep(muc, du_doan):
+    """File dài ghép từ nhiều đoạn ngắn: chia lỗi về từng đoạn ngắn đã ghép.
+
+    Lời gốc của file dài là lời các đoạn nối theo thứ tự, nên sau khi căn chữ máy nghe với lời gốc,
+    mỗi lỗi sai/thiếu thuộc về đoạn chứa từ gốc đó; từ thừa tính cho đoạn đứng ngay trước nó.
+    4 file dài thành ~100 đơn vị, khoảng tin cậy hẹp lại. Trả về [(số từ, số lỗi)] theo từng đoạn,
+    hoặc None nếu không chia được (thiếu lời gốc của bộ nguồn).
+    """
+    nhan = {m["id"]: m for m in doc_json(THU_MUC_BO / muc["nguon_bo"] / "nhan.json", [])}
+    if not all(i in nhan for i in muc["tu_doan"]):
+        return None
+    cac_tu_goc, thuoc_doan = [], []
+    for so, i in enumerate(muc["tu_doan"]):
+        tu = chuan_hoa_danh_gia(nhan[i]["text"]).split()
+        cac_tu_goc += tu
+        thuoc_doan += [so] * len(tu)
+    if not cac_tu_goc:
+        return None
+    dem = [[0, 0] for _ in muc["tu_doan"]]
+    for so in thuoc_doan:
+        dem[so][0] += 1
+    do = jiwer.process_words(" ".join(cac_tu_goc), du_doan or "")
+    for khuc in do.alignments[0]:
+        if khuc.type in ("substitute", "delete"):
+            for vi_tri in range(khuc.ref_start_idx, khuc.ref_end_idx):
+                dem[thuoc_doan[vi_tri]][1] += 1
+        elif khuc.type == "insert":
+            so = thuoc_doan[max(0, min(khuc.ref_start_idx, len(thuoc_doan)) - 1)]
+            dem[so][1] += khuc.hyp_end_idx - khuc.hyp_start_idx
+    return [(tu, loi) for tu, loi in dem if tu]
+
+
 def khac_biet_that_hay_ngau_nhien(chung, ket):
     """So từng cấu hình với cấu hình ĐẦU TIÊN: chênh WER kèm khoảng tin cậy 95%.
 
@@ -451,7 +483,7 @@ def khac_biet_that_hay_ngau_nhien(chung, ket):
     goc = cac_ch[0]
     d = [f"\nKHÁC BIỆT THẬT HAY NGẪU NHIÊN? (so với {goc}, khoảng tin cậy 95%, bootstrap theo đoạn)"]
     for ch in cac_ch[1:]:
-        cac_cap, tot, te = [], 0, 0
+        cac_cap, tot, te, so_muc = [], 0, 0, 0
         for muc in chung:
             ka, kb = ket[goc][muc["id"]], ket[ch][muc["id"]]
             dap_an = chuan_hoa_danh_gia(muc["text"])
@@ -459,9 +491,16 @@ def khac_biet_that_hay_ngau_nhien(chung, ket):
                 continue
             la = so_loi(dap_an, chuan_hoa_danh_gia(ka["du_doan"]))
             lb = so_loi(dap_an, chuan_hoa_danh_gia(kb["du_doan"]))
-            cac_cap.append((len(dap_an.split()), la, lb))
             tot += lb < la
             te += lb > la
+            so_muc += 1
+            if "tu_doan" in muc:   # file dài: lấy mẫu theo từng đoạn ngắn đã ghép, không theo cả file
+                chia_a = loi_theo_doan_ghep(muc, chuan_hoa_danh_gia(ka["du_doan"]))
+                chia_b = loi_theo_doan_ghep(muc, chuan_hoa_danh_gia(kb["du_doan"]))
+                if chia_a and chia_b:
+                    cac_cap += [(tu, a, b) for (tu, a), (_, b) in zip(chia_a, chia_b)]
+                    continue
+            cac_cap.append((len(dap_an.split()), la, lb))
         if not cac_cap:
             continue
         chenh, duoi, tren = khoang_tin_cay(cac_cap)
@@ -472,9 +511,11 @@ def khac_biet_that_hay_ngau_nhien(chung, ket):
         else:
             ket_luan = "CHƯA CHẮC (có thể chỉ do ngẫu nhiên)"
         d.append(f"  {ch[:40]:<40} WER {chenh * 100:+.1f} điểm  [95%: {duoi * 100:+.1f} .. {tren * 100:+.1f}]"
-                 f"  -> {ket_luan} | tốt hơn ở {tot} đoạn, tệ hơn ở {te}, bằng nhau {len(cac_cap) - tot - te}")
+                 f"  -> {ket_luan} | tốt hơn ở {tot} đoạn, tệ hơn ở {te}, bằng nhau {so_muc - tot - te}")
+        if len(cac_cap) > so_muc:
+            d.append(f"      (file dài: lấy mẫu trên {len(cac_cap)} đoạn ngắn đã ghép thành {so_muc} file)")
         if len(cac_cap) < 20:
-            d.append(f"      (chỉ có {len(cac_cap)} đoạn: khoảng tin cậy kém chính xác, nên đo thêm)")
+            d.append(f"      (chỉ có {len(cac_cap)} đơn vị: khoảng tin cậy kém chính xác, nên đo thêm)")
     return d
 
 
