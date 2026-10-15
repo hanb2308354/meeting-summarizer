@@ -130,8 +130,12 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
   PhoWhisper nghe đúng "**luật**"; giọng Tây Nguyên 13,9% → 2,4%.
 - Điểm yếu: hay nối câu bịa sau lời thật, nên chậm. Đã thêm giới hạn số chữ model được sinh mỗi lượt
   (theo độ dài lượt): WER giữ đúng như ước tính nhưng tốc độ chỉ 11,8x → 11,0x, tức chậm không chủ yếu vì câu bịa dài.
-- **Đang kiểm tra:** chạy PhoWhisper bằng thư viện gốc (transformers) trên cùng đoạn để biết việc nối câu bịa
-  và chạy chậm là do chính model hay do bản chuyển đổi sang faster-whisper; đếm số token model sinh ra mỗi đoạn.
+- Đếm token (15/10): PhoWhisper dành 50–67% số token cho câu bịa nối sau lời thật (vd đoạn 6,8 giây: 48 token lời thật,
+  99 token bịa), medium thì 0. Câu bịa là một phần lý do chậm.
+- **Phép thử phân định (15/10):** chạy PhoWhisper bằng thư viện gốc của VinAI (transformers, số thực đầy đủ) trên cùng
+  đoạn: **dừng đúng chỗ, không có câu bịa** (43 token, đúng 100%). → Lỗi không nằm ở model mà ở bản chuyển đổi/cách chạy.
+  Nghi vấn chính: lúc chuyển đã nén trọng số xuống int8, làm model tinh chỉnh mất khả năng "biết dừng".
+- **Đang kiểm tra:** chuyển lại PhoWhisper giữ số thực (float16) và chạy kiểu tính float32 trên cùng đoạn.
 - Sự cố: sau khi dời bộ nhớ đệm model sang ổ D, file model `medium` bị hỏng (không tải được); cần tải lại.
 
 ---

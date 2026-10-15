@@ -40,7 +40,9 @@ def main():
                  "  pip install torch --index-url https://download.pytorch.org/whl/cpu\n"
                  "  pip install transformers")
 
-    dich = THU_MUC_GOC / "models" / (args.model.split("/")[-1].lower() + "-ct2")
+    # int8 giữ tên cũ (models/phowhisper-medium-ct2); kiểu khác thêm đuôi để không ghi đè
+    duoi = "" if args.luong_tu == "int8" else f"-{args.luong_tu}"
+    dich = THU_MUC_GOC / "models" / (args.model.split("/")[-1].lower() + "-ct2" + duoi)
     if (dich / "model.bin").exists():
         sys.exit(f"Đã có {dich}. Xóa thư mục đó nếu muốn chuyển lại.")
     print(f"Đang tải {args.model} và chuyển sang CTranslate2 ({args.luong_tu}). "

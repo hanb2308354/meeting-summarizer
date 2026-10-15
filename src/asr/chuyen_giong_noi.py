@@ -56,6 +56,10 @@ TEN_MODEL = "medium"            # Đã chốt qua thử nghiệm (xem thu_faster
 #   4 file dài x 5 phút: 36,4% -> 29,9% (mất chữ 841 -> 507 từ), khoảng tin cậy 95% [-13,9; -0,1]
 #   30 đoạn ngắn: 25,5% -> 25,4% (bằng nhau, [-0,8; +0,5]); đổi lại chậm hơn ở file dài (1,8x -> 3,0x)
 TUNG_LUOT_MAC_DINH = True
+# Kiểu tính của model trên CPU. int8: nhanh, đủ chính xác với Whisper gốc. Model tinh chỉnh
+# (PhoWhisper) bản int8 không biết dừng, nối câu bịa sau lời thật, trong khi bản gốc (transformers,
+# float32) dừng đúng chỗ: đang đo float32 (--kieu-tinh trong danh_gia_bo.py)
+KIEU_TINH = "int8"
 TAN_SO_MAU = 16000              # Whisper làm việc ở 16 kHz, 1 kênh
 # Tính theo vị trí file code (src/asr/ -> lên 2 cấp là thư mục project),
 # nên chạy từ thư mục nào JSON cũng được lưu đúng chỗ phần NLP đọc.
@@ -768,6 +772,8 @@ def main():
     )
     parser.add_argument("duong_dan", nargs="+", help="File ghi âm hoặc thư mục chứa file ghi âm")
     parser.add_argument("--model", default=TEN_MODEL, help=f"Model Whisper (mặc định: {TEN_MODEL})")
+    parser.add_argument("--kieu-tinh", default=KIEU_TINH, choices=["int8", "int8_float32", "float32"],
+                        help=f"Kiểu tính trên CPU (mặc định {KIEU_TINH})")
     parser.add_argument("--loc-nhieu", action="store_true",
                         help="Bật giảm tạp âm (thử nghiệm, mặc định tắt vì có thể làm méo tiếng)")
     parser.add_argument("--khong-tien-xu-ly", action="store_true",
@@ -808,7 +814,7 @@ def main():
     print(f"Đang tải model {args.model}...")
     bat_dau = time.time()
     try:
-        model = WhisperModel(args.model, device="cpu", compute_type="int8")
+        model = WhisperModel(args.model, device="cpu", compute_type=args.kieu_tinh)
     except Exception as loi:
         sys.exit(
             f"Không tải được model {args.model}: {type(loi).__name__}: {loi}\n"

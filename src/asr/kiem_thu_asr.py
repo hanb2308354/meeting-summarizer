@@ -1226,6 +1226,31 @@ def tung_luot_gioi_han_so_token_theo_do_dai():
         return f"giới hạn token sai: {da_goi}"
 
 
+@ca
+def kieu_tinh_vao_ten_cau_hinh_va_truyen_cho_model():
+    import danh_gia_bo as dg
+    from types import SimpleNamespace
+    co_ban = dict(model="medium", goi_y="cau_mo_dau", thu_lai="gioi_han", theo_khuc=False, tung_luot=True,
+                  khong_moc_thoi_gian=False, khong_tien_xu_ly=False, loc_nhieu=False)
+    ten_int8 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="int8"))
+    ten_f32 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="float32"))
+    if ten_int8 != "medium_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot" or ten_f32 != "medium_chi_cau_mo_dau_float32_gioi_han_thu_lai_tung_luot":
+        return f"tên cấu hình sai: {ten_int8}, {ten_f32}"
+    da_tao = []
+    with tempfile.TemporaryDirectory() as tm:
+        ghi_wav(Path(tm) / "hop.wav", tieng_noi_gia(2))
+        asr.THU_MUC_KET_QUA = Path(tm) / "transcripts"
+        asr.WhisperModel = lambda *a, **k: (da_tao.append(k.get("compute_type")), ModelGia([]))[1]
+        sys.argv = ["chuyen_giong_noi.py", str(Path(tm) / "hop.wav"), "--kieu-tinh", "float32"]
+        with contextlib.redirect_stdout(io.StringIO()):
+            try:
+                asr.main()
+            except SystemExit:
+                pass
+    if da_tao != ["float32"]:
+        return f"kiểu tính không truyền cho model: {da_tao}"
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))

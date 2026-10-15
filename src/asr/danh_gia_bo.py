@@ -160,6 +160,8 @@ def ten_model(model):
 
 def ten_cau_hinh(args):
     ten = ten_model(args.model) + HAU_TO_GOI_Y[args.goi_y]
+    if args.kieu_tinh != asr.KIEU_TINH:
+        ten += f"_{args.kieu_tinh}"
     if args.thu_lai == "gioi_han":
         ten += "_gioi_han_thu_lai"
     if args.theo_khuc:
@@ -720,6 +722,8 @@ def main():
     parser = argparse.ArgumentParser(description="Đo WER của ASR trên các bộ dữ liệu đã tải.")
     parser.add_argument("bo", nargs="*", help="Tên bộ trong data/bo_danh_gia/ (bỏ trống = tất cả)")
     parser.add_argument("--model", default=asr.TEN_MODEL, help=f"Model Whisper (mặc định {asr.TEN_MODEL})")
+    parser.add_argument("--kieu-tinh", default=asr.KIEU_TINH, choices=["int8", "int8_float32", "float32"],
+                        help=f"Kiểu tính trên CPU (mặc định {asr.KIEU_TINH}); float32 chậm hơn nhưng không làm tròn trọng số")
     parser.add_argument("--so-mau", type=int, default=0, help="Chỉ chạy N đoạn đầu mỗi bộ (chạy thử nhanh)")
     parser.add_argument("--goi-y", choices=list(HAU_TO_GOI_Y), default=asr.GOI_Y_MAC_DINH,
                         help=f"Cách gợi ý cho model (mặc định {asr.GOI_Y_MAC_DINH}, giống chuyen_giong_noi.py)")
@@ -803,7 +807,7 @@ def main():
         if not model:
             print(f"Đang tải model {args.model}...")
             try:
-                model.append(asr.WhisperModel(args.model, device="cpu", compute_type="int8"))
+                model.append(asr.WhisperModel(args.model, device="cpu", compute_type=args.kieu_tinh))
             except Exception as loi:
                 sys.exit(f"Không tải được model {args.model}: {type(loi).__name__}: {loi}")
         return model[0]
