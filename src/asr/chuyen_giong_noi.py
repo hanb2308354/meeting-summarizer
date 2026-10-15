@@ -87,6 +87,13 @@ DO_DAI_LUOT_TOI_DA = 25.0   # chế độ từng lượt: lượt nói dài hơn
 # Ví dụ đo được (đoạn hop_va_dien_thoai_0000186): lượt 9,7 giây chỉ ra "Cảm ơn các bạn."
 LUOT_XET_MAT_DO = 3.0
 MAT_DO_TOI_THIEU = 1.0
+# Chế độ từng lượt: số token model được sinh tối đa cho một lượt, theo độ dài lượt. Người nói
+# nhanh ~8 tiếng/giây, mỗi tiếng Việt ~2-3 token -> 20 token/giây là rộng rãi cho lời thật.
+# Không giới hạn thì khi model bịa nó sinh tới ~440 token rồi thử lại ở nhiệt độ khác, lại
+# ~440 token: đo được PhoWhisper mất 243 giây cho đoạn 9 giây (12x độ dài, medium 3,7x)
+TOKEN_MOI_GIAY = 20
+TOKEN_CONG_THEM = 30
+TOKEN_TOI_DA = 380              # chừa chỗ cho câu mở đầu trong giới hạn 448 token của Whisper
 CAU_MO_DAU = "Cuộc họp nhóm, có dùng một số từ tiếng Anh."
 # Cụm 4 từ liền nhau của câu mở đầu, trừ cụm đầu "cuộc họp nhóm có" (người họp nói thật
 # "cuộc họp nhóm có ba người"); gặp các cụm còn lại trong đoạn ngắn là model đọc lại gợi ý
@@ -468,7 +475,9 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
         def nghe_doan(tu, den, **doi):
             # Không chạy VAD lần nữa trong lượt: đã đo bật VAD ở đây thì TỆ HƠN cả hai bộ
             # (file dài 30,5% -> 31,8%, 30 đoạn ngắn 27,7% -> 29,3%) mà vẫn không hết bịa câu
-            tham_so = dict(tham_so_chung, **them, condition_on_previous_text=False, vad_filter=False)
+            so_token = int(TOKEN_MOI_GIAY * (den - tu) / TAN_SO_MAU) + TOKEN_CONG_THEM
+            tham_so = dict(tham_so_chung, **them, condition_on_previous_text=False, vad_filter=False,
+                           max_new_tokens=min(so_token, TOKEN_TOI_DA))
             tham_so.update(doi)
             doan, _ = model.transcribe(song_am[tu:den], **tham_so)
             return [doi_moc_thoi_gian(d, tu / TAN_SO_MAU) for d in doan]

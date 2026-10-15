@@ -1205,6 +1205,27 @@ def loc_lai_ket_qua_cu_khong_chay_model():
         return f"chấm lại sai: {moi}"
 
 
+@ca
+def tung_luot_gioi_han_so_token_theo_do_dai():
+    da_goi = []
+
+    class ModelGhi(ModelGia):
+        def transcribe(self, am_thanh, **tham_so):
+            da_goi.append(tham_so.get("max_new_tokens"))
+            return super().transcribe(am_thanh, **tham_so)
+
+    goc = asr.cat_luot_noi
+    try:
+        asr.cat_luot_noi = lambda song_am: [(0, 4 * SR), (5 * SR, 30 * SR)]
+        with contextlib.redirect_stdout(io.StringIO()):
+            asr.nhan_dang(ModelGhi([doan(chuoi_tu(0.0, "Bạn Lan làm slide nha mọi người ơi."))]),
+                          np.zeros(31 * SR, dtype=np.float32), tung_luot=True)
+    finally:
+        asr.cat_luot_noi = goc
+    if da_goi[:2] != [4 * asr.TOKEN_MOI_GIAY + asr.TOKEN_CONG_THEM, asr.TOKEN_TOI_DA]:
+        return f"giới hạn token sai: {da_goi}"
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))
