@@ -1231,7 +1231,7 @@ def kieu_tinh_vao_ten_cau_hinh_va_truyen_cho_model():
     import danh_gia_bo as dg
     from types import SimpleNamespace
     co_ban = dict(model="medium", goi_y="cau_mo_dau", thu_lai="gioi_han", theo_khuc=False, tung_luot=True,
-                  khong_moc_thoi_gian=False, dem_im_lang=False, khong_tien_xu_ly=False, loc_nhieu=False)
+                  khong_moc_thoi_gian=False, dem_im_lang=False, beam=5, khong_tien_xu_ly=False, loc_nhieu=False)
     ten_int8 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="int8"))
     ten_f32 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="float32"))
     if ten_int8 != "medium_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot" or ten_f32 != "medium_chi_cau_mo_dau_float32_gioi_han_thu_lai_tung_luot":
@@ -1298,6 +1298,22 @@ def dem_im_lang_that_cho_moi_luot_du_30_giay():
         asr.cat_luot_noi = goc
     if da_nghe != [(4 * SR, 0.0), (30 * SR, 0.0)]:
         return f"phải đệm im lặng (số 0 trên sóng âm) tới đúng 30 giây khi bật: {da_nghe}"
+
+
+@ca
+def beam_truyen_dung_cho_model():
+    da_goi = []
+
+    class ModelGhi(ModelGia):
+        def transcribe(self, am_thanh, **tham_so):
+            da_goi.append(tham_so.get("beam_size"))
+            return super().transcribe(am_thanh, **tham_so)
+
+    with contextlib.redirect_stdout(io.StringIO()):
+        asr.nhan_dang(ModelGhi([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))]), np.zeros(SR, dtype=np.float32))
+        asr.nhan_dang(ModelGhi([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))]), np.zeros(SR, dtype=np.float32), beam=1)
+    if da_goi != [asr.BEAM, 1]:
+        return f"beam truyền sai: {da_goi}"
 
 
 if __name__ == "__main__":

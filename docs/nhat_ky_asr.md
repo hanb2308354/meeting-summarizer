@@ -140,7 +140,12 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 - Nguyên nhân tìm được bằng cách đọc mã nguồn faster-whisper: phần thiếu của cửa sổ 30 giây được đệm bằng
   **số 0 trên phổ âm thanh**, mà 0 không phải im lặng (im lặng thật = −1,12, tiếng nói ≈ 0,9). Thư viện gốc đệm
   im lặng thật vào âm thanh. Câu bịa luôn nằm đúng ở vùng đệm này (6,62 → 6,72 giây, ngay sau lời thật).
-- **Đang kiểm tra:** tự đệm im lặng thật cho mỗi lượt đủ 30 giây (`--dem-im-lang`), đo trên PhoWhisper và medium.
+- Đệm im lặng thật (`--dem-im-lang`): với PhoWhisper **không chữa được**, còn tệ hơn: câu bịa rải vào khoảng im lặng
+  (17–30 giây) với tốc độ bình thường nên lọt bộ lọc (đoạn 1753: 0% → 127%). Với medium trên 1 đoạn: 5,6% → 0%,
+  nhanh hơn 29% (77 → 55 giây) — cần đo trên cả bộ.
+- Vòng thử cuối cho PhoWhisper (gom mọi khác biệt còn lại với bản gốc trong 1 lượt): đủ điều kiện như bản gốc
+  (không gợi ý, không mốc thời gian, đệm im lặng, không tiền xử lý âm thanh); chỉ bỏ tiền xử lý âm thanh;
+  dò 1 nhánh (beam 1). Không cách nào dừng đúng thì kết luận và chuyển việc.
 - Sự cố: dời bộ nhớ đệm Hugging Face sang ổ D bằng cách chép file làm hỏng các file "lối tắt" bên trong
   (thành file rỗng): `medium` không tải được (đã tải lại, chạy bình thường), bản gốc PhoWhisper cũng hỏng.
   Bài học: không chép tay bộ nhớ đệm model; xóa rồi để chương trình tự tải lại vào chỗ mới.

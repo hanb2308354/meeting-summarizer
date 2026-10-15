@@ -66,6 +66,7 @@ KIEU_TINH = "int8"
 # cách đệm im lặng thật của thư viện gốc) nghe "tiếng ồn" đó rồi nói tiếp, nối câu bịa sau lời thật.
 # Đo: bản gốc transformers dừng đúng chỗ (43 token), faster-whisper sinh 132 token, kể cả khi tính float32.
 DEM_IM_LANG = False             # chưa làm mặc định: đang đo
+BEAM = 5                        # số nhánh dò chữ cùng lúc (beam search); 1 = dò tham lam, nhanh hơn
 SO_MAU_CUA_SO = 30 * 16000       # 30 giây ở 16 kHz (cửa sổ của Whisper)
 TAN_SO_MAU = 16000              # Whisper làm việc ở 16 kHz, 1 kênh
 # Tính theo vị trí file code (src/asr/ -> lên 2 cấp là thư mục project),
@@ -464,7 +465,7 @@ def doi_moc_thoi_gian(doan, lech):
 
 
 def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, theo_khuc=False,
-              tung_luot=False, nhat_ky=None, khong_moc_thoi_gian=False, dem_im_lang=None):
+              tung_luot=False, nhat_ky=None, khong_moc_thoi_gian=False, dem_im_lang=None, beam=None):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
     Các tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
@@ -492,7 +493,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
     dung_cau_mo_dau = goi_y in ("day_du", "cau_mo_dau")
     dung_tu_khoa = goi_y in ("day_du", "tu_khoa")
     them = {"temperature": list(nhiet_do)} if nhiet_do else {}
-    tham_so_chung = dict(language="vi", beam_size=5,
+    tham_so_chung = dict(language="vi", beam_size=beam or BEAM,
                          initial_prompt=CAU_MO_DAU if dung_cau_mo_dau else None,
                          hotwords=TU_KHOA_GOI_Y if dung_tu_khoa else None,
                          word_timestamps=True, without_timestamps=khong_moc_thoi_gian)
