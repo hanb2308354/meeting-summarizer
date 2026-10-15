@@ -806,6 +806,8 @@ def main():
     def tai_model():  # chỉ tải model khi thật sự có đoạn cần nhận dạng
         if not model:
             print(f"Đang tải model {args.model}...")
+            if asr.loi_thu_muc_model(args.model):
+                sys.exit(asr.loi_thu_muc_model(args.model))
             try:
                 model.append(asr.WhisperModel(args.model, device="cpu", compute_type=args.kieu_tinh))
             except Exception as loi:

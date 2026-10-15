@@ -426,6 +426,20 @@ def ly_do_loai(doan):
     return None
 
 
+def loi_thu_muc_model(ten_model):
+    """--model là đường dẫn thư mục (vd models/phowhisper-medium-ct2) mà thư mục chưa có hoặc thiếu
+    model.bin: báo rõ thay vì để faster-whisper đi tìm trên mạng rồi báo lỗi 401 khó hiểu."""
+    if not re.search(r"[\\/]", ten_model):
+        return None   # tên model có sẵn của faster-whisper (medium, large-v3-turbo...)
+    thu_muc = Path(ten_model)
+    if not thu_muc.is_absolute():
+        thu_muc = Path.cwd() / thu_muc
+    if not (thu_muc / "model.bin").exists():
+        return (f"Chưa có model ở {ten_model} (không thấy model.bin). Nếu là model tự chuyển đổi, "
+                "chạy trước: python src/asr/chuyen_doi_model.py (xem --help)")
+    return None
+
+
 def cat_luot_noi(song_am):
     """VAD cắt file thành các lượt nói (ngừng >= 1 giây là sang lượt mới), mỗi lượt <= 25 giây.
 
@@ -813,6 +827,8 @@ def main():
     # Tải model MỘT lần cho tất cả các file
     print(f"Đang tải model {args.model}...")
     bat_dau = time.time()
+    if loi_thu_muc_model(args.model):
+        sys.exit(loi_thu_muc_model(args.model))
     try:
         model = WhisperModel(args.model, device="cpu", compute_type=args.kieu_tinh)
     except Exception as loi:

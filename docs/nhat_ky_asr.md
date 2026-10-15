@@ -136,7 +136,10 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
   đoạn: **dừng đúng chỗ, không có câu bịa** (43 token, đúng 100%). → Lỗi không nằm ở model mà ở bản chuyển đổi/cách chạy.
   Nghi vấn chính: lúc chuyển đã nén trọng số xuống int8, làm model tinh chỉnh mất khả năng "biết dừng".
 - **Đang kiểm tra:** chuyển lại PhoWhisper giữ số thực (float16) và chạy kiểu tính float32 trên cùng đoạn.
-- Sự cố: sau khi dời bộ nhớ đệm model sang ổ D, file model `medium` bị hỏng (không tải được); cần tải lại.
+- Sự cố: dời bộ nhớ đệm Hugging Face sang ổ D bằng cách chép file làm hỏng các file "lối tắt" bên trong
+  (thành file rỗng): `medium` không tải được (đã tải lại, chạy bình thường), bản gốc PhoWhisper cũng hỏng.
+  Bài học: không chép tay bộ nhớ đệm model; xóa rồi để chương trình tự tải lại vào chỗ mới.
+  Đã thêm báo lỗi rõ ràng khi thiếu thư mục model hoặc bộ nhớ đệm hỏng.
 
 ---
 

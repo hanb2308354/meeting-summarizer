@@ -17,6 +17,7 @@ Kết quả: models/<tên>-ct2/  (không lên git). Dùng:
     python src/asr/chuyen_giong_noi.py data/audio/hop.wav --model models/phowhisper-medium-ct2
 """
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -47,8 +48,15 @@ def main():
         sys.exit(f"Đã có {dich}. Xóa thư mục đó nếu muốn chuyển lại.")
     print(f"Đang tải {args.model} và chuyển sang CTranslate2 ({args.luong_tu}). "
           "Lần đầu tải ~3 GB, cần ~8 GB RAM...")
-    ctranslate2.converters.TransformersConverter(args.model, copy_files=FILE_KEM).convert(
-        str(dich), quantization=args.luong_tu)
+    try:
+        ctranslate2.converters.TransformersConverter(args.model, copy_files=FILE_KEM).convert(
+            str(dich), quantization=args.luong_tu)
+    except OSError as loi:
+        # Hay gặp sau khi chép/dời bộ nhớ đệm Hugging Face sang ổ khác: file "lối tắt" thành file rỗng
+        bo_nho_dem = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface")) / "hub"
+        thu_muc_hong = bo_nho_dem / ("models--" + args.model.replace("/", "--"))
+        sys.exit(f"Không đọc được bản tải về của {args.model}: {loi}\n"
+                 f"Bản trong bộ nhớ đệm có thể bị hỏng. Xóa thư mục này rồi chạy lại để tải mới:\n  {thu_muc_hong}")
     print(f"\nXong: {dich}")
     print(f"Dùng:  python src/asr/danh_gia_bo.py --model models/{dich.name}")
 

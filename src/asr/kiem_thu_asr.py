@@ -1251,6 +1251,32 @@ def kieu_tinh_vao_ten_cau_hinh_va_truyen_cho_model():
         return f"kiểu tính không truyền cho model: {da_tao}"
 
 
+@ca
+def bao_ro_khi_thu_muc_model_chua_co():
+    if asr.loi_thu_muc_model("medium") is not None:
+        return "tên model có sẵn bị coi là thư mục"
+    with tempfile.TemporaryDirectory() as tm:
+        thieu = asr.loi_thu_muc_model(str(Path(tm) / "models" / "chua-co-ct2"))
+        (Path(tm) / "co").mkdir()
+        (Path(tm) / "co" / "model.bin").write_bytes(b"x")
+        co = asr.loi_thu_muc_model(str(Path(tm) / "co"))
+    if not thieu or "chuyen_doi_model.py" not in thieu or co is not None:
+        return f"kiểm tra thư mục model sai: {thieu!r}, {co!r}"
+    goi, ma = [], None
+    asr.WhisperModel = lambda *a, **k: goi.append(1)
+    with tempfile.TemporaryDirectory() as tm:
+        ghi_wav(Path(tm) / "hop.wav", tieng_noi_gia(2))
+        asr.THU_MUC_KET_QUA = Path(tm) / "transcripts"
+        sys.argv = ["chuyen_giong_noi.py", str(Path(tm) / "hop.wav"), "--model", "models/chua-co-ct2"]
+        with contextlib.redirect_stdout(io.StringIO()):
+            try:
+                asr.main()
+            except SystemExit as thoat:
+                ma = thoat.code
+    if goi or "chuyen_doi_model.py" not in str(ma):
+        return f"không dừng sớm khi thiếu thư mục model: {goi}, {ma!r}"
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))
