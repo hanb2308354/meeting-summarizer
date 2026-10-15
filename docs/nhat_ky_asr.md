@@ -23,7 +23,8 @@ File ghi âm → Làm sạch âm thanh → Nhận dạng giọng nói (Whisper) 
 từng lượt nói · lượt nào ra quá ít chữ thì nhận dạng lại · lọc câu bịa (kể cả câu có tốc độ nói bất khả thi).
 
 **Đang làm:** chọn model tốt nhất. PhoWhisper (bản Whisper được huấn luyện thêm cho tiếng Việt) hứa hẹn
-giảm lỗi họp còn ~21% và giọng miền còn ~5%, đang chạy thật để xác nhận.
+giảm lỗi họp còn ~21% và giọng miền còn ~5% (đã xác nhận bằng chạy thật, chưa chắc về thống kê), nhưng chạy qua
+faster-whisper thì không biết dừng, nối câu bịa sau lời thật nên chậm ~3 lần. Đang thử cắt câu bịa bằng mốc thời gian.
 
 **Cách đo dùng xuyên suốt:**
 - Không tự thu âm mà dùng bộ dữ liệu công khai có sẵn lời gốc: 30–100 đoạn họp/hội nghị/gọi điện, 30–100 đoạn giọng
@@ -143,9 +144,22 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 - Đệm im lặng thật (`--dem-im-lang`): với PhoWhisper **không chữa được**, còn tệ hơn: câu bịa rải vào khoảng im lặng
   (17–30 giây) với tốc độ bình thường nên lọt bộ lọc (đoạn 1753: 0% → 127%). Với medium trên 1 đoạn: 5,6% → 0%,
   nhanh hơn 29% (77 → 55 giây) — cần đo trên cả bộ.
-- Vòng thử cuối cho PhoWhisper (gom mọi khác biệt còn lại với bản gốc trong 1 lượt): đủ điều kiện như bản gốc
-  (không gợi ý, không mốc thời gian, đệm im lặng, không tiền xử lý âm thanh); chỉ bỏ tiền xử lý âm thanh;
-  dò 1 nhánh (beam 1). Không cách nào dừng đúng thì kết luận và chuyển việc.
+- Vòng thử cuối cho PhoWhisper (gom mọi khác biệt còn lại với bản gốc trong 1 lượt, đoạn 0001753): cả 4 cách vẫn bịa.
+  | Cách chạy | Token model sinh | Thời gian | Ghi chú |
+  |---|---|---|---|
+  | Đủ điều kiện như bản gốc (không gợi ý, không mốc, đệm im lặng, không tiền xử lý) | 75 | 90 s | vẫn bịa |
+  | Chỉ bỏ tiền xử lý âm thanh | 147 | 126 s | vẫn bịa |
+  | Dò 1 nhánh (beam 1) | 85 | 82 s | WER 0% sau lọc, nhanh hơn 35% |
+  | Như bản gốc + beam 1 | 84 | — | vẫn bịa |
+- **Kết luận (dừng tìm nguyên nhân):** đã loại int8, đệm phổ bằng 0, mốc thời gian, gợi ý, tiền xử lý âm thanh, số nhánh dò.
+  Bản gốc (transformers) dừng đúng, bản faster-whisper không bao giờ sinh token kết thúc ở model này. Ghi là giới hạn
+  của faster-whisper với PhoWhisper; không vá tiếp vào bên trong thư viện.
+- Hai điều rút ra dùng được: (1) beam 1 cùng WER mà nhanh hơn → đưa vào bước tăng tốc (C1); (2) khi đệm im lặng,
+  câu bịa **luôn** nằm sau cuối âm thanh thật của lượt → có thể cắt bằng mốc thời gian thay vì đoán theo nội dung.
+- **Luật mới (bundle 28): bỏ chữ nằm sau cuối âm thanh thật của lượt.** Trong chế độ từng lượt, từ có điểm giữa
+  sau (độ dài lượt + 0,5 giây) bị bỏ, in `[LOẠI - ngoài âm thanh thật của lượt]`, ghi vào chi tiết để `--chi-doan` hiện ra.
+  Không đệm thì model không thể ra từ sau cuối âm thanh, nên luật chỉ có tác dụng khi bật `--dem-im-lang`; mặc định
+  không đổi kết quả. Cần đo: medium và PhoWhisper với `--dem-im-lang` (và beam 1) trên 30 + 30 đoạn, so bằng khoảng tin cậy.
 - Sự cố: dời bộ nhớ đệm Hugging Face sang ổ D bằng cách chép file làm hỏng các file "lối tắt" bên trong
   (thành file rỗng): `medium` không tải được (đã tải lại, chạy bình thường), bản gốc PhoWhisper cũng hỏng.
   Bài học: không chép tay bộ nhớ đệm model; xóa rồi để chương trình tự tải lại vào chỗ mới.
@@ -167,7 +181,13 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 2. Tạo bộ kiểm tra giữ riêng (≥ 100 đoạn mỗi bộ, chưa từng dùng để chỉnh) + 15–20 phút họp thật tự ghi.
 3. Bật/tắt từng thành phần để chắc thành phần nào cũng có ích.
 4. Tăng tốc độ, thử file 2 giờ, thêm luật sửa lỗi từ các cặp hay nghe nhầm.
-5. Tài liệu định dạng đầu ra cho phần tóm tắt, chương báo cáo.
+5. Chương báo cáo phần ASR và demo.
+
+**Đã xong ở bundle 28 (không cần chạy model):**
+- Tài liệu định dạng đầu ra cho phần tóm tắt `docs/dinh_dang_dau_ra.md` + ca kiểm thử hợp đồng: file ASR ghi ra phải
+  đọc được bằng chính `src/tien_xu_ly/doc_transcript.py` (điều kiện E1).
+- Kiểm thử tự chạy trên GitHub mỗi lần push, cả Linux và Windows (`.github/workflows/kiem_thu.yml`, điều kiện C3;
+  tính Đạt khi lần chạy đầu trên GitHub xanh). Kiểm thử: 62 → 64 ca.
 
 ---
 
@@ -181,8 +201,10 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 | 11/10 | So cách gợi ý: bỏ từ khóa, giữ câu mở đầu, giới hạn thử lại |
 | 12/10 | Đo 100 đoạn mỗi bộ; phát hiện cuộc họp dài bị mất chữ |
 | 14/10 | Nhận dạng từng lượt + nhận dạng lại lượt hỏng; công cụ chẩn đoán, khoảng tin cậy; dời dự án sang ổ D |
-| 14–15/10 | So model; lọc câu bịa theo tốc độ nói; giới hạn số chữ mỗi lượt (đang đo) |
+| 14–15/10 | So model; lọc câu bịa theo tốc độ nói; giới hạn số chữ mỗi lượt |
+| 15/10 | Tìm nguyên nhân PhoWhisper bịa (int8, đệm, mốc thời gian, gợi ý, beam): dừng, ghi là giới hạn thư viện |
+| 15/10 | Luật bỏ chữ ngoài âm thanh thật; tài liệu định dạng đầu ra; kiểm thử tự chạy trên GitHub |
 
 **Về điểm số trong các báo cáo tiến độ:** thang 10 điểm và 16 điều kiện "hoàn thiện" do nhóm tự đặt
 (không phải thang của học phần). Mức hoàn thiện = tổng điểm 16 điều kiện ÷ 16 (Đạt = 1, Một phần = 0,5, Chưa = 0),
-hiện là 6,5/16 = 41%. Điểm chất lượng hiện là 7,5/10.
+hiện là 7/16 ≈ 44% (E1 đạt). Điểm chất lượng hiện là 7,75/10.

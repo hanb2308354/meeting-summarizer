@@ -139,8 +139,10 @@ python src/nlp/kiem_cau.py
 | `tai_bo_danh_gia.py`    | Tải mẫu các bộ giọng nói tiếng Việt có lời gốc (ViMD, VietSuperSpeech) |
 | `danh_gia_bo.py`        | Chạy ASR trên các bộ đã tải, đo WER và phân tích lỗi         |
 | `ghep_file_dai.py`      | Ghép đoạn ngắn thành file dài giống cuộc họp để thử ASR      |
-| `kiem_thu_asr.py`       | Kiểm thử tự động (không cần tải model)                       |
+| `kiem_thu_asr.py`       | Kiểm thử tự động (không cần tải model); tự chạy trên GitHub mỗi lần push (`.github/workflows/kiem_thu.yml`) |
 | `thu_faster_whisper.py` | Chỉ dùng để thử nghiệm chọn model, không dùng trong hệ thống |
+
+Định dạng file JSON đầu ra (hợp đồng với phần tóm tắt): xem `docs/dinh_dang_dau_ra.md`.
 
 Lần đầu chạy cần **internet** để tải model `medium` (khoảng 1,5 GB); các lần sau dùng bản đã lưu trên máy.
 

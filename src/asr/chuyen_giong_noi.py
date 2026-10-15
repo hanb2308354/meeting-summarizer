@@ -69,6 +69,10 @@ DEM_IM_LANG = False             # chưa làm mặc định: đang đo
 BEAM = 5                        # số nhánh dò chữ cùng lúc (beam search); 1 = dò tham lam, nhanh hơn
 SO_MAU_CUA_SO = 30 * 16000       # 30 giây ở 16 kHz (cửa sổ của Whisper)
 TAN_SO_MAU = 16000              # Whisper làm việc ở 16 kHz, 1 kênh
+# Chế độ từng lượt: bỏ chữ có điểm giữa nằm sau cuối âm thanh thật của lượt quá LE_CUOI_LUOT giây.
+# Khi đệm im lặng tới 30 giây, chữ bịa (PhoWhisper không biết dừng) luôn nằm trong phần đệm
+# (đo lượt 0000101, 0001753); 0,5 giây chừa cho mốc thời gian theo từ bị lệch nhẹ
+LE_CUOI_LUOT = 0.5
 # Tính theo vị trí file code (src/asr/ -> lên 2 cấp là thư mục project),
 # nên chạy từ thư mục nào JSON cũng được lưu đúng chỗ phần NLP đọc.
 THU_MUC_GOC = Path(__file__).resolve().parents[2]
@@ -511,6 +515,11 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
             if dem_im_lang and len(am_thanh) < SO_MAU_CUA_SO:
                 am_thanh = np.pad(am_thanh, (0, SO_MAU_CUA_SO - len(am_thanh)))
             doan, _ = model.transcribe(am_thanh, **tham_so)
+            doan, chu_bo = cat_ngoai_am_thanh(list(doan), (den - tu) / TAN_SO_MAU + LE_CUOI_LUOT)
+            if chu_bo:
+                print(f"  [LOẠI - ngoài âm thanh thật của lượt] {chu_bo}")
+                if nhat_ky is not None:
+                    nhat_ky.append({"ngoai_am_thanh": chu_bo, "sau_giay": round(den / TAN_SO_MAU, 2)})
             return [doi_moc_thoi_gian(d, tu / TAN_SO_MAU) for d in doan]
 
         cac_doan = []
@@ -563,6 +572,32 @@ def cat_theo_khoang(cac_doan, tu_giay, den_giay):
             ket_qua.append(dataclasses.replace(doan, start=cac_tu[0].start, end=cac_tu[-1].end, words=cac_tu,
                                                text="".join(t.word for t in cac_tu)))
     return ket_qua
+
+
+def cat_ngoai_am_thanh(cac_doan, den_giay):
+    """Bỏ các từ có điểm giữa >= den_giay (nằm trong phần im lặng đệm thêm, không có tiếng thật).
+
+    Đoạn không mất từ nào giữ nguyên; đoạn mất hết từ thì bỏ; đoạn không có mốc theo từ thì xét
+    theo mốc bắt đầu. Trả về (các đoạn giữ lại, chữ đã bỏ).
+    """
+    giu, bo = [], []
+    for doan in cac_doan:
+        if not doan.words:
+            if doan.start < den_giay:
+                giu.append(doan)
+            else:
+                bo.append(doan.text.strip())
+            continue
+        trong = [t for t in doan.words if (t.start + t.end) / 2 < den_giay]
+        ngoai = [t for t in doan.words if (t.start + t.end) / 2 >= den_giay]
+        if not ngoai:
+            giu.append(doan)
+            continue
+        bo.append("".join(t.word for t in ngoai).strip())
+        if trong:
+            giu.append(dataclasses.replace(doan, start=trong[0].start, end=trong[-1].end, words=trong,
+                                           text="".join(t.word for t in trong)))
+    return giu, " ".join(b for b in bo if b)
 
 
 def nghe_lai_luot(nghe_doan, cac_luot, i, ban_dau, nhat_ky=None):

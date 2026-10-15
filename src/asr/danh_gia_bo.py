@@ -586,6 +586,11 @@ def bao_cao_chi_doan(ten_bo, cau_hinh, muc, kq, kq_cu=None):
                 d.append(f"  => chọn: {c['cach']}")
             else:
                 d.append(f"  {c['thu_lai']:<24} {c['so_chu']:>3} chữ thật | {c['chu'] or '(trống)'}")
+    ngoai = [c for c in chi_tiet if "ngoai_am_thanh" in c]
+    if ngoai:
+        d.append("\nCHỮ BỎ VÌ NẰM SAU CUỐI ÂM THANH THẬT CỦA LƯỢT (trong phần im lặng đệm thêm)")
+        for c in ngoai:
+            d.append(f"  sau {c['sau_giay']:.1f}s: {c['ngoai_am_thanh'][:150]}")
     cac_doan = [c for c in chi_tiet if "text" in c]
     d.append(f"\nCÁC ĐOẠN MODEL TRẢ VỀ: {len(cac_doan)}"
              "  (tin cậy: gần 0 là chắc chắn; không tiếng: xác suất model nghĩ chỗ đó im lặng)")

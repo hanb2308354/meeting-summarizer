@@ -1,0 +1,32 @@
+# Kiểm thử tự động mỗi lần push / mở pull request (điều kiện C3 trong kế hoạch phần ASR).
+# Các ca kiểm thử dùng model giả và âm thanh tổng hợp, không tải model, không cần dữ liệu đánh giá
+# (data/bo_danh_gia/ không có trên GitHub), chạy vài chục giây.
+# Chạy cả Linux lẫn Windows: nhóm dùng Windows, lỗi đường dẫn / mã hóa chữ phải lộ ra ở đây.
+name: Kiểm thử
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  kiem-thu:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Cài thư viện
+        run: python -m pip install -r requirements.txt
+      - name: Kiểm thử phần nhận dạng giọng nói (ASR)
+        run: python src/asr/kiem_thu_asr.py
+      - name: Kiểm thử phần tiền xử lý văn bản
+        run: python src/tien_xu_ly/kiem_thu_tien_xu_ly.py

@@ -974,12 +974,12 @@ def nhat_ky_ghi_chi_tiet_tung_doan_va_luot():
                 doan(chuoi_tu(3.0, "Cảm ơn các bạn đã theo dõi"), khong_co_tieng=0.9, do_tin_cay=-1.2)]
     goc = asr.cat_luot_noi
     try:
-        asr.cat_luot_noi = lambda song_am: [(0, 5 * SR)]
+        asr.cat_luot_noi = lambda song_am: [(0, 6 * SR)]
         with contextlib.redirect_stdout(io.StringIO()):
-            asr.nhan_dang(ModelGia(cac_doan), np.zeros(6 * SR, dtype=np.float32), tung_luot=True, nhat_ky=nhat_ky)
+            asr.nhan_dang(ModelGia(cac_doan), np.zeros(7 * SR, dtype=np.float32), tung_luot=True, nhat_ky=nhat_ky)
     finally:
         asr.cat_luot_noi = goc
-    if nhat_ky[0] != {"luot": [0.0, 5.0]}:
+    if nhat_ky[0] != {"luot": [0.0, 6.0]}:
         return f"không ghi lượt VAD: {nhat_ky[:1]}"
     doan_ghi = [c for c in nhat_ky if "text" in c]
     if len(doan_ghi) != 2 or doan_ghi[0]["loai"] or not doan_ghi[1]["loai"]:
@@ -1314,6 +1314,63 @@ def beam_truyen_dung_cho_model():
         asr.nhan_dang(ModelGhi([doan(chuoi_tu(0.0, "Bạn Lan làm slide."))]), np.zeros(SR, dtype=np.float32), beam=1)
     if da_goi != [asr.BEAM, 1]:
         return f"beam truyền sai: {da_goi}"
+
+
+@ca
+def tung_luot_bo_chu_nam_sau_cuoi_am_thanh_that():
+    """Đệm im lặng tới 30 giây: chữ bịa nằm trong phần đệm (sau cuối lượt) phải bị bỏ, chữ thật giữ."""
+    that = chuoi_tu(0.2, "Bạn Lan làm slide nha mọi người.")          # 0,2 -> 2,95 s, lượt dài 4 s
+    bia = chuoi_tu(6.0, "Cảm ơn các bạn đã theo dõi và hẹn gặp lại.")  # trong phần đệm
+    lan_ranh = [tu(3.9, "nhé.")]                                        # điểm giữa 4,075 < 4,5: giữ
+    goc = asr.cat_luot_noi
+    try:
+        asr.cat_luot_noi = lambda s: [(SR, 5 * SR)]
+        nhat_ky = []
+        with contextlib.redirect_stdout(io.StringIO()):
+            cac_tu, _ = asr.nhan_dang(ModelGia([doan(that + lan_ranh), doan(bia)]),
+                                      np.zeros(10 * SR, dtype=np.float32), tung_luot=True,
+                                      dem_im_lang=True, nhat_ky=nhat_ky)
+    finally:
+        asr.cat_luot_noi = goc
+    chu = asr.ghep_tu(cac_tu)
+    if chu != "Bạn Lan làm slide nha mọi người. nhé.":
+        return f"giữ/bỏ sai: {chu!r}"
+    if abs(cac_tu[0].start - 1.2) > 1e-6:
+        return f"mốc thời gian không cộng lệch lượt: {cac_tu[0].start}"
+    bo = [c for c in nhat_ky if "ngoai_am_thanh" in c]
+    if len(bo) != 1 or not bo[0]["ngoai_am_thanh"].startswith("Cảm ơn"):
+        return f"nhật ký không ghi chữ đã bỏ: {bo}"
+    # Một đoạn vắt qua cuối lượt: chỉ cắt phần đuôi, giữ phần đầu
+    giu, chu_bo = asr.cat_ngoai_am_thanh([doan(chuoi_tu(3.0, "một hai ba bốn năm"))], 4.5)
+    if [asr.ghep_tu(d.words) for d in giu] != ["một hai ba bốn"] or chu_bo != "năm" or giu[0].end != 4.55:
+        return f"cắt đoạn vắt qua sai: {[d.text for d in giu]}, {chu_bo!r}"
+
+
+@ca
+def json_dau_ra_qua_duoc_kiem_tra_cua_phan_tom_tat():
+    """Hợp đồng với phần tóm tắt (docs/dinh_dang_dau_ra.md): file ASR ghi ra phải đọc được bằng
+    src/tien_xu_ly/doc_transcript.py, kể cả khi mốc thời gian theo từ của Whisper bị ngược."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tien_xu_ly"))
+    from doc_transcript import doc_transcript
+    nguoc = [Word(start=5.0, end=4.8, word=" Xong.", probability=0.9)]
+    cac_doan = [doan(chuoi_tu(0, "Bạn Tuấn phụ trách frontend.")), doan(nguoc),
+                doan(chuoi_tu(7, "Thứ sáu nhóm nộp báo cáo cho cô, còn bạn Lan gửi slide trước tối thứ năm, "
+                                 "bạn Tuấn kiểm tra phần API và sửa lỗi đăng nhập, cuối tuần họp lại."))]
+    with tempfile.TemporaryDirectory() as tm:
+        tm = Path(tm)
+        ghi_wav(tm / "hop.wav", tieng_noi_gia(5))
+        ma = chay_main(tm, cac_doan, [str(tm / "hop.wav")])
+        tep = tm / "transcripts" / "hop.json"
+        if ma != 0 or not tep.exists():
+            return f"mã thoát {ma}, có file: {tep.exists()}"
+        try:
+            cac_cau = doc_transcript(tep)
+        except ValueError as loi:
+            return f"phần tóm tắt không đọc được: {loi}"
+    if len(cac_cau) < 3 or any(c["speaker"] != "SPEAKER_00" or not c["text"].strip() for c in cac_cau):
+        return f"nội dung sai: {cac_cau}"
+    if any(a["start"] > b["start"] for a, b in zip(cac_cau, cac_cau[1:])):
+        return "các câu không theo thứ tự thời gian"
 
 
 if __name__ == "__main__":
