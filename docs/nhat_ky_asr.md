@@ -135,7 +135,12 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 - **Phép thử phân định (15/10):** chạy PhoWhisper bằng thư viện gốc của VinAI (transformers, số thực đầy đủ) trên cùng
   đoạn: **dừng đúng chỗ, không có câu bịa** (43 token, đúng 100%). → Lỗi không nằm ở model mà ở bản chuyển đổi/cách chạy.
   Nghi vấn chính: lúc chuyển đã nén trọng số xuống int8, làm model tinh chỉnh mất khả năng "biết dừng".
-- **Đang kiểm tra:** chuyển lại PhoWhisper giữ số thực (float16) và chạy kiểu tính float32 trên cùng đoạn.
+- Giả thuyết "nén int8 làm model không biết dừng": **sai**. Bản giữ số thực, tính float32 vẫn bịa y hệt
+  (đoạn 6,8 giây: 48 token lời thật + 84 token "cảm ơn và hẹn gặp lại......").
+- Nguyên nhân tìm được bằng cách đọc mã nguồn faster-whisper: phần thiếu của cửa sổ 30 giây được đệm bằng
+  **số 0 trên phổ âm thanh**, mà 0 không phải im lặng (im lặng thật = −1,12, tiếng nói ≈ 0,9). Thư viện gốc đệm
+  im lặng thật vào âm thanh. Câu bịa luôn nằm đúng ở vùng đệm này (6,62 → 6,72 giây, ngay sau lời thật).
+- **Đang kiểm tra:** tự đệm im lặng thật cho mỗi lượt đủ 30 giây (`--dem-im-lang`), đo trên PhoWhisper và medium.
 - Sự cố: dời bộ nhớ đệm Hugging Face sang ổ D bằng cách chép file làm hỏng các file "lối tắt" bên trong
   (thành file rỗng): `medium` không tải được (đã tải lại, chạy bình thường), bản gốc PhoWhisper cũng hỏng.
   Bài học: không chép tay bộ nhớ đệm model; xóa rồi để chương trình tự tải lại vào chỗ mới.

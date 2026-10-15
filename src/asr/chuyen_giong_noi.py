@@ -60,6 +60,13 @@ TUNG_LUOT_MAC_DINH = True
 # (PhoWhisper) bản int8 không biết dừng, nối câu bịa sau lời thật, trong khi bản gốc (transformers,
 # float32) dừng đúng chỗ: đang đo float32 (--kieu-tinh trong danh_gia_bo.py)
 KIEU_TINH = "int8"
+# Đệm im lặng thật cho mỗi lượt nói đủ 30 giây trước khi nhận dạng (chế độ từng lượt).
+# faster-whisper đệm phần thiếu của cửa sổ 30 giây bằng SỐ 0 trên phổ âm thanh đã tính, mà 0 không phải
+# im lặng (im lặng thật là -1,12, tiếng nói ~0,9): Whisper gốc chịu được, nhưng PhoWhisper (huấn luyện với
+# cách đệm im lặng thật của thư viện gốc) nghe "tiếng ồn" đó rồi nói tiếp, nối câu bịa sau lời thật.
+# Đo: bản gốc transformers dừng đúng chỗ (43 token), faster-whisper sinh 132 token, kể cả khi tính float32.
+DEM_IM_LANG = False             # chưa làm mặc định: đang đo
+SO_MAU_CUA_SO = 30 * 16000       # 30 giây ở 16 kHz (cửa sổ của Whisper)
 TAN_SO_MAU = 16000              # Whisper làm việc ở 16 kHz, 1 kênh
 # Tính theo vị trí file code (src/asr/ -> lên 2 cấp là thư mục project),
 # nên chạy từ thư mục nào JSON cũng được lưu đúng chỗ phần NLP đọc.
@@ -457,7 +464,7 @@ def doi_moc_thoi_gian(doan, lech):
 
 
 def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, theo_khuc=False,
-              tung_luot=False, nhat_ky=None, khong_moc_thoi_gian=False):
+              tung_luot=False, nhat_ky=None, khong_moc_thoi_gian=False, dem_im_lang=None):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
     Các tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
@@ -478,6 +485,8 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
                xác suất không có tiếng, nhiệt độ đã dùng, có bị loại không) và các lượt VAD cắt ra.
                Dùng để chẩn đoán vì sao một đoạn bị sai (danh_gia_bo.py --chi-doan)
     """
+    if dem_im_lang is None:
+        dem_im_lang = DEM_IM_LANG
     if goi_y not in ("day_du", "tu_khoa", "cau_mo_dau", "khong"):
         raise ValueError(f"goi_y không hợp lệ: {goi_y!r}")
     dung_cau_mo_dau = goi_y in ("day_du", "cau_mo_dau")
@@ -497,7 +506,10 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
             tham_so = dict(tham_so_chung, **them, condition_on_previous_text=False, vad_filter=False,
                            max_new_tokens=min(so_token, TOKEN_TOI_DA))
             tham_so.update(doi)
-            doan, _ = model.transcribe(song_am[tu:den], **tham_so)
+            am_thanh = song_am[tu:den]
+            if dem_im_lang and len(am_thanh) < SO_MAU_CUA_SO:
+                am_thanh = np.pad(am_thanh, (0, SO_MAU_CUA_SO - len(am_thanh)))
+            doan, _ = model.transcribe(am_thanh, **tham_so)
             return [doi_moc_thoi_gian(d, tu / TAN_SO_MAU) for d in doan]
 
         cac_doan = []

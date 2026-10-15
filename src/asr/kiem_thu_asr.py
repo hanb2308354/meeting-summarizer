@@ -1231,7 +1231,7 @@ def kieu_tinh_vao_ten_cau_hinh_va_truyen_cho_model():
     import danh_gia_bo as dg
     from types import SimpleNamespace
     co_ban = dict(model="medium", goi_y="cau_mo_dau", thu_lai="gioi_han", theo_khuc=False, tung_luot=True,
-                  khong_moc_thoi_gian=False, khong_tien_xu_ly=False, loc_nhieu=False)
+                  khong_moc_thoi_gian=False, dem_im_lang=False, khong_tien_xu_ly=False, loc_nhieu=False)
     ten_int8 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="int8"))
     ten_f32 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="float32"))
     if ten_int8 != "medium_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot" or ten_f32 != "medium_chi_cau_mo_dau_float32_gioi_han_thu_lai_tung_luot":
@@ -1275,6 +1275,29 @@ def bao_ro_khi_thu_muc_model_chua_co():
                 ma = thoat.code
     if goi or "chuyen_doi_model.py" not in str(ma):
         return f"không dừng sớm khi thiếu thư mục model: {goi}, {ma!r}"
+
+
+@ca
+def dem_im_lang_that_cho_moi_luot_du_30_giay():
+    da_nghe = []
+
+    class ModelGhi(ModelGia):
+        def transcribe(self, am_thanh, **tham_so):
+            da_nghe.append((len(am_thanh), float(np.abs(am_thanh[SR * 4:]).max()) if len(am_thanh) > SR * 4 else 0.0))
+            return super().transcribe(am_thanh, **tham_so)
+
+    song_am = (np.random.default_rng(0).normal(0, 0.1, 10 * SR)).astype(np.float32)
+    goc = asr.cat_luot_noi
+    try:
+        asr.cat_luot_noi = lambda s: [(0, 4 * SR)]
+        with contextlib.redirect_stdout(io.StringIO()):
+            for dem in (False, True):
+                asr.nhan_dang(ModelGhi([doan(chuoi_tu(0.0, "Bạn Lan làm slide nha mọi người."))]), song_am,
+                              tung_luot=True, dem_im_lang=dem)
+    finally:
+        asr.cat_luot_noi = goc
+    if da_nghe != [(4 * SR, 0.0), (30 * SR, 0.0)]:
+        return f"phải đệm im lặng (số 0 trên sóng âm) tới đúng 30 giây khi bật: {da_nghe}"
 
 
 if __name__ == "__main__":

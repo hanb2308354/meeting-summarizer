@@ -170,6 +170,8 @@ def ten_cau_hinh(args):
         ten += "_tung_luot"
     if args.khong_moc_thoi_gian:
         ten += "_khong_moc"
+    if args.dem_im_lang:
+        ten += "_dem_lang"
     if args.khong_tien_xu_ly:
         ten += "_khong_tien_xu_ly"
     if args.loc_nhieu:
@@ -189,7 +191,7 @@ def nhan_dang_mot_doan(model, duong_dan, args):
         nhiet_do = asr.NHIET_DO_THU_LAI if args.thu_lai == "gioi_han" else None
         cac_tu, _ = asr.nhan_dang(model, song_am, goi_y=args.goi_y, nhiet_do=nhiet_do,
                                   theo_khuc=args.theo_khuc, tung_luot=args.tung_luot, nhat_ky=nhat_ky,
-                                  khong_moc_thoi_gian=args.khong_moc_thoi_gian)
+                                  khong_moc_thoi_gian=args.khong_moc_thoi_gian, dem_im_lang=args.dem_im_lang)
     return {
         "du_doan": " ".join(cau["text"] for cau in asr.tach_cau(cac_tu)),
         "bi_loai": [d.strip() for d in dau_ra.getvalue().splitlines() if "[LOẠI" in d],
@@ -736,6 +738,8 @@ def main():
                         help="Cắt file theo từng lượt nói rồi nhận dạng từng lượt (đã là mặc định)")
     parser.add_argument("--ca-file", action="store_true",
                         help="Nhận dạng cả file một lượt như trước (so sánh với chế độ từng lượt)")
+    parser.add_argument("--dem-im-lang", action="store_true",
+                        help="Đệm im lặng thật cho mỗi lượt đủ 30 giây (như thư viện gốc), thay vì đệm số 0 của faster-whisper")
     parser.add_argument("--khong-moc-thoi-gian", action="store_true",
                         help="Model không đoán mốc thời gian theo đoạn (cần cho PhoWhisper)")
     parser.add_argument("--khong-tien-xu-ly", action="store_true", help="Tắt tiền xử lý âm thanh")
