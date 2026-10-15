@@ -124,11 +124,15 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 | PhoWhisper-medium (VinAI) | 37,1% | 25,3% | 11,8x | Nghe đúng hơn nhưng nối câu bịa sau lời thật |
 | PhoWhisper, tắt đoán mốc thời gian | 50,0% | — | 10,1x | Thử chữa bịa câu, **sai hướng**, bịa nhiều hơn → **bỏ** |
 | PhoWhisper + lọc tốc độ nói (ước tính) | **21,2%** | **5,2%** | 11,8x | Tốt nhất, thắng medium ở 21/30 và 16/30 đoạn, chưa chắc về thống kê |
+| PhoWhisper + lọc + giới hạn số chữ mỗi lượt (chạy thật, 15/10) | **21,2%** | **5,2%** | 11,0x / 13,3x | Xác nhận đúng số ước tính; tốc độ gần như không đổi |
 
 - Điểm mạnh của PhoWhisper: nghe đúng giọng miền, ví dụ medium nghe "**lục** ban hành văn bản",
   PhoWhisper nghe đúng "**luật**"; giọng Tây Nguyên 13,9% → 2,4%.
 - Điểm yếu: hay nối câu bịa sau lời thật, nên chậm. Đã thêm giới hạn số chữ model được sinh mỗi lượt
-  (theo độ dài lượt). **Đang chạy thật để kiểm:** PhoWhisper phải nhanh ngang medium và giữ WER ước tính.
+  (theo độ dài lượt): WER giữ đúng như ước tính nhưng tốc độ chỉ 11,8x → 11,0x, tức chậm không chủ yếu vì câu bịa dài.
+- **Đang kiểm tra:** chạy PhoWhisper bằng thư viện gốc (transformers) trên cùng đoạn để biết việc nối câu bịa
+  và chạy chậm là do chính model hay do bản chuyển đổi sang faster-whisper; đếm số token model sinh ra mỗi đoạn.
+- Sự cố: sau khi dời bộ nhớ đệm model sang ổ D, file model `medium` bị hỏng (không tải được); cần tải lại.
 
 ---
 

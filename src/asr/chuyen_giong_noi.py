@@ -509,7 +509,7 @@ def chi_tiet_doan(doan, ly_do):
     return {"start": round(doan.start, 2), "end": round(doan.end, 2), "text": doan.text.strip(),
             "do_tin_cay": round(doan.avg_logprob, 3), "khong_co_tieng": round(doan.no_speech_prob, 3),
             "ty_le_nen": round(doan.compression_ratio, 2), "nhiet_do": getattr(doan, "temperature", None),
-            "loai": ly_do}
+            "so_token": len(doan.tokens or []), "loai": ly_do}
 
 
 def so_chu_that(cac_doan):

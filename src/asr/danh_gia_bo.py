@@ -585,6 +585,7 @@ def bao_cao_chi_doan(ten_bo, cau_hinh, muc, kq, kq_cu=None):
     for c in cac_doan:
         d.append(f"  [{c['start']:7.2f} -> {c['end']:7.2f}] tin cậy {c['do_tin_cay']:+.2f} | không tiếng "
                  f"{c['khong_co_tieng']:.2f} | nén {c['ty_le_nen']:.1f} | nhiệt độ {c['nhiet_do']}"
+                 f" | {c.get('so_token', '?')} token / {len(c['text'].split())} từ"
                  + (f" | BỊ LOẠI: {c['loai']}" if c["loai"] else ""))
         d.append(f"      {c['text'][:150]}")
         for dieu_kien, y_nghia in DAU_HIEU:
@@ -592,6 +593,15 @@ def bao_cao_chi_doan(ten_bo, cau_hinh, muc, kq, kq_cu=None):
                 d.append(f"      ⚠ {y_nghia}")
     if not chi_tiet:
         d.append("  (kết quả này chưa có chi tiết: chạy lại với --chi-doan)")
+    cac_doan_co_token = [c for c in cac_doan if "so_token" in c]
+    if cac_doan_co_token:
+        giu = [c for c in cac_doan_co_token if not c["loai"]]
+        bo = [c for c in cac_doan_co_token if c["loai"]]
+        d.append(f"\nTOKEN MODEL ĐÃ SINH: {sum(c['so_token'] for c in cac_doan_co_token)} "
+                 f"(giữ {sum(c['so_token'] for c in giu)}, bị loại {sum(c['so_token'] for c in bo)})"
+                 f" | token/từ của lời được giữ: "
+                 f"{sum(c['so_token'] for c in giu) / max(1, sum(len(c['text'].split()) for c in giu)):.2f}"
+                 "  ← token bị loại nhiều = thời gian chạy đổ vào chữ bịa")
     return "\n".join(d)
 
 
