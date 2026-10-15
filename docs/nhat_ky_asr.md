@@ -1,144 +1,167 @@
-# Nhật ký kỹ thuật phần ASR (Tô Tiểu Hân)
+# Nhật ký phần nhận dạng giọng nói (ASR) — Tô Tiểu Hân
 
-Ghi lại mọi thay đổi của phần nhận dạng giọng nói và tiền xử lý văn bản: đổi gì, vì sao,
-số liệu trước/sau, quyết định gì. Dùng làm nguồn cho báo cáo tiến độ và chương báo cáo phần ASR.
-Mỗi lần có thay đổi mới thì ghi thêm vào mục "Nhật ký theo thời gian" và cập nhật "Trạng thái hiện tại".
+## 1. Tóm tắt
 
-**Quy ước số liệu**
-- WER (tỉ lệ lỗi từ) càng thấp càng tốt. Trước khi so, chữ được đưa về cùng cách viết
-  (số "20" = "hai mươi", "km" = "ki lô mét", "kì" = "kỳ", dấu thanh kiểu cũ/mới...), nên WER chỉ tính lỗi nghe sai thật.
-- `hop_va_dien_thoai`: đoạn họp trực tuyến, hội nghị, tranh luận, thuyết trình, phỏng vấn, gọi điện
-  (DataStudio/Vietnamese_ASR_TestingData). `phuong_ngu`: giọng Bắc, Trung, Nam, Tây Nguyên (LSVSC, CC BY 4.0).
-  `..._dai`: 4 file × 5 phút ghép từ đoạn ngắn, xen khoảng lặng 0,3–10 giây và ồn nền, mô phỏng cuộc họp.
-- "Tốt hơn thật / tệ hơn thật / chưa chắc": khoảng tin cậy 95% (bootstrap ghép cặp theo đoạn) không chứa 0 / chứa 0.
-- Tốc độ "3,7x" = thời gian xử lý gấp 3,7 lần độ dài ghi âm, trên máy của Hân (CPU 4 luồng, không GPU).
+**Phần của Hân làm gì:** nhận file ghi âm cuộc họp → chuyển thành chữ → làm sạch chữ → giao văn bản sạch
+cho phần tóm tắt của Anh.
 
----
+```
+File ghi âm → Làm sạch âm thanh → Nhận dạng giọng nói (Whisper) → Lọc câu bịa → Tách câu → JSON
+           → Làm sạch văn bản (sửa lỗi nhận dạng, bỏ từ đệm, câu xã giao) → Văn bản sạch cho phần tóm tắt
+```
 
-## Tóm tắt các quyết định quan trọng
+**Kết quả hiện tại** (WER = tỉ lệ từ sai, càng thấp càng tốt):
 
-| # | Quyết định | Bằng chứng | Ngày |
-|---|---|---|---|
-| 1 | Dùng faster-whisper `medium` int8 trên CPU | Thử nghiệm ban đầu các cỡ model (thu_faster_whisper.py) | 30/09 |
-| 2 | Bỏ phân biệt người nói (pyannote), bỏ giao diện demo | Thu hẹp phạm vi; giảng viên không yêu cầu | trước 08/10 |
-| 3 | Đo bằng bộ dữ liệu công khai thay vì tự thu âm | Phần ASR chỉ cần tiếng Việt tự nhiên bất kỳ; thu âm tốn thời gian và cần đồng ý người nói | 10/10 |
-| 4 | Bỏ từ khóa gợi ý (hotwords), chỉ giữ câu mở đầu | WER 28,2% → 25,6%; từ khóa làm model liệt kê, bịa câu, kẹt | 11/10 |
-| 5 | Chỉ thử lại tới nhiệt độ 0,4 | Đoạn bị kẹt 1 → 0, nhanh hơn ~25%, WER không đổi | 11/10 |
-| 6 | Nhận dạng từng lượt nói làm mặc định | File dài 36,4% → 29,9%, tốt hơn thật [−13,9; −0,1]; đoạn ngắn bằng nhau | 14/10 |
-| 7 | Lượt ra quá ít chữ thì nhận dạng lại | Đoạn bị bịa câu 88% → 42%; đoạn ngắn về lại 25,4% | 14/10 |
-| 8 | Loại câu có tốc độ nói bất khả thi (> 12 từ/giây) | Câu bịa có mốc thời gian dồn vào 0,04–0,18 giây; luật bỏ 0 đoạn lời thật của medium/turbo | 15/10 |
-| 9 | Không dùng `large-v3-turbo` | Không tốt hơn thật ở bộ nào, chậm hơn medium trên máy Hân (5,1x so với 3,7x) | 14/10 |
-| 10 | PhoWhisper là ứng viên thay medium (đang xác nhận) | Sau khi lọc: 21,2% / 5,2% so với medium 25,4% / 8,2% (ước tính, chưa chắc về thống kê) | 15/10 |
-
----
-
-## Nhật ký theo thời gian
-
-### 30/09 — Dựng nền tảng
-- Thử nghiệm faster-whisper, chốt `medium` int8 chạy CPU.
-- Viết `chuyen_giong_noi.py`: đọc file âm thanh, nhận dạng, tách câu theo dấu câu, xuất JSON cho phần tóm tắt.
-
-### 08/10 – 09/10 — Hoàn thiện luồng âm thanh → văn bản sạch
-- Tiền xử lý âm thanh: lọc tiếng ù 50 Hz, chuẩn hóa âm lượng, giảm tạp âm (tùy chọn).
-- Bộ lọc câu bịa `[LOẠI]`: câu kiểu YouTube ("Cảm ơn các bạn đã theo dõi", "Hãy subscribe..."), lặp chữ,
-  đọc lại từ khóa gợi ý, lặp lại đoạn trước (kể cả kiểu A, B, A, B). Sửa các trường hợp loại oan lời thật
-  (câu liệt kê, câu nhắc lại sau "Dạ.").
-- Tách câu theo dấu câu và khoảng ngừng; không cắt ở "...", "v.v.", chữ viết tắt.
-- Nhận phần tiền xử lý văn bản từ Anh, tách riêng thành `src/tien_xu_ly` (làm sạch, sửa lỗi nhận dạng, từ đệm,
-  câu xã giao); phần NLP của Anh đọc văn bản sạch từ `data/processed`. Kèm kiểm thử.
-
-### 10/10 — Bộ đánh giá trên dữ liệu thật
-- Tải mẫu từ Hugging Face (tải thẳng file parquet, chờ và thử lại khi bị giới hạn 429/500), chia đều mẫu
-  theo nhóm và giới hạn số đoạn cùng người nói.
-- Bỏ VietSuperSpeech khỏi mặc định: lời gốc do máy tạo, không tin được.
-- Sửa cách tính WER cho công bằng (số, đơn vị, i/y, vị trí dấu thanh).
-
-### 10/10 – 11/10 — Thử nghiệm cách gợi ý cho model (30 đoạn họp/gọi điện)
-
-| Cấu hình | WER | Tốc độ | Đoạn kẹt |
-|---|---|---|---|
-| Câu mở đầu + từ khóa (cấu hình cũ) | 28,2% | 5,4x | 1 |
-| Chỉ từ khóa | 35,8% | 5,6x | 2 |
-| Không gợi ý | 25,8% | 4,0x | 0 |
-| Chỉ câu mở đầu | 25,6% | 4,2x | 1 |
-| **Chỉ câu mở đầu + thử lại tới 0,4** | **25,6%** | **4,0x** | **0** |
-
-- Kết luận: từ khóa gợi ý có hại → bỏ. Đoạn kẹt mất 81–347 giây cho 4 giây âm thanh và đều ra chữ bịa → giới hạn thử lại.
-- Thêm luật loại đoạn chép lại một phần câu mở đầu ("Còn một số từ tiếng Anh.").
-- Bộ phương ngữ: 8,3% → 8,2% (không đổi).
-- Đo bảng sửa lỗi của tiền xử lý văn bản trên chữ ASR thật: 0 chỗ sửa sai / 2.100 từ.
-
-### 12/10 — Số liệu 100 đoạn và thử file dài
-- 100 đoạn mỗi bộ (7.150 từ): họp/gọi điện **25,6%** (tranh luận 8,8%, hội nghị 12,9%, thuyết trình 16,3%,
-  họp trực tuyến 24,4%, gọi điện 58,1%); phương ngữ **10,2%** (Bắc 8,4%, Trung 10,4%, Nam 12,6%, Tây Nguyên 12,6%).
-- Ghép 4 file × 5 phút: **file dài 36,4%** trong khi nghe từng đoạn ngắn của chính lời đó **27,0%**.
-  Lỗi tăng chủ yếu do **mất chữ** (thiếu 841 từ): cửa sổ 30 giây trượt trên cả file bỏ qua cả khúc lời.
-
-### 14/10 — Sửa lỗi mất chữ ở file dài
-
-| Cách nhận dạng | File dài | Thiếu từ | 30 đoạn ngắn | Quyết định |
-|---|---|---|---|---|
-| Trượt cửa sổ cả file (cũ) | 36,4% | 841 | 25,5% | — |
-| Theo lô của faster-whisper | 47,0% | 1.486 | 26,8% | Bỏ |
-| Từng lượt nói, lần 1 | 30,5% | 568 | 27,7% | Giữ hướng, còn 1 đoạn bị bịa |
-| + gộp lượt quá ngắn | 30,4% | — | 27,8% | Bỏ (không tác dụng; chẩn đoán sai) |
-| + bật VAD lần nữa trong lượt | 31,8% | 649 | 29,3% | Bỏ (tệ hơn cả hai bộ) |
-| **+ nhận dạng lại lượt ra quá ít chữ** | **29,9%** | **507** | **25,4%** | **Mặc định** |
-
-- Hai lần chẩn đoán sai liên tiếp (đoán do lượt quá ngắn, rồi do VAD) → thêm công cụ chẩn đoán:
-  lưu chi tiết từng đoạn model trả về (mốc thời gian, độ tin cậy, xác suất im lặng, nhiệt độ),
-  `--chi-doan` chạy lại 1 đoạn và in lỗi theo vị trí, khoảng tin cậy trong `--so-sanh`.
-- Nguyên nhân thật (đoạn 0000186): lượt 9,7 giây chỉ ra "Cảm ơn các bạn." → luật mật độ chữ
-  (lượt ≥ 3 giây mà < 1 chữ/giây là hỏng) rồi nhận dạng lại (bỏ gợi ý, sau đó nghe kèm lượt bên cạnh).
-  Đoạn 0000186: 88% → 42%.
-- Khoảng tin cậy file dài tính theo 91 đoạn ngắn đã ghép (thay vì 4 file): −6,5 điểm [−13,9; −0,1] → tốt hơn thật.
-- Dời dự án và bộ nhớ đệm model sang ổ D (ổ C chỉ còn 1,6 GB trống).
-
-### 14/10 – 15/10 — So sánh model (cùng 30 + 30 đoạn)
-
-| Model | Họp/gọi điện | Phương ngữ | Tốc độ | Kết luận |
-|---|---|---|---|---|
-| medium (mặc định) | 25,4% | 8,2% | 3,7x | mốc so sánh |
-| large-v3-turbo | 29,1% | 7,1% | 5,1x | chưa chắc cả hai bộ, chậm hơn → không dùng |
-| PhoWhisper-medium (chuyển sang CTranslate2) | 37,1% | 25,3% | 11,8x | tệ hơn thật |
-| PhoWhisper, không đoán mốc thời gian | 50,0% | — | 10,1x | tệ hơn nữa → bỏ hướng này |
-| **PhoWhisper + lọc tốc độ nói (ước tính)** | **21,2%** | **5,2%** | 11,8x | chưa chắc (−4,2 [−9,2; +1,3] và −3,0 [−7,4; +0,6]), thắng 21/30 và 16/30 đoạn |
-
-- PhoWhisper (VinAI, huấn luyện thêm ~844 giờ tiếng Việt) nghe đúng hơn rõ (nghe sai 95–134 từ so với 168 của medium;
-  Tây Nguyên 13,9% → 2,4%: medium nghe "lục" thay "luật"), nhưng nối câu bịa sau lời thật.
-- Giả thuyết "do model không được dạy đoán mốc thời gian" đã thử và **sai** (bịa nhiều hơn: thừa 200 → 434 từ).
-- Dấu hiệu thật, tìm được từ nhật ký chi tiết: lời thật 26 từ / 6,62 giây (độ tin cậy −0,00), câu bịa 12 từ / 0,08 giây.
-  → Luật "tốc độ nói bất khả thi". Kiểm chứng: bỏ 0 đoạn của medium và turbo (không xóa nhầm), bỏ 16–23 đoạn bịa của PhoWhisper.
-- Câu mở đầu có ích cho PhoWhisper ở cuộc gọi điện (81% → 43%).
-- Thêm `--loc-lai`: chấm lại kết quả đã lưu với bộ lọc mới trong vài giây (ước tính, không chạy lại model).
-
-### 15/10 — Giới hạn số token mỗi lượt (đang đo)
-- PhoWhisper chậm 11,8x vì khi bịa nó sinh tới ~440 token rồi thử lại ở nhiệt độ khác.
-  Giới hạn 20 token/giây + 30 (tối đa 380). Đang chạy thật medium + PhoWhisper để kiểm:
-  medium phải giữ nguyên WER, PhoWhisper phải nhanh ngang medium và giữ WER ước tính.
-
----
-
-## Hướng đã thử và bỏ (kết quả âm, vẫn có giá trị cho báo cáo)
-
-| Hướng | Kết quả | Lý do bỏ |
+| Loại âm thanh | WER lúc bắt đầu đo | WER hiện tại |
 |---|---|---|
-| Từ khóa gợi ý (hotwords) | 25,6% → 35,8% khi chỉ dùng từ khóa | Model liệt kê từ khóa, bịa câu, kẹt |
-| Nhận dạng theo lô (BatchedInferencePipeline) | File dài 47,0% | Mất chữ nhiều hơn (1.486 từ) |
-| Gộp lượt nói quá ngắn | Không đổi (30,4% / 27,8%) | Chẩn đoán sai nguyên nhân |
-| Bật VAD lần nữa trong từng lượt | Tệ hơn ở cả hai bộ | Không chữa được câu bịa |
-| PhoWhisper không đoán mốc thời gian | Thừa 200 → 434 từ | Bịa nhiều hơn |
-| large-v3-turbo | Không tốt hơn thật, chậm hơn | Không đáng đổi |
-| VietSuperSpeech làm bộ đánh giá | Lời gốc do máy tạo | Không tin được |
+| Họp, hội nghị, gọi điện (đoạn ngắn) | 28,2% | 25,4% |
+| Cuộc họp dài 5 phút | 36,4% | 29,9% |
+| Giọng các miền | 8,3% | 8,2% |
+| Model bị kẹt (chạy hàng trăm giây cho vài giây âm thanh) | có | 0 |
+
+**Cấu hình đang dùng:** model Whisper `medium` chạy trên CPU · chỉ dùng câu gợi ý mở đầu · nhận dạng
+từng lượt nói · lượt nào ra quá ít chữ thì nhận dạng lại · lọc câu bịa (kể cả câu có tốc độ nói bất khả thi).
+
+**Đang làm:** chọn model tốt nhất. PhoWhisper (bản Whisper được huấn luyện thêm cho tiếng Việt) hứa hẹn
+giảm lỗi họp còn ~21% và giọng miền còn ~5%, đang chạy thật để xác nhận.
+
+**Cách đo dùng xuyên suốt:**
+- Không tự thu âm mà dùng bộ dữ liệu công khai có sẵn lời gốc: 30–100 đoạn họp/hội nghị/gọi điện, 30–100 đoạn giọng
+  Bắc/Trung/Nam/Tây Nguyên, và 4 file 5 phút ghép từ các đoạn đó để giả lập cuộc họp dài.
+- Mọi thay đổi đều đo trên **cùng một bộ đoạn** trước và sau.
+- Chỉ đổi cấu hình mặc định khi chênh lệch là **thật** (khoảng tin cậy 95% không chứa 0), không phải do may rủi.
 
 ---
 
-## Trạng thái hiện tại (15/10)
+## 2. Các vấn đề đã giải quyết
 
-- Giai đoạn 7/13 (chọn model). Điểm chất lượng 7,5/10. Mức hoàn thiện 41% = 6,5/16 điểm điều kiện
-  (Đạt = 1, Một phần = 0,5, Chưa = 0; trước 15/10 ghi "khoảng 55%" là ước lượng, chưa theo công thức).
-- Thang điểm và 16 điều kiện do nhóm tự xây dựng (không phải thang chính thức của học phần);
-  các chỉ số bên trong (WER, khoảng tin cậy bootstrap, bộ kiểm tra giữ riêng) là cách đo chuẩn của ngành ASR.
-- Kiểm thử tự động: 58 ca ASR + 9 nhóm tiền xử lý, đều đạt.
-- Việc tiếp theo: xác nhận PhoWhisper bằng chạy thật; thử model lớn (large-v3, PhoWhisper-large);
-  tạo bộ kiểm tra giữ riêng (≥ 100 đoạn mỗi bộ + họp thật tự ghi).
+### 2.1. Chọn công cụ và model nền
+**Mục đích:** chạy được trên laptop sinh viên không có card đồ họa.
+**Đã làm:** viết script đo tốc độ và độ chính xác của faster-whisper (bản Whisper chạy nhanh trên CPU)
+trên một file thử, chạy được với từng cỡ model.
+**Chọn:** `medium`, nén int8 để chạy nhanh hơn trên CPU.
+**Lưu ý:** số liệu của lần thử này không được lưu lại. Việc so sánh model có số liệu đầy đủ đang làm ở mục 3.
+
+### 2.2. Làm sạch âm thanh đầu vào
+**Mục đích:** giảm lỗi do âm thanh xấu (tiếng ù điện, ghi âm quá nhỏ hoặc quá to).
+**Đã làm:** lọc tiếng ù 50 Hz, chuẩn hóa âm lượng; giảm tạp âm để ở dạng tùy chọn.
+**Lý do giảm tạp âm chỉ là tùy chọn:** giảm tạp âm mạnh có thể làm méo giọng; sẽ đo bật/tắt ở giai đoạn sau.
+
+### 2.3. Chống "bịa chữ"
+**Vấn đề:** Whisper học từ phụ đề YouTube nên ở chỗ im lặng hoặc khó nghe hay tự bịa câu như
+"Cảm ơn các bạn đã theo dõi", "Hãy subscribe cho kênh...", hoặc lặp một chữ nhiều lần.
+
+| Đã thử | Kết quả | Quyết định |
+|---|---|---|
+| Lọc câu kiểu YouTube, lặp chữ, lặp lại đoạn trước | Chặn được phần lớn | Giữ |
+| Lọc mọi câu "lặp lại đoạn trước" | Xóa nhầm câu thật như "Dạ.", câu người nói nhắc lại | Sửa: chỉ xét câu từ 4 từ, cho phép kiểu "A, Dạ., A" |
+| Lọc câu chép lại câu gợi ý ("Còn một số từ tiếng Anh.") | Model hay chép gợi ý ở chỗ khó nghe | Giữ |
+| Lọc theo **tốc độ nói bất khả thi** (> 12 từ/giây) | Câu bịa có thời gian dồn vào 0,04–0,18 giây (vd 12 từ trong 0,08 giây), lời thật ~4 từ/giây. Không xóa nhầm đoạn nào của model medium | Giữ (15/10) |
+
+### 2.4. Cách "gợi ý" cho model
+**Mục đích:** giúp model nghe đúng từ chuyên môn trong cuộc họp (deadline, frontend, slide...).
+**Đã làm:** so 4 cách trên cùng 30 đoạn họp/gọi điện.
+
+| Cách | WER | Tốc độ | Model bị kẹt | Quyết định |
+|---|---|---|---|---|
+| Câu mở đầu + danh sách từ khóa (cách cũ) | 28,2% | 5,4x | 1 | Bỏ |
+| Chỉ danh sách từ khóa | 35,8% | 5,6x | 2 | Bỏ: model đọc lại danh sách, bịa câu |
+| Không gợi ý gì | 25,8% | 4,0x | 0 | — |
+| **Chỉ câu mở đầu** + giới hạn số lần thử lại | **25,6%** | **4,0x** | **0** | **Chọn** |
+
+**Bài học:** gợi ý càng nhiều chưa chắc càng tốt. Danh sách từ khóa làm model "nghe ra" từ khóa ở chỗ không có.
+"Giới hạn số lần thử lại" (nhiệt độ tới 0,4): các lần model bị kẹt 81–347 giây cho 4 giây âm thanh đều ra chữ bịa,
+nên không cần cho nó thử tiếp.
+
+### 2.5. Cuộc họp dài bị mất chữ
+**Vấn đề phát hiện được:** cùng một lời nói, nghe từng đoạn ngắn thì sai 27,0%, nhưng ghép thành file 5 phút
+thì sai 36,4%. Phần lỗi tăng thêm chủ yếu là **mất chữ** (841 từ): model bỏ qua cả khúc lời.
+
+| Cách đã thử | File dài | Đoạn ngắn | Quyết định |
+|---|---|---|---|
+| Đọc cả file theo cửa sổ 30 giây (cách cũ) | 36,4% | 25,5% | Bỏ |
+| Xử lý theo lô (có sẵn trong faster-whisper) | 47,0% | 26,8% | Bỏ: mất chữ nhiều hơn |
+| Cắt theo từng lượt nói rồi nhận dạng từng lượt | 30,5% | 27,7% | Giữ hướng, nhưng 1 đoạn bị bịa cả câu |
+| + gộp các lượt quá ngắn | 30,4% | 27,8% | Bỏ: không tác dụng (đoán sai nguyên nhân) |
+| + cắt lại thêm một lần trong mỗi lượt | 31,8% | 29,3% | Bỏ: tệ hơn |
+| **+ lượt nào ra quá ít chữ thì nhận dạng lại** | **29,9%** | **25,4%** | **Chọn** (tốt hơn thật) |
+
+**Quá trình:** sau hai lần đoán sai nguyên nhân, đã làm thêm công cụ xem chi tiết từng đoạn model trả về.
+Nhờ đó thấy nguyên nhân thật: một lượt nói 9,7 giây mà model chỉ ra "Cảm ơn các bạn." (4 chữ, trong khi
+bình thường phải 30–40 chữ). Từ đó thêm luật "lượt dài mà quá ít chữ là hỏng → nhận dạng lại".
+
+### 2.6. Làm sạch văn bản (nhận lại từ Anh)
+**Mục đích:** văn bản giao cho phần tóm tắt phải sạch: sửa từ nghe nhầm hay gặp (vd "phôn thên" → "frontend"),
+bỏ từ đệm ("ờ", "à"), đánh dấu câu xã giao.
+**Đã làm:** tách thành thư mục riêng `src/tien_xu_ly` để không lẫn với code của Anh; viết kiểm thử.
+**Kết quả:** đo trên chữ máy nghe thật: 0 chỗ sửa sai trên 2.100 từ.
+**Chưa làm:** thêm luật sửa lỗi từ danh sách "các cặp hay nghe nhầm". Cố ý để sau khi chốt model, vì mỗi model
+nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại nhiều lần.
+
+### 2.7. Xây dựng cách đo
+**Mục đích:** biết chính xác sai ở đâu, sửa có hiệu quả không, thay vì đoán.
+
+| Đã làm | Vì sao |
+|---|---|
+| Tải bộ dữ liệu họp/gọi điện và bộ giọng miền từ Hugging Face | Có lời gốc chính xác để so; đủ đa dạng |
+| Bỏ bộ VietSuperSpeech | Lời gốc do máy tạo ra, không tin được |
+| Chuẩn hóa trước khi so ("20" = "hai mươi", "kì" = "kỳ"...) | Không tính oan cách viết khác là lỗi |
+| Ghép đoạn ngắn thành file 5 phút | Thử được lỗi chỉ có ở cuộc họp dài mà không cần thu âm |
+| Khoảng tin cậy 95% khi so sánh | Phân biệt cải thiện thật với may rủi |
+| Công cụ xem chi tiết 1 đoạn (`--chi-doan`) | Tìm đúng nguyên nhân trước khi sửa |
+| Chấm lại kết quả cũ với bộ lọc mới (`--loc-lai`) | Thử ý tưởng trong vài giây thay vì chạy lại 1 tiếng |
+
+---
+
+## 3. Đang làm: chọn model
+
+**Mục đích:** biết `medium` có phải là tốt nhất chưa. Nếu model khác tốt hơn thì đổi; nếu không thì đã chạm giới hạn.
+
+| Model | Họp/gọi điện | Giọng miền | Tốc độ | Nhận xét |
+|---|---|---|---|---|
+| medium (đang dùng) | 25,4% | 8,2% | 3,7x | Mốc so sánh |
+| large-v3-turbo | 29,1% | 7,1% | 5,1x | Không tốt hơn thật, lại chậm hơn → **bỏ** |
+| PhoWhisper-medium (VinAI) | 37,1% | 25,3% | 11,8x | Nghe đúng hơn nhưng nối câu bịa sau lời thật |
+| PhoWhisper, tắt đoán mốc thời gian | 50,0% | — | 10,1x | Thử chữa bịa câu, **sai hướng**, bịa nhiều hơn → **bỏ** |
+| PhoWhisper + lọc tốc độ nói (ước tính) | **21,2%** | **5,2%** | 11,8x | Tốt nhất, thắng medium ở 21/30 và 16/30 đoạn, chưa chắc về thống kê |
+
+- Điểm mạnh của PhoWhisper: nghe đúng giọng miền, ví dụ medium nghe "**lục** ban hành văn bản",
+  PhoWhisper nghe đúng "**luật**"; giọng Tây Nguyên 13,9% → 2,4%.
+- Điểm yếu: hay nối câu bịa sau lời thật, nên chậm. Đã thêm giới hạn số chữ model được sinh mỗi lượt
+  (theo độ dài lượt). **Đang chạy thật để kiểm:** PhoWhisper phải nhanh ngang medium và giữ WER ước tính.
+
+---
+
+## 4. Phạm vi đã thu hẹp
+
+| Bỏ | Lý do |
+|---|---|
+| Phân biệt ai nói câu nào (pyannote) | Ngoài yêu cầu của giảng viên, tốn công |
+| Giao diện demo | Tập trung vào chất lượng nhận dạng |
+
+---
+
+## 5. Việc tiếp theo
+1. Xác nhận PhoWhisper bằng chạy thật; thử thêm model lớn hơn (large-v3, PhoWhisper-large).
+2. Tạo bộ kiểm tra giữ riêng (≥ 100 đoạn mỗi bộ, chưa từng dùng để chỉnh) + 15–20 phút họp thật tự ghi.
+3. Bật/tắt từng thành phần để chắc thành phần nào cũng có ích.
+4. Tăng tốc độ, thử file 2 giờ, thêm luật sửa lỗi từ các cặp hay nghe nhầm.
+5. Tài liệu định dạng đầu ra cho phần tóm tắt, chương báo cáo.
+
+---
+
+## Phụ lục: mốc thời gian
+
+| Ngày | Việc chính |
+|---|---|
+| 30/09 | Thử faster-whisper, chốt `medium`, viết chương trình nhận dạng và xuất JSON |
+| 08–09/10 | Làm sạch âm thanh, lọc câu bịa, tách câu; nhận và tách riêng phần làm sạch văn bản |
+| 10/10 | Dựng bộ đánh giá trên dữ liệu thật, sửa cách tính WER cho công bằng |
+| 11/10 | So cách gợi ý: bỏ từ khóa, giữ câu mở đầu, giới hạn thử lại |
+| 12/10 | Đo 100 đoạn mỗi bộ; phát hiện cuộc họp dài bị mất chữ |
+| 14/10 | Nhận dạng từng lượt + nhận dạng lại lượt hỏng; công cụ chẩn đoán, khoảng tin cậy; dời dự án sang ổ D |
+| 14–15/10 | So model; lọc câu bịa theo tốc độ nói; giới hạn số chữ mỗi lượt (đang đo) |
+
+**Về điểm số trong các báo cáo tiến độ:** thang 10 điểm và 16 điều kiện "hoàn thiện" do nhóm tự đặt
+(không phải thang của học phần). Mức hoàn thiện = tổng điểm 16 điều kiện ÷ 16 (Đạt = 1, Một phần = 0,5, Chưa = 0),
+hiện là 6,5/16 = 41%. Điểm chất lượng hiện là 7,5/10.
