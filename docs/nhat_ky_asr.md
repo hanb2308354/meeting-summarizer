@@ -135,7 +135,10 @@ Mỗi lần có thay đổi mới thì ghi thêm vào mục "Nhật ký theo th�
 
 ## Trạng thái hiện tại (15/10)
 
-- Giai đoạn 7/13 (chọn model). Điểm 7,5/10, hoàn thiện khoảng 55% theo 16 điều kiện của kế hoạch.
+- Giai đoạn 7/13 (chọn model). Điểm chất lượng 7,5/10. Mức hoàn thiện 41% = 6,5/16 điểm điều kiện
+  (Đạt = 1, Một phần = 0,5, Chưa = 0; trước 15/10 ghi "khoảng 55%" là ước lượng, chưa theo công thức).
+- Thang điểm và 16 điều kiện do nhóm tự xây dựng (không phải thang chính thức của học phần);
+  các chỉ số bên trong (WER, khoảng tin cậy bootstrap, bộ kiểm tra giữ riêng) là cách đo chuẩn của ngành ASR.
 - Kiểm thử tự động: 58 ca ASR + 9 nhóm tiền xử lý, đều đạt.
 - Việc tiếp theo: xác nhận PhoWhisper bằng chạy thật; thử model lớn (large-v3, PhoWhisper-large);
   tạo bộ kiểm tra giữ riêng (≥ 100 đoạn mỗi bộ + họp thật tự ghi).
