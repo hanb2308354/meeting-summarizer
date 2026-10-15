@@ -652,6 +652,38 @@ def kiem_sua_loi(ten_bo, cau_hinh):
 # ======================================================================
 # CHƯƠNG TRÌNH CHÍNH
 # ======================================================================
+def loc_lai(ten_bo, cau_hinh):
+    """Chấm lại kết quả ĐÃ LƯU với bộ lọc [LOẠI] hiện tại, không chạy lại nhận dạng (vài giây).
+
+    Dựng lại chữ máy nghe từ "chi_tiet" (các đoạn model trả về), bỏ đoạn mà bộ lọc hiện tại loại.
+    Là ƯỚC TÍNH: không tái hiện được việc nghe lại lượt hỏng (cần chạy model). Ghi ra cấu hình
+    <cau_hinh>_loc_lai để so bằng --so-sanh; muốn số chính xác thì chạy lại thật với --chay-lai.
+    """
+    from types import SimpleNamespace
+    thu_muc = THU_MUC_BO / ten_bo
+    cu = doc_json(thu_muc / f"ket_qua__{cau_hinh}.json", {})
+    moi, thieu_chi_tiet, so_doan_bo = {}, 0, 0
+    for id_doan, kq in cu.items():
+        cac_doan = [c for c in kq.get("chi_tiet", []) if "text" in c]
+        if "loi" in kq or not cac_doan:
+            thieu_chi_tiet += "loi" not in kq
+            moi[id_doan] = kq
+            continue
+        giu, bi_loai = [], []
+        for c in cac_doan:
+            doan = SimpleNamespace(text=c["text"], start=c["start"], end=c["end"], avg_logprob=c["do_tin_cay"],
+                                   no_speech_prob=c["khong_co_tieng"], compression_ratio=c["ty_le_nen"], words=None)
+            ly_do = c["loai"] or asr.ly_do_loai(doan)
+            (bi_loai if ly_do else giu).append((c, ly_do))
+        so_doan_bo += sum(1 for c, _ in bi_loai if not c["loai"])
+        moi[id_doan] = dict(kq, du_doan=" ".join(c["text"] for c, _ in giu),
+                            bi_loai=[f"[LOẠI - {l}] [{c['start']:7.2f} --> {c['end']:7.2f}] {c['text']}"
+                                     for c, l in bi_loai])
+    ten_moi = f"{cau_hinh}_loc_lai"
+    ghi_json(moi, thu_muc / f"ket_qua__{ten_moi}.json")
+    return ten_moi, so_doan_bo, thieu_chi_tiet
+
+
 def chay_chi_doan(cac_bo, args, cau_hinh, tai_model):
     con_lai = list(dict.fromkeys(args.chi_doan))
     for ten_bo in cac_bo:
@@ -701,6 +733,8 @@ def main():
     parser.add_argument("--chi-doan", nargs="+", metavar="ID",
                         help="Chạy lại riêng các đoạn này với cấu hình đang chọn và in chi tiết để chẩn đoán "
                              "(không ghi đè kết quả đã lưu)")
+    parser.add_argument("--loc-lai", metavar="CAU_HINH",
+                        help="Không chạy ASR: chấm lại kết quả đã lưu với bộ lọc hiện tại (ước tính nhanh)")
     parser.add_argument("--so-sanh", nargs="+", metavar="CAU_HINH",
                         help="Không chạy ASR, chỉ so các cấu hình đã chạy "
                              "(vd: --so-sanh medium medium_khong_goi_y)")
@@ -727,6 +761,21 @@ def main():
             tep = THU_MUC_BAO_CAO / f"{ten_bo}__kiem_sua_loi.txt"
             tep.write_text(bao_cao + "\n", encoding="utf-8")
             print("\n" + bao_cao + f"\n\nĐã lưu: {asr.hien_thi(tep)}")
+        return
+
+    if args.loc_lai:
+        THU_MUC_BAO_CAO.mkdir(parents=True, exist_ok=True)
+        for ten_bo in cac_bo:
+            ten_moi, so_doan_bo, thieu = loc_lai(ten_bo, args.loc_lai)
+            cac_muc = doc_json(THU_MUC_BO / ten_bo / "nhan.json", [])
+            ket = doc_json(THU_MUC_BO / ten_bo / f"ket_qua__{ten_moi}.json", {})
+            bao_cao = viet_bao_cao(ten_bo, ten_moi, phan_tich(cac_muc, ket))
+            tep = THU_MUC_BAO_CAO / f"{ten_bo}__{ten_moi}.txt"
+            tep.write_text(bao_cao + "\n", encoding="utf-8")
+            print(f"\n=== {ten_bo}: bộ lọc hiện tại bỏ thêm {so_doan_bo} đoạn"
+                  + (f"; {thieu} kết quả chưa có chi tiết, giữ nguyên" if thieu else "") + " ===")
+            print(bao_cao.split("\n\nCÁC CẶP")[0])
+            print(f"Đã lưu: {asr.hien_thi(tep)}  |  so sánh: --so-sanh {args.loc_lai} {ten_moi}")
         return
 
     if args.so_sanh:

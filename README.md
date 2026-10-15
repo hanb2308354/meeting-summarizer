@@ -186,6 +186,8 @@ python src/asr/danh_gia_bo.py hop_va_dien_thoai --so-sanh medium medium_chi_cau_
                                                   # không chạy ASR: so các cấu hình đã chạy, kèm khoảng tin cậy 95%
                                                   # (khoảng chứa 0 = chênh lệch có thể chỉ do ngẫu nhiên, chưa đủ để đổi mặc định)
 python src/asr/danh_gia_bo.py --kiem-sua-loi      # không chạy ASR: bảng sửa lỗi của src/tien_xu_ly sửa đúng hay sai
+python src/asr/danh_gia_bo.py hop_va_dien_thoai --loc-lai medium_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot
+                                                  # không chạy ASR: chấm lại kết quả cũ với bộ lọc mới (ước tính nhanh)
 python src/asr/danh_gia_bo.py hop_va_dien_thoai --chi-doan hop_va_dien_thoai_0000186
                                                   # chạy lại 1 đoạn: lỗi theo vị trí, các lượt VAD, chỉ số từng đoạn model trả về
 ```

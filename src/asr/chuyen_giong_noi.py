@@ -138,6 +138,12 @@ SO_CUM_LUON_LOAI = 5               # chuỗi >= 5 từ khóa gợi ý liền nha
 # với no_speech_prob > 0.6 và avg_logprob <= -1.0, nên ở đây không lọc lại.)
 NGUONG_LAP_LAI = 2.4            # compression_ratio cao -> chữ bị lặp vòng
 SO_TU_TOI_THIEU_LOC_TRUNG = 4   # câu ngắn lặp lại ("Dạ.", "Ok.") là bình thường, không xóa
+# Tốc độ nói bất khả thi: người nói nhanh cũng chỉ ~7-8 tiếng/giây. Câu bịa có mốc thời gian dồn
+# vào một khoảnh khắc: đo được "một số khán giả đã tham gia vào đêm thi đấu tại việt nam"
+# 12 từ trong 0,08 giây (PhoWhisper), "Cảm ơn các bạn đã theo dõi" 6 từ trong 0,04 giây (medium),
+# trong khi lời thật cùng đoạn là 26 từ / 6,6 giây (4 từ/giây)
+TOC_DO_NOI_TOI_DA = 12.0        # từ/giây
+SO_TU_XET_TOC_DO = 3            # 1-2 từ ("Dạ.", "Ok.") thì mốc thời gian không đủ tin để xét
 
 # Tách câu
 DAU_KET_CAU = (".", "?", "!")
@@ -372,6 +378,9 @@ def ly_do_loai(doan):
     van_ban = doan.text.strip()
     if not van_ban:
         return "rỗng"
+    so_tu = len(van_ban.split())
+    if so_tu >= SO_TU_XET_TOC_DO and so_tu > TOC_DO_NOI_TOI_DA * max(doan.end - doan.start, 0.0):
+        return "tốc độ nói bất khả thi"
     # Chữ bị lặp vòng (vd: "cảm ơn cảm ơn cảm ơn..."). Tính lại tỉ lệ nén trên chữ
     # của RIÊNG đoạn này: doan.compression_ratio của faster-whisper tính cho cả cửa sổ
     # 30 giây, dùng nó sẽ loại oan cả những câu thật nằm chung cửa sổ.

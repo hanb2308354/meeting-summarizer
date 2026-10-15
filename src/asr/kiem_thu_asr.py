@@ -1165,6 +1165,46 @@ def khong_moc_thoi_gian_truyen_without_timestamps():
         return f"without_timestamps truyền sai: {da_goi}"
 
 
+@ca
+def loai_cau_bia_toc_do_noi_bat_kha_thi():
+    that = doan(chuoi_tu(0.0, "đề nghị các cơ quan soạn thảo cần có giải pháp khắc phục"))
+    bia = doan([tu(6.62, w) for w in "một số khán giả đã tham gia vào đêm thi đấu".split()])
+    bia = dataclasses.replace(bia, start=6.68, end=6.76)
+    da = dataclasses.replace(doan([tu(7.0, "Dạ.")]), start=7.0, end=7.02)   # 1 từ: không xét
+    with contextlib.redirect_stdout(io.StringIO()):
+        cac_tu, so_loai = asr.nhan_dang(ModelGia([that, bia, da]), np.zeros(SR, dtype=np.float32))
+    van_ban = " ".join(c["text"] for c in asr.tach_cau(cac_tu))
+    if "khán giả" in van_ban or "soạn thảo" not in van_ban or "Dạ" not in van_ban or so_loai != 1:
+        return f"lọc theo tốc độ nói sai: {van_ban!r}, loại {so_loai}"
+
+
+@ca
+def loc_lai_ket_qua_cu_khong_chay_model():
+    import danh_gia_bo as dg
+    goc = dg.THU_MUC_BO
+    chi_tiet = [{"start": 0.0, "end": 6.62, "text": "đề nghị các cơ quan soạn thảo", "do_tin_cay": 0.0,
+                 "khong_co_tieng": 0.0, "ty_le_nen": 1.1, "nhiet_do": 0.0, "loai": None},
+                {"start": 6.68, "end": 6.76, "text": "một số khán giả đã tham gia", "do_tin_cay": -0.56,
+                 "khong_co_tieng": 0.0, "ty_le_nen": 0.9, "nhiet_do": 0.0, "loai": None}]
+    kq = {"a": {"du_doan": "đề nghị các cơ quan soạn thảo một số khán giả đã tham gia", "bi_loai": [],
+                "do_dai": 6.8, "thoi_gian": 9, "chi_tiet": chi_tiet},
+          "b": {"du_doan": "cũ", "bi_loai": [], "do_dai": 3, "thoi_gian": 9}}
+    with tempfile.TemporaryDirectory() as tm:
+        thu_muc = Path(tm) / "bo"
+        thu_muc.mkdir()
+        (thu_muc / "ket_qua__x.json").write_text(json.dumps(kq, ensure_ascii=False), encoding="utf-8")
+        try:
+            dg.THU_MUC_BO = Path(tm)
+            ten, so_bo, thieu = dg.loc_lai("bo", "x")
+            moi = json.loads((thu_muc / f"ket_qua__{ten}.json").read_text(encoding="utf-8"))
+        finally:
+            dg.THU_MUC_BO = goc
+    if ten != "x_loc_lai" or so_bo != 1 or thieu != 1:
+        return f"đếm sai: {ten}, bỏ {so_bo}, thiếu chi tiết {thieu}"
+    if moi["a"]["du_doan"] != "đề nghị các cơ quan soạn thảo" or moi["b"]["du_doan"] != "cũ":
+        return f"chấm lại sai: {moi}"
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))
