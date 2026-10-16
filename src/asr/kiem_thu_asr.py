@@ -1224,6 +1224,17 @@ def tung_luot_gioi_han_so_token_theo_do_dai():
         asr.cat_luot_noi = goc
     if da_goi[:2] != [4 * asr.TOKEN_MOI_GIAY + asr.TOKEN_CONG_THEM, asr.TOKEN_TOI_DA]:
         return f"giới hạn token sai: {da_goi}"
+    # Giới hạn tự chọn (đo tốc độ PhoWhisper): 12 x 4 giây + 10
+    da_goi.clear()
+    try:
+        asr.cat_luot_noi = lambda song_am: [(0, 4 * SR)]
+        with contextlib.redirect_stdout(io.StringIO()):
+            asr.nhan_dang(ModelGhi([doan(chuoi_tu(0.0, "Bạn Lan làm slide nha mọi người ơi."))]),
+                          np.zeros(5 * SR, dtype=np.float32), tung_luot=True, token_moi_giay=12, token_cong_them=10)
+    finally:
+        asr.cat_luot_noi = goc
+    if da_goi[:1] != [58]:
+        return f"giới hạn token tự chọn sai: {da_goi}"
 
 
 @ca
@@ -1231,7 +1242,8 @@ def kieu_tinh_vao_ten_cau_hinh_va_truyen_cho_model():
     import danh_gia_bo as dg
     from types import SimpleNamespace
     co_ban = dict(model="medium", goi_y="cau_mo_dau", thu_lai="gioi_han", theo_khuc=False, tung_luot=True,
-                  khong_moc_thoi_gian=False, dem_im_lang=False, beam=5, khong_tien_xu_ly=False, loc_nhieu=False)
+                  khong_moc_thoi_gian=False, dem_im_lang=False, beam=5, khong_tien_xu_ly=False, loc_nhieu=False,
+                  token_moi_giay=asr.TOKEN_MOI_GIAY, token_cong_them=asr.TOKEN_CONG_THEM, so_luong=asr.SO_LUONG_CPU)
     ten_int8 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="int8"))
     ten_f32 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="float32"))
     if ten_int8 != "medium_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot" or ten_f32 != "medium_chi_cau_mo_dau_float32_gioi_han_thu_lai_tung_luot":
@@ -1371,6 +1383,79 @@ def json_dau_ra_qua_duoc_kiem_tra_cua_phan_tom_tat():
         return f"nội dung sai: {cac_cau}"
     if any(a["start"] > b["start"] for a, b in zip(cac_cau, cac_cau[1:])):
         return "các câu không theo thứ tự thời gian"
+
+
+@ca
+def loai_cau_ket_video_khi_model_tu_tin_giu_cau_hop_that():
+    """large-v3 bịa câu kết video với độ tin cậy cao (lọt bộ lọc cũ), có khi 2 câu nối nhau > 15 từ."""
+    bia = ["Hãy subscribe cho kênh La La School để không bỏ lỡ những video hấp dẫn.",
+           "Hãy đăng ký kênh để ủng hộ kênh của mình nhé.",
+           "Hãy subscribe cho kênh La La School để không bỏ lỡ những video hấp dẫn. "
+           "Hãy đăng ký kênh để ủng hộ kênh của mình nhé."]
+    for cau in bia:
+        if asr.ly_do_loai(doan(chuoi_tu(0, cau, buoc=0.3))) != "câu bịa kiểu YouTube":
+            return f"không loại: {cau}"
+    that = ["Tháng này mình cần tăng lượt subscribe cho kênh của khách hàng.",
+            "Khách hàng muốn người xem đăng ký kênh trước cuối tháng.",
+            "Bên mình làm video để không bỏ lỡ khách hàng tiềm năng."]
+    for cau in that:
+        if asr.ly_do_loai(doan(chuoi_tu(0, cau))):
+            return f"loại nhầm câu họp thật: {cau}"
+
+
+@ca
+def so_luong_cpu_truyen_cho_model_va_vao_ten_cau_hinh():
+    import danh_gia_bo as dg
+    from types import SimpleNamespace
+    co_ban = dict(model="models/phowhisper-medium-ct2", goi_y="cau_mo_dau", thu_lai="gioi_han", theo_khuc=False,
+                  tung_luot=True, khong_moc_thoi_gian=False, dem_im_lang=True, beam=5, khong_tien_xu_ly=False,
+                  loc_nhieu=False, kieu_tinh="int8")
+    ten = dg.ten_cau_hinh(SimpleNamespace(**co_ban, token_moi_giay=12, token_cong_them=10, so_luong=8))
+    if ten != "phowhisper-medium-ct2_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot_dem_lang_token12-10_luong8":
+        return f"tên cấu hình sai: {ten}"
+    da_tao = []
+    with tempfile.TemporaryDirectory() as tm:
+        ghi_wav(Path(tm) / "hop.wav", tieng_noi_gia(2))
+        asr.THU_MUC_KET_QUA = Path(tm) / "transcripts"
+        asr.WhisperModel = lambda *a, **k: (da_tao.append(k.get("cpu_threads")), ModelGia([]))[1]
+        sys.argv = ["chuyen_giong_noi.py", str(Path(tm) / "hop.wav"), "--so-luong", "6"]
+        with contextlib.redirect_stdout(io.StringIO()):
+            try:
+                asr.main()
+            except SystemExit:
+                pass
+    if da_tao != [6]:
+        return f"số luồng không truyền cho model: {da_tao}"
+
+
+@ca
+def thong_ke_token_tim_gioi_han_khong_cat_loi():
+    import danh_gia_bo as dg
+
+    class TachGia:   # mỗi từ = 1 token
+        def encode(self, chu):
+            return type("K", (), {"ids": chu.split()})()
+
+    chi_tiet = [{"luot": [0.0, 4.0]}, {"luot": [5.0, 6.0]},
+                {"start": 0.1, "end": 3.9, "text": " ".join(["chữ"] * 47), "loai": None},
+                {"start": 4.1, "end": 4.6, "text": "cảm ơn và hẹn gặp lại", "loai": "câu bịa kiểu YouTube"},
+                {"start": 5.1, "end": 5.9, "text": "dạ", "loai": None}]
+    goc = dg.THU_MUC_BO, dg.tim_tokenizer
+    with tempfile.TemporaryDirectory() as tm:
+        (Path(tm) / "bo").mkdir()
+        (Path(tm) / "bo" / "ket_qua__x.json").write_text(
+            json.dumps({"a": {"du_doan": "", "chi_tiet": chi_tiet}}, ensure_ascii=False), encoding="utf-8")
+        try:
+            dg.THU_MUC_BO, dg.tim_tokenizer = Path(tm), lambda m: TachGia()
+            bao_cao = dg.thong_ke_token(["bo"], "x", "medium")
+        finally:
+            dg.THU_MUC_BO, dg.tim_tokenizer = goc
+    # Lượt 1 (4 giây) cần 47 + 2 + 1 = 50 token: 8 x 4 + 10 = 42 cắt mất lời, 10 x 4 + 10 = 50 vừa đủ;
+    # câu bịa bị loại không tính
+    dong = {" ".join(l.split("|")[0].split()): l for l in bao_cao.splitlines() if "x giây +" in l and "|" in l}
+    if "| 1 lượt" not in " ".join(dong.get("8 x giây + 10", "").split()) \
+            or "| 0 lượt" not in " ".join(dong.get("10 x giây + 10", "").split()):
+        return f"thống kê sai:\n{bao_cao}"
 
 
 if __name__ == "__main__":

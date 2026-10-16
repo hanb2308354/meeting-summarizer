@@ -191,6 +191,8 @@ python src/asr/danh_gia_bo.py --kiem-sua-loi      # không chạy ASR: bảng s�
 python src/asr/danh_gia_bo.py hop_va_dien_thoai --loc-lai medium_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot
                                                   # không chạy ASR: chấm lại kết quả cũ với bộ lọc mới (ước tính nhanh)
 python src/asr/danh_gia_bo.py hop_va_dien_thoai --chi-doan hop_va_dien_thoai_0000186
+python src/asr/danh_gia_bo.py hop_va_dien_thoai --thong-ke-token CAU_HINH   # không chạy ASR: token lời thật mỗi lượt, giới hạn token sát nhất
+python src/asr/danh_gia_bo.py hop_va_dien_thoai --token-moi-giay 12 --token-cong-them 10 --so-luong 8   # đo tốc độ
                                                   # chạy lại 1 đoạn: lỗi theo vị trí, các lượt VAD, chỉ số từng đoạn model trả về
 ```
 

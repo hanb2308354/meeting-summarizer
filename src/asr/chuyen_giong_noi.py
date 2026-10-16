@@ -67,6 +67,7 @@ KIEU_TINH = "int8"
 # Đo: bản gốc transformers dừng đúng chỗ (43 token), faster-whisper sinh 132 token, kể cả khi tính float32.
 DEM_IM_LANG = False             # chưa làm mặc định: đang đo
 BEAM = 5                        # số nhánh dò chữ cùng lúc (beam search); 1 = dò tham lam, nhanh hơn
+SO_LUONG_CPU = 0                # số luồng CPU cho model; 0 = mặc định của faster-whisper (4 luồng)
 SO_MAU_CUA_SO = 30 * 16000       # 30 giây ở 16 kHz (cửa sổ của Whisper)
 TAN_SO_MAU = 16000              # Whisper làm việc ở 16 kHz, 1 kênh
 # Chế độ từng lượt: bỏ chữ có điểm giữa nằm sau cuối âm thanh thật của lượt quá LE_CUOI_LUOT giây.
@@ -141,7 +142,14 @@ TAP_TU_GOI_Y = {tu.strip().lower() for tu in TU_KHOA_GOI_Y.split(",")}
 # ("Phụ đề được thực hiện bởi cộng đồng Amara.org", "Vietsub by ..." là câu cuối phụ đề
 #  Whisper học thuộc. "phụ đề"/"vietsub" vẫn có thể là chuyện thật của team làm video,
 #  nên để ở loại NGHI.)
-MAU_CAU_BIA_CHAC = re.compile(r"ghiền mì gõ|thanks for watching|amara\.org", re.IGNORECASE)
+MAU_CAU_BIA_CHAC = re.compile(
+    r"ghiền mì gõ|thanks for watching|amara\.org|"
+    # Câu kết video large-v3 bịa ra khi tự tin (đo 15/10: 7/30 đoạn họp, lọt bộ lọc vì model không
+    # "nghi"). Chỉ bắt dạng kêu gọi kiểu YouTube; câu họp thật "tăng lượt subscribe cho kênh của
+    # khách hàng" không khớp
+    r"hãy (?:subscribe|đăng k[ýí]) (?:cho )?kênh|ủng hộ kênh của (?:mình|chúng tôi)|"
+    r"để không bỏ lỡ (?:những |các )?video",
+    re.IGNORECASE)
 MAU_CAU_BIA_NGHI = re.compile(
     r"subscribe|like và share|bấm chuông|đăng ký kênh|vietsub|"
     r"phụ đề (?:được thực hiện )?bởi|"
@@ -150,6 +158,7 @@ MAU_CAU_BIA_NGHI = re.compile(
     re.IGNORECASE,
 )
 SO_TU_TOI_DA_CAU_BIA = 15
+SO_TU_TOI_DA_CAU_BIA_CHAC = 30     # mẫu chắc chắn là bịa: model hay nối 2 câu kết video liền nhau
 NGUONG_NGHI_KHONG_CO_TIENG = 0.3   # no_speech_prob trên mức này: model nghi không có người nói
 NGUONG_NGHI_DO_TIN_CAY = -1.0      # avg_logprob dưới mức này: model không chắc chữ vừa ra
                                    # (-1.0 là ngưỡng "không chắc" của chính Whisper; để cao hơn
@@ -412,9 +421,9 @@ def ly_do_loai(doan):
     model_khong_chac = (doan.no_speech_prob > NGUONG_NGHI_KHONG_CO_TIENG
                         or doan.avg_logprob < NGUONG_NGHI_DO_TIN_CAY)
     # Câu bịa kiểu YouTube (chỉ xét đoạn ngắn)
+    if len(van_ban.split()) <= SO_TU_TOI_DA_CAU_BIA_CHAC and MAU_CAU_BIA_CHAC.search(van_ban):
+        return "câu bịa kiểu YouTube"
     if len(van_ban.split()) <= SO_TU_TOI_DA_CAU_BIA:
-        if MAU_CAU_BIA_CHAC.search(van_ban):
-            return "câu bịa kiểu YouTube"
         if MAU_CAU_BIA_NGHI.search(van_ban) and model_khong_chac:
             return "câu bịa kiểu YouTube"
     # Whisper đọc lại danh sách từ khóa gợi ý (hay gặp ở chỗ ồn hoặc im lặng)
@@ -469,7 +478,8 @@ def doi_moc_thoi_gian(doan, lech):
 
 
 def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, theo_khuc=False,
-              tung_luot=False, nhat_ky=None, khong_moc_thoi_gian=False, dem_im_lang=None, beam=None):
+              tung_luot=False, nhat_ky=None, khong_moc_thoi_gian=False, dem_im_lang=None, beam=None,
+              token_moi_giay=None, token_cong_them=None):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
     Các tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
@@ -486,12 +496,17 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
                từ vẫn có). Cần cho model tinh chỉnh không kèm mốc thời gian như PhoWhisper: để
                mặc định thì nó nghe đúng lời nhưng không biết dừng, bịa thêm câu ở cuối
                ("cảm ơn và hẹn gặp lại", "dự án thứ trung quốc...": thừa 151-217 từ / 30 đoạn)
+    token_moi_giay, token_cong_them: giới hạn số token model được sinh mỗi lượt
+               (= token_moi_giay x số giây + token_cong_them, tối đa TOKEN_TOI_DA); None = mặc định.
+               PhoWhisper không biết dừng nên luôn sinh tới giới hạn: giới hạn càng sát càng nhanh
     nhat_ky  : truyền vào một list để ghi chi tiết từng đoạn model trả về (mốc thời gian, độ tin cậy,
                xác suất không có tiếng, nhiệt độ đã dùng, có bị loại không) và các lượt VAD cắt ra.
                Dùng để chẩn đoán vì sao một đoạn bị sai (danh_gia_bo.py --chi-doan)
     """
     if dem_im_lang is None:
         dem_im_lang = DEM_IM_LANG
+    token_moi_giay = TOKEN_MOI_GIAY if token_moi_giay is None else token_moi_giay
+    token_cong_them = TOKEN_CONG_THEM if token_cong_them is None else token_cong_them
     if goi_y not in ("day_du", "tu_khoa", "cau_mo_dau", "khong"):
         raise ValueError(f"goi_y không hợp lệ: {goi_y!r}")
     dung_cau_mo_dau = goi_y in ("day_du", "cau_mo_dau")
@@ -507,7 +522,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
         def nghe_doan(tu, den, **doi):
             # Không chạy VAD lần nữa trong lượt: đã đo bật VAD ở đây thì TỆ HƠN cả hai bộ
             # (file dài 30,5% -> 31,8%, 30 đoạn ngắn 27,7% -> 29,3%) mà vẫn không hết bịa câu
-            so_token = int(TOKEN_MOI_GIAY * (den - tu) / TAN_SO_MAU) + TOKEN_CONG_THEM
+            so_token = int(token_moi_giay * (den - tu) / TAN_SO_MAU) + token_cong_them
             tham_so = dict(tham_so_chung, **them, condition_on_previous_text=False, vad_filter=False,
                            max_new_tokens=min(so_token, TOKEN_TOI_DA))
             tham_so.update(doi)
@@ -840,6 +855,9 @@ def main():
                         help="Bật giảm tạp âm (thử nghiệm, mặc định tắt vì có thể làm méo tiếng)")
     parser.add_argument("--khong-tien-xu-ly", action="store_true",
                         help="Tắt toàn bộ tiền xử lý (chỉ dùng để thử nghiệm so sánh)")
+    parser.add_argument("--so-luong", type=int, default=SO_LUONG_CPU,
+                        help="Số luồng CPU cho model (mặc định 0 = 4 luồng của faster-whisper); "
+                             "máy nhiều nhân đặt bằng số nhân thật để chạy nhanh hơn")
     parser.add_argument("--ghi-de", action="store_true",
                         help="Khi chạy cả thư mục: chạy lại cả những file đã có JSON")
     args = parser.parse_args()
@@ -878,7 +896,7 @@ def main():
     if loi_thu_muc_model(args.model):
         sys.exit(loi_thu_muc_model(args.model))
     try:
-        model = WhisperModel(args.model, device="cpu", compute_type=args.kieu_tinh)
+        model = WhisperModel(args.model, device="cpu", compute_type=args.kieu_tinh, cpu_threads=args.so_luong)
     except Exception as loi:
         sys.exit(
             f"Không tải được model {args.model}: {type(loi).__name__}: {loi}\n"

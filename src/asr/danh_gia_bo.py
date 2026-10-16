@@ -174,6 +174,10 @@ def ten_cau_hinh(args):
         ten += "_dem_lang"
     if args.beam != asr.BEAM:
         ten += f"_beam{args.beam}"
+    if (args.token_moi_giay, args.token_cong_them) != (asr.TOKEN_MOI_GIAY, asr.TOKEN_CONG_THEM):
+        ten += f"_token{args.token_moi_giay}-{args.token_cong_them}"
+    if args.so_luong != asr.SO_LUONG_CPU:   # chỉ đổi tốc độ, nhưng để riêng cho số "xử lý ...x" so được
+        ten += f"_luong{args.so_luong}"
     if args.khong_tien_xu_ly:
         ten += "_khong_tien_xu_ly"
     if args.loc_nhieu:
@@ -194,7 +198,8 @@ def nhan_dang_mot_doan(model, duong_dan, args):
         cac_tu, _ = asr.nhan_dang(model, song_am, goi_y=args.goi_y, nhiet_do=nhiet_do,
                                   theo_khuc=args.theo_khuc, tung_luot=args.tung_luot, nhat_ky=nhat_ky,
                                   khong_moc_thoi_gian=args.khong_moc_thoi_gian, dem_im_lang=args.dem_im_lang,
-                                  beam=args.beam)
+                                  beam=args.beam, token_moi_giay=args.token_moi_giay,
+                                  token_cong_them=args.token_cong_them)
     return {
         "du_doan": " ".join(cau["text"] for cau in asr.tach_cau(cac_tu)),
         "bi_loai": [d.strip() for d in dau_ra.getvalue().splitlines() if "[LOẠI" in d],
@@ -706,6 +711,57 @@ def loc_lai(ten_bo, cau_hinh):
     return ten_moi, so_doan_bo, thieu_chi_tiet
 
 
+CAC_GIOI_HAN_THU = [(20, 30), (16, 20), (14, 15), (12, 15), (12, 10), (10, 10), (8, 10)]
+
+
+def tim_tokenizer(model):
+    """tokenizer.json của Whisper (PhoWhisper dùng chung bộ tách token với Whisper đa ngôn ngữ)."""
+    cac_cho = [Path(model) / "tokenizer.json"] + sorted((THU_MUC_GOC / "models").glob("*/tokenizer.json"))
+    for tep in cac_cho:
+        if tep.exists():
+            from tokenizers import Tokenizer
+            return Tokenizer.from_file(str(tep))
+    return None
+
+
+def thong_ke_token(cac_bo, cau_hinh, model):
+    """Mỗi lượt nói: số token của lời được giữ (ước tính bằng chính bộ tách token của model) so với
+    giới hạn token. Lượt có lời thật nhiều token hơn giới hạn = giới hạn đó sẽ cắt mất lời.
+
+    Không chạy model. Lời được giữ đã bỏ câu bịa, nên đây là số token model CẦN sinh; phần
+    giới hạn còn dư là số token PhoWhisper (không biết dừng) sinh phí cho câu bịa."""
+    tach = tim_tokenizer(model)
+    d = [f"THỐNG KÊ TOKEN MỖI LƯỢT: cấu hình {cau_hinh}", "=" * 100]
+    if tach is None:
+        return "\n".join(d + ["Không tìm thấy tokenizer.json (cần thư mục models/<model>-ct2)."])
+    cac_luot = []   # (giây, số token lời thật, id đoạn)
+    for ten_bo in cac_bo:
+        for id_doan, kq in doc_json(THU_MUC_BO / ten_bo / f"ket_qua__{cau_hinh}.json", {}).items():
+            chi_tiet = kq.get("chi_tiet", [])
+            luot = [c["luot"] for c in chi_tiet if "luot" in c]
+            doan = [c for c in chi_tiet if "text" in c and not c["loai"]]
+            for a, b in luot:
+                trong = [c for c in doan if a <= (c["start"] + c["end"]) / 2 < b + asr.LE_CUOI_LUOT]
+                # +2 token mốc thời gian mỗi đoạn, +1 token kết thúc
+                so = sum(len(tach.encode(" " + c["text"]).ids) + 2 for c in trong) + 1
+                cac_luot.append((b - a, so, id_doan))
+    if not cac_luot:
+        return "\n".join(d + ["Chưa có kết quả có chi tiết lượt nói (chạy lại cấu hình này)."])
+    toc_do = sorted(so / max(g, 0.5) for g, so, _ in cac_luot)
+    phan_vi = lambda p: toc_do[min(len(toc_do) - 1, int(p * len(toc_do)))]
+    d.append(f"{len(cac_luot)} lượt, {sum(g for g, _, _ in cac_luot):.0f} giây. Token lời thật / giây: "
+             f"trung vị {phan_vi(0.5):.1f}, 95% {phan_vi(0.95):.1f}, 99% {phan_vi(0.99):.1f}, cao nhất {toc_do[-1]:.1f}")
+    d.append("\nGIỚI HẠN (token/giây x giây + cộng thêm) | lượt bị cắt lời | tổng token tối đa so với hiện tại")
+    goc = sum(min(int(asr.TOKEN_MOI_GIAY * g) + asr.TOKEN_CONG_THEM, asr.TOKEN_TOI_DA) for g, _, _ in cac_luot)
+    for a, b in CAC_GIOI_HAN_THU:
+        gioi_han = [min(int(a * g) + b, asr.TOKEN_TOI_DA) for g, _, _ in cac_luot]
+        bi_cat = [(g, so, i) for (g, so, i), gh in zip(cac_luot, gioi_han) if so > gh]
+        d.append(f"  {a:>2} x giây + {b:<3} | {len(bi_cat):>3} lượt | {sum(gioi_han) / goc:6.1%}"
+                 + (f"  vd {bi_cat[0][2]}: {bi_cat[0][0]:.1f}s cần {bi_cat[0][1]} token" if bi_cat else ""))
+    d.append("\nChọn giới hạn sát nhất mà 0 lượt bị cắt, rồi chạy thật để đo tốc độ và WER.")
+    return "\n".join(d)
+
+
 def chay_chi_doan(cac_bo, args, cau_hinh, tai_model):
     con_lai = list(dict.fromkeys(args.chi_doan))
     for ten_bo in cac_bo:
@@ -748,6 +804,16 @@ def main():
                         help="Nhận dạng cả file một lượt như trước (so sánh với chế độ từng lượt)")
     parser.add_argument("--beam", type=int, default=asr.BEAM,
                         help=f"Số nhánh dò chữ (mặc định {asr.BEAM}); 1 nhanh hơn nhiều")
+    parser.add_argument("--token-moi-giay", type=int, default=asr.TOKEN_MOI_GIAY,
+                        help=f"Giới hạn token mỗi lượt = số này x số giây + --token-cong-them "
+                             f"(mặc định {asr.TOKEN_MOI_GIAY})")
+    parser.add_argument("--token-cong-them", type=int, default=asr.TOKEN_CONG_THEM,
+                        help=f"(mặc định {asr.TOKEN_CONG_THEM})")
+    parser.add_argument("--so-luong", type=int, default=asr.SO_LUONG_CPU,
+                        help="Số luồng CPU cho model (mặc định 0 = 4 luồng của faster-whisper)")
+    parser.add_argument("--thong-ke-token", metavar="CAU_HINH",
+                        help="Không chạy ASR: từ kết quả đã lưu, đếm số token lời thật mỗi lượt và ước tính "
+                             "giới hạn token sát nhất mà không cắt mất lời")
     parser.add_argument("--dem-im-lang", action="store_true",
                         help="Đệm im lặng thật cho mỗi lượt đủ 30 giây (như thư viện gốc), thay vì đệm số 0 của faster-whisper")
     parser.add_argument("--khong-moc-thoi-gian", action="store_true",
@@ -806,6 +872,14 @@ def main():
             print(f"Đã lưu: {asr.hien_thi(tep)}  |  so sánh: --so-sanh {args.loc_lai} {ten_moi}")
         return
 
+    if args.thong_ke_token:
+        THU_MUC_BAO_CAO.mkdir(parents=True, exist_ok=True)
+        bao_cao = thong_ke_token(cac_bo, args.thong_ke_token, args.model)
+        tep = THU_MUC_BAO_CAO / f"thong_ke_token__{args.thong_ke_token}.txt"
+        tep.write_text(bao_cao + "\n", encoding="utf-8")
+        print("\n" + bao_cao + f"\n\nĐã lưu: {asr.hien_thi(tep)}")
+        return
+
     if args.so_sanh:
         THU_MUC_BAO_CAO.mkdir(parents=True, exist_ok=True)
         for ten_bo in cac_bo:
@@ -823,7 +897,8 @@ def main():
             if asr.loi_thu_muc_model(args.model):
                 sys.exit(asr.loi_thu_muc_model(args.model))
             try:
-                model.append(asr.WhisperModel(args.model, device="cpu", compute_type=args.kieu_tinh))
+                model.append(asr.WhisperModel(args.model, device="cpu", compute_type=args.kieu_tinh,
+                                              cpu_threads=args.so_luong))
             except Exception as loi:
                 sys.exit(f"Không tải được model {args.model}: {type(loi).__name__}: {loi}")
         return model[0]

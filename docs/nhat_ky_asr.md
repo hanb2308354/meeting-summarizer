@@ -24,7 +24,8 @@ từng lượt nói · lượt nào ra quá ít chữ thì nhận dạng lại �
 
 **Đang làm:** chọn model tốt nhất. PhoWhisper (bản Whisper được huấn luyện thêm cho tiếng Việt) hứa hẹn
 giảm lỗi họp còn ~21% và giọng miền còn ~5% (đã xác nhận bằng chạy thật, chưa chắc về thống kê), nhưng chạy qua
-faster-whisper thì không biết dừng, nối câu bịa sau lời thật nên chậm ~3 lần. Đang thử cắt câu bịa bằng mốc thời gian.
+faster-whisper thì không biết dừng, nối câu bịa sau lời thật. Đã cắt được câu bịa bằng mốc thời gian (đệm im lặng +
+bỏ chữ sau cuối lượt): họp 20,4% — tốt hơn medium thật sự. Còn chậm khoảng 2,7 lần medium, đang tăng tốc.
 
 **Cách đo dùng xuyên suốt:**
 - Không tự thu âm mà dùng bộ dữ liệu công khai có sẵn lời gốc: 30–100 đoạn họp/hội nghị/gọi điện, 30–100 đoạn giọng
@@ -165,6 +166,31 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
   Bài học: không chép tay bộ nhớ đệm model; xóa rồi để chương trình tự tải lại vào chỗ mới.
   Đã thêm báo lỗi rõ ràng khi thiếu thư mục model hoặc bộ nhớ đệm hỏng.
 
+- **Kết quả bundle 28 (đo 15–16/10, 30 + 30 đoạn và 4 file dài 5 phút, khoảng tin cậy 95% so với medium):**
+
+  | Cấu hình | Họp/gọi điện | Giọng miền | File dài | Tốc độ (đoạn ngắn) | Kết luận |
+  |---|---|---|---|---|---|
+  | medium (mặc định) | 25,4% | 8,2% | 29,9% | 3,7x / 4,6x | mốc so sánh |
+  | medium + đệm im lặng | 25,6% | 8,4% | 32,1% | 3,8x / 4,7x | không có ích → **bỏ** (1 đoạn thử trước đó là may) |
+  | medium + beam 1 | 27,4% (TỆ HƠN THẬT) | 9,3% (TỆ HƠN THẬT) | — | 3,6x / 4,1x | nhanh hơn rất ít mà tệ hơn → **bỏ** |
+  | PhoWhisper | 21,2% | 5,2% | — | 11,0x / 13,3x | |
+  | **PhoWhisper + đệm im lặng + luật cắt** | **20,4% (TỐT HƠN THẬT, −5,0 [−8,6; −1,0])** | 5,6% (−2,5, chưa chắc) | — | 10,2x / 12,6x | **chính xác nhất** |
+  | PhoWhisper + đệm + beam 1 | 21,7% | 6,0% | 28,1% (−1,8, tốt hơn ở 4/4 file) | 10,0x / 10,0x | tệ hơn chút, nhanh hơn ít → không dùng beam 1 |
+  | large-v3 | 32,7% | 6,7% | — | 8,0x / 9,0x | bịa câu kết video rất tự tin (7/30 đoạn) → **bỏ** |
+  | PhoWhisper-large | 22,6% | 7,8% | — | 12,1x / 17,1x | không hơn bản medium, chậm hơn → **bỏ** |
+
+- Luật cắt chữ ngoài âm thanh thật: bỏ 200 khúc trên mọi lần chạy; các khúc xem được đều là câu bịa (câu kết video,
+  "cảm ơn và hẹn gặp lại", chuỗi lặp "a b b b..."). Với medium chỉ cắt 2 khúc ở đoạn ngắn ("mọi người.",
+  "đã theo dõi.") — cũng là câu bịa. Chưa thấy cắt nhầm lời thật.
+- **Kết luận chọn model (điều kiện A1 đạt):** đã thử đủ 5 model; PhoWhisper-medium + đệm im lặng là bản duy nhất
+  TỐT HƠN THẬT medium, không model nào hơn nó. Model lớn hơn không giúp gì trên tiếng Việt ở đây.
+- **Còn vướng: tốc độ.** PhoWhisper không bao giờ tự dừng nên lượt nào cũng sinh tới giới hạn token
+  (20 token/giây + 30), phần lớn là chữ bịa rồi bị cắt. File họp 5 phút mất khoảng 38 phút. Chưa đổi mặc định
+  cho tới khi đo xong cách tăng tốc (bundle 29): giới hạn token sát hơn và dùng nhiều luồng CPU hơn.
+- Bổ sung bộ lọc (bundle 29): các câu kêu gọi kiểu YouTube ("Hãy subscribe cho kênh...", "ủng hộ kênh của mình",
+  "để không bỏ lỡ những video") luôn bị loại kể cả khi model tự tin, nối 2 câu tới 30 từ vẫn bắt được; câu họp thật
+  "tăng lượt subscribe cho kênh của khách hàng" vẫn giữ (có ca kiểm thử).
+
 ---
 
 ## 4. Phạm vi đã thu hẹp
@@ -177,7 +203,8 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 ---
 
 ## 5. Việc tiếp theo
-1. Xác nhận PhoWhisper bằng chạy thật; thử thêm model lớn hơn (large-v3, PhoWhisper-large).
+1. Tăng tốc PhoWhisper (giới hạn token theo số đo, số luồng CPU) rồi đổi mặc định sang PhoWhisper + đệm im lặng,
+   giữ medium làm chế độ nhanh.
 2. Tạo bộ kiểm tra giữ riêng (≥ 100 đoạn mỗi bộ, chưa từng dùng để chỉnh) + 15–20 phút họp thật tự ghi.
 3. Bật/tắt từng thành phần để chắc thành phần nào cũng có ích.
 4. Tăng tốc độ, thử file 2 giờ, thêm luật sửa lỗi từ các cặp hay nghe nhầm.
@@ -204,7 +231,8 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 | 14–15/10 | So model; lọc câu bịa theo tốc độ nói; giới hạn số chữ mỗi lượt |
 | 15/10 | Tìm nguyên nhân PhoWhisper bịa (int8, đệm, mốc thời gian, gợi ý, beam): dừng, ghi là giới hạn thư viện |
 | 15/10 | Luật bỏ chữ ngoài âm thanh thật; tài liệu định dạng đầu ra; kiểm thử tự chạy trên GitHub |
+| 15–16/10 | Đo 8 cấu hình / 5 model qua đêm: PhoWhisper + đệm im lặng chính xác nhất (TỐT HƠN THẬT), chốt A1; còn tốc độ |
 
 **Về điểm số trong các báo cáo tiến độ:** thang 10 điểm và 16 điều kiện "hoàn thiện" do nhóm tự đặt
 (không phải thang của học phần). Mức hoàn thiện = tổng điểm 16 điều kiện ÷ 16 (Đạt = 1, Một phần = 0,5, Chưa = 0),
-hiện là 7/16 ≈ 44% (E1 đạt). Điểm chất lượng hiện là 7,75/10.
+hiện là 7,5/16 ≈ 47% (E1, A1 đạt). Điểm chất lượng hiện là 7,75/10.
