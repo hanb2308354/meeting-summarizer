@@ -144,6 +144,8 @@ python src/nlp/kiem_cau.py
 
 Định dạng file JSON đầu ra (hợp đồng với phần tóm tắt): xem `docs/dinh_dang_dau_ra.md`.
 
+**Hai chế độ** (`--che-do`): `chinh_xac` (mặc định) dùng PhoWhisper-medium của VinAI + đệm im lặng: lỗi họp 20,4% so với 25,4% của Whisper medium (tốt hơn thật, khoảng tin cậy 95%), giọng miền 5,6% so với 8,2%, nhưng chậm hơn khoảng 2,7 lần. `nhanh` dùng Whisper medium. Model PhoWhisper phải chuyển đổi một lần (`python src/asr/chuyen_doi_model.py`, cần `pip install torch transformers`); chưa có thì chương trình tự dùng chế độ nhanh và báo cách tạo.
+
 Lần đầu chạy cần **internet** để tải model `medium` (khoảng 1,5 GB); các lần sau dùng bản đã lưu trên máy.
 
 ```powershell

@@ -711,6 +711,49 @@ def loc_lai(ten_bo, cau_hinh):
     return ten_moi, so_doan_bo, thieu_chi_tiet
 
 
+class DoThoiGian:
+    """Bọc model CTranslate2 bên trong faster-whisper: đếm số lần gọi và thời gian từng bước
+    (encode = nghe cửa sổ 30 giây, generate = sinh chữ, kể cả các lần thử lại ở nhiệt độ cao hơn,
+    align = dò mốc thời gian theo từ). Phần còn lại là tính phổ âm thanh, VAD, lọc, tách câu."""
+
+    BUOC = ("encode", "generate", "align")
+
+    def __init__(self, goc):
+        self._goc = goc
+        self.so_lan = Counter()
+        self.giay = Counter()
+        self.so_token = 0
+
+    def __getattr__(self, ten):
+        thuoc_tinh = getattr(self._goc, ten)
+        if ten not in self.BUOC:
+            return thuoc_tinh
+
+        def bao(*a, **k):
+            bat_dau = time.time()
+            kq = thuoc_tinh(*a, **k)
+            self.giay[ten] += time.time() - bat_dau
+            self.so_lan[ten] += 1
+            if ten == "generate":
+                self.so_token += sum(len(r.sequences_ids[0]) for r in kq if getattr(r, "sequences_ids", None))
+            return kq
+        return bao
+
+    def bao_cao(self, tong_giay, so_giay_am_thanh, so_lan_nghe):
+        d = [f"\nTHỜI GIAN TỪNG BƯỚC: {tong_giay:.0f}s cho {so_giay_am_thanh:.0f}s âm thanh "
+             f"({tong_giay / max(so_giay_am_thanh, 1):.1f}x), {so_lan_nghe} lần gọi nhận dạng (lượt + nghe lại)"]
+        for ten, y_nghia in (("encode", "nghe cửa sổ 30 giây"), ("generate", "sinh chữ (gồm thử lại nhiệt độ)"),
+                             ("align", "dò mốc thời gian theo từ")):
+            d.append(f"  {ten:<9} {y_nghia:<32} {self.so_lan[ten]:>4} lần  {self.giay[ten]:7.1f}s "
+                     f"({self.giay[ten] / max(tong_giay, 1e-9):5.1%})")
+        con_lai = tong_giay - sum(self.giay.values())
+        d.append(f"  {'khác':<9} {'phổ âm thanh, VAD, lọc, tách câu':<32} {'':>4}       {con_lai:7.1f}s "
+                 f"({con_lai / max(tong_giay, 1e-9):5.1%})")
+        d.append(f"  token đã sinh: {self.so_token} | lần sinh chữ / lần gọi nhận dạng: "
+                 f"{self.so_lan['generate'] / max(so_lan_nghe, 1):.2f}  ← > 1 là có thử lại ở nhiệt độ cao hơn")
+        return "\n".join(d)
+
+
 CAC_GIOI_HAN_THU = [(20, 30), (16, 20), (14, 15), (12, 15), (12, 10), (10, 10), (8, 10)]
 
 
@@ -764,6 +807,7 @@ def thong_ke_token(cac_bo, cau_hinh, model):
 
 def chay_chi_doan(cac_bo, args, cau_hinh, tai_model):
     con_lai = list(dict.fromkeys(args.chi_doan))
+    so_giay, thoi_gian = 0.0, 0.0
     for ten_bo in cac_bo:
         thu_muc = THU_MUC_BO / ten_bo
         nhan = {m["id"]: m for m in doc_json(thu_muc / "nhan.json", [])}
@@ -776,12 +820,15 @@ def chay_chi_doan(cac_bo, args, cau_hinh, tai_model):
                 kq = nhan_dang_mot_doan(tai_model(), thu_muc / muc["tep"], args)
             except asr.LoiDauVao as loi:
                 kq = {"loi": str(loi)}
+            so_giay += kq.get("do_dai", 0.0)
+            thoi_gian += kq.get("thoi_gian", 0.0)
             bao_cao = bao_cao_chi_doan(ten_bo, cau_hinh, muc, kq, ket_cu.get(id_doan))
             tep = THU_MUC_BAO_CAO / f"{id_doan}__{cau_hinh}__chi_tiet.txt"
             tep.write_text(bao_cao + "\n", encoding="utf-8")
             print("\n" + bao_cao + f"\n\nĐã lưu: {asr.hien_thi(tep)}\n")
     if con_lai:
         print(f"Không tìm thấy đoạn: {', '.join(con_lai)} (trong các bộ {', '.join(cac_bo)})")
+    return so_giay, thoi_gian
 
 
 def main():
@@ -811,6 +858,8 @@ def main():
                         help=f"(mặc định {asr.TOKEN_CONG_THEM})")
     parser.add_argument("--so-luong", type=int, default=asr.SO_LUONG_CPU,
                         help="Số luồng CPU cho model (mặc định 0 = 4 luồng của faster-whisper)")
+    parser.add_argument("--do-thoi-gian", action="store_true",
+                        help="Dùng với --chi-doan: đo thời gian từng bước (nghe, sinh chữ, dò mốc thời gian)")
     parser.add_argument("--thong-ke-token", metavar="CAU_HINH",
                         help="Không chạy ASR: từ kết quả đã lưu, đếm số token lời thật mỗi lượt và ước tính "
                              "giới hạn token sát nhất mà không cắt mất lời")
@@ -899,6 +948,14 @@ def main():
             try:
                 model.append(asr.WhisperModel(args.model, device="cpu", compute_type=args.kieu_tinh,
                                               cpu_threads=args.so_luong))
+                if args.do_thoi_gian:
+                    model[0].model = DoThoiGian(model[0].model)
+                    goc_transcribe = model[0].transcribe
+
+                    def dem_transcribe(*a, **k):
+                        model[0].so_lan_nghe = getattr(model[0], "so_lan_nghe", 0) + 1
+                        return goc_transcribe(*a, **k)
+                    model[0].transcribe = dem_transcribe
             except Exception as loi:
                 sys.exit(f"Không tải được model {args.model}: {type(loi).__name__}: {loi}")
         return model[0]
@@ -906,7 +963,9 @@ def main():
     cau_hinh = ten_cau_hinh(args)
     THU_MUC_BAO_CAO.mkdir(parents=True, exist_ok=True)
     if args.chi_doan:
-        chay_chi_doan(cac_bo, args, cau_hinh, tai_model)
+        so_giay, thoi_gian = chay_chi_doan(cac_bo, args, cau_hinh, tai_model)
+        if args.do_thoi_gian and model:
+            print(model[0].model.bao_cao(thoi_gian, so_giay, getattr(model[0], "so_lan_nghe", 0)))
         return
     tom_tat = []
     for ten_bo in cac_bo:

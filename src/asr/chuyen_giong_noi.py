@@ -56,6 +56,12 @@ TEN_MODEL = "medium"            # Đã chốt qua thử nghiệm (xem thu_faster
 #   4 file dài x 5 phút: 36,4% -> 29,9% (mất chữ 841 -> 507 từ), khoảng tin cậy 95% [-13,9; -0,1]
 #   30 đoạn ngắn: 25,5% -> 25,4% (bằng nhau, [-0,8; +0,5]); đổi lại chậm hơn ở file dài (1,8x -> 3,0x)
 TUNG_LUOT_MAC_DINH = True
+# Hai chế độ của chuyen_giong_noi.py (--che-do). Đo 16/10 trên 30 + 30 đoạn, khoảng tin cậy 95% so với medium:
+#   chinh_xac: PhoWhisper-medium (VinAI, tinh chỉnh cho tiếng Việt) + đệm im lặng thật + cắt chữ ngoài âm thanh:
+#              họp 25,4% -> 20,4% (TỐT HƠN THẬT [-8,6; -1,0]), giọng miền 8,2% -> 5,6%; chậm hơn ~2,7 lần
+#   nhanh    : Whisper medium (đệm im lặng không giúp gì cho medium nên tắt)
+# Model chính xác phải tự chuyển đổi một lần (src/asr/chuyen_doi_model.py); chưa có thì tự dùng chế độ nhanh.
+CHE_DO_MAC_DINH = "chinh_xac"
 # Kiểu tính của model trên CPU. int8: nhanh, đủ chính xác với Whisper gốc. Model tinh chỉnh
 # (PhoWhisper) bản int8 không biết dừng, nối câu bịa sau lời thật, trong khi bản gốc (transformers,
 # float32) dừng đúng chỗ: đang đo float32 (--kieu-tinh trong danh_gia_bo.py)
@@ -65,9 +71,21 @@ KIEU_TINH = "int8"
 # im lặng (im lặng thật là -1,12, tiếng nói ~0,9): Whisper gốc chịu được, nhưng PhoWhisper (huấn luyện với
 # cách đệm im lặng thật của thư viện gốc) nghe "tiếng ồn" đó rồi nói tiếp, nối câu bịa sau lời thật.
 # Đo: bản gốc transformers dừng đúng chỗ (43 token), faster-whisper sinh 132 token, kể cả khi tính float32.
-DEM_IM_LANG = False             # chưa làm mặc định: đang đo
+DEM_IM_LANG = False             # mặc định của nhan_dang(); chế độ "chinh_xac" bật (xem CHE_DO)
 BEAM = 5                        # số nhánh dò chữ cùng lúc (beam search); 1 = dò tham lam, nhanh hơn
-SO_LUONG_CPU = 0                # số luồng CPU cho model; 0 = mặc định của faster-whisper (4 luồng)
+
+
+def so_nhan_that():
+    """Số nhân CPU thật (không tính siêu phân luồng). Đo trên máy 2 nhân / 4 luồng: chạy 2 luồng nhanh
+    hơn 4 luồng (mặc định của faster-whisper) 16-18%, chữ ra y hệt. 0 = không biết, để thư viện tự chọn."""
+    try:
+        import psutil
+        return psutil.cpu_count(logical=False) or 0
+    except Exception:
+        return 0
+
+
+SO_LUONG_CPU = so_nhan_that()   # số luồng CPU cho model = số nhân thật
 SO_MAU_CUA_SO = 30 * 16000       # 30 giây ở 16 kHz (cửa sổ của Whisper)
 TAN_SO_MAU = 16000              # Whisper làm việc ở 16 kHz, 1 kênh
 # Chế độ từng lượt: bỏ chữ có điểm giữa nằm sau cuối âm thanh thật của lượt quá LE_CUOI_LUOT giây.
@@ -78,6 +96,20 @@ LE_CUOI_LUOT = 0.5
 # nên chạy từ thư mục nào JSON cũng được lưu đúng chỗ phần NLP đọc.
 THU_MUC_GOC = Path(__file__).resolve().parents[2]
 THU_MUC_KET_QUA = THU_MUC_GOC / "data" / "transcripts"
+MODEL_CHINH_XAC = THU_MUC_GOC / "models" / "phowhisper-medium-ct2"
+
+
+def chon_che_do(che_do, model=None):
+    """Trả về (model dùng, có đệm im lặng không, cảnh báo hoặc None)."""
+    if che_do == "chinh_xac":
+        if model:
+            return model, True, None
+        if (Path(MODEL_CHINH_XAC) / "model.bin").exists():
+            return str(MODEL_CHINH_XAC), True, None
+        return TEN_MODEL, False, (
+            f"Chưa có model chính xác ({hien_thi(Path(MODEL_CHINH_XAC))}), tạm dùng chế độ nhanh ({TEN_MODEL}). "
+            "Tạo model một lần: python src/asr/chuyen_doi_model.py")
+    return model or TEN_MODEL, False, None
 DUOI_HO_TRO = {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac", ".wma", ".webm", ".mp4"}
 
 # Câu mở đầu (initial_prompt): chỉ có tác dụng ở ~30 giây đầu, giúp model vào đúng
@@ -785,7 +817,7 @@ def luu_json(ket_qua, duong_dan_am_thanh):
 # ======================================================================
 # CHƯƠNG TRÌNH CHÍNH
 # ======================================================================
-def xu_ly_mot_file(model, duong_dan, loc_nhieu, tien_xu_ly_bat):
+def xu_ly_mot_file(model, duong_dan, loc_nhieu, tien_xu_ly_bat, dem_im_lang=False):
     print(f"\n=== {duong_dan.name} ===")
     bat_dau = time.time()
 
@@ -802,7 +834,7 @@ def xu_ly_mot_file(model, duong_dan, loc_nhieu, tien_xu_ly_bat):
         print("Tiền xử lý: tắt")
 
     print("Đang nhận dạng giọng nói, vui lòng chờ...")
-    cac_tu, so_bi_loai = nhan_dang(model, song_am, tung_luot=TUNG_LUOT_MAC_DINH)
+    cac_tu, so_bi_loai = nhan_dang(model, song_am, tung_luot=TUNG_LUOT_MAC_DINH, dem_im_lang=dem_im_lang)
     ket_qua = tach_cau(cac_tu)
     if not ket_qua:
         # Không ghi file rỗng: src/tien_xu_ly/doc_transcript.py coi danh sách rỗng là lỗi
@@ -848,7 +880,11 @@ def main():
         description="Chuyển file ghi âm cuộc họp thành transcript JSON."
     )
     parser.add_argument("duong_dan", nargs="+", help="File ghi âm hoặc thư mục chứa file ghi âm")
-    parser.add_argument("--model", default=TEN_MODEL, help=f"Model Whisper (mặc định: {TEN_MODEL})")
+    parser.add_argument("--che-do", choices=["chinh_xac", "nhanh"], default=CHE_DO_MAC_DINH,
+                        help="chinh_xac (mặc định): PhoWhisper, lỗi ít hơn, chậm hơn ~2,7 lần; "
+                             f"nhanh: Whisper {TEN_MODEL}")
+    parser.add_argument("--model", default=None,
+                        help="Đổi model (tên model của faster-whisper hoặc thư mục model CTranslate2)")
     parser.add_argument("--kieu-tinh", default=KIEU_TINH, choices=["int8", "int8_float32", "float32"],
                         help=f"Kiểu tính trên CPU (mặc định {KIEU_TINH})")
     parser.add_argument("--loc-nhieu", action="store_true",
@@ -856,11 +892,11 @@ def main():
     parser.add_argument("--khong-tien-xu-ly", action="store_true",
                         help="Tắt toàn bộ tiền xử lý (chỉ dùng để thử nghiệm so sánh)")
     parser.add_argument("--so-luong", type=int, default=SO_LUONG_CPU,
-                        help="Số luồng CPU cho model (mặc định 0 = 4 luồng của faster-whisper); "
-                             "máy nhiều nhân đặt bằng số nhân thật để chạy nhanh hơn")
+                        help=f"Số luồng CPU cho model (mặc định = số nhân thật của máy: {SO_LUONG_CPU})")
     parser.add_argument("--ghi-de", action="store_true",
                         help="Khi chạy cả thư mục: chạy lại cả những file đã có JSON")
     args = parser.parse_args()
+    args.model, dem_im_lang, canh_bao = chon_che_do(args.che_do, args.model)
 
     cac_file = liet_ke_file(args.duong_dan, args.ghi_de)
 
@@ -891,6 +927,8 @@ def main():
         ten_da_gap[f.stem.lower()] = f
 
     # Tải model MỘT lần cho tất cả các file
+    if canh_bao:
+        print(f"  ⚠ {canh_bao}")
     print(f"Đang tải model {args.model}...")
     bat_dau = time.time()
     if loi_thu_muc_model(args.model):
@@ -907,7 +945,7 @@ def main():
 
     for duong_dan in hop_le:
         try:
-            xu_ly_mot_file(model, duong_dan, args.loc_nhieu, not args.khong_tien_xu_ly)
+            xu_ly_mot_file(model, duong_dan, args.loc_nhieu, not args.khong_tien_xu_ly, dem_im_lang)
         except LoiDauVao as loi:
             so_loi += 1
             print(f"  ✗ {loi}")

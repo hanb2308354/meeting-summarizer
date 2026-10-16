@@ -19,8 +19,8 @@ File ghi âm → Làm sạch âm thanh → Nhận dạng giọng nói (Whisper) 
 | Giọng các miền | 8,3% | 8,2% |
 | Model bị kẹt (chạy hàng trăm giây cho vài giây âm thanh) | có | 0 |
 
-**Cấu hình đang dùng:** model Whisper `medium` chạy trên CPU · chỉ dùng câu gợi ý mở đầu · nhận dạng
-từng lượt nói · lượt nào ra quá ít chữ thì nhận dạng lại · lọc câu bịa (kể cả câu có tốc độ nói bất khả thi).
+**Cấu hình đang dùng:** chế độ chính xác = PhoWhisper-medium + đệm im lặng (chế độ nhanh = Whisper `medium`),
+CPU, số luồng = số nhân thật · chỉ dùng câu gợi ý mở đầu · nhận dạng từng lượt nói · lượt nào ra quá ít chữ thì nhận dạng lại · lọc câu bịa (kể cả câu có tốc độ nói bất khả thi).
 
 **Đang làm:** chọn model tốt nhất. PhoWhisper (bản Whisper được huấn luyện thêm cho tiếng Việt) hứa hẹn
 giảm lỗi họp còn ~21% và giọng miền còn ~5% (đã xác nhận bằng chạy thật, chưa chắc về thống kê), nhưng chạy qua
@@ -191,6 +191,29 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
   "để không bỏ lỡ những video") luôn bị loại kể cả khi model tự tin, nối 2 câu tới 30 từ vẫn bắt được; câu họp thật
   "tăng lượt subscribe cho kênh của khách hàng" vẫn giữ (có ca kiểm thử).
 
+- **Kết quả bundle 29 (16/10) — tăng tốc PhoWhisper:**
+
+  | Thử | Họp/gọi điện | Giọng miền | Tốc độ | Kết luận |
+  |---|---|---|---|---|
+  | PhoWhisper + đệm, giới hạn token cũ (20/giây + 30) | 20,4% | 5,6% | 10,2x / 12,6x | mốc |
+  | giới hạn 14/giây + 15 | 20,9% | 7,5% | 10,2x / 12,7x | không nhanh hơn, tệ hơn |
+  | giới hạn 12/giây + 10 | 25,2% | 12,3% | 10,1x / 12,2x | cắt mất lời → **bỏ** |
+  | giới hạn 10/giây + 10 | 26,8% | 18,3% | 10,0x / 12,9x | cắt mất lời → **bỏ** |
+  | 2 luồng CPU thay vì 4 (máy Hân: 2 nhân thật, 4 luồng) — 10 + 10 đoạn | y hệt | y hệt | medium 3,9x → 3,3x; PhoWhisper 11,8x → 9,7x | **nhanh hơn 16–18%, giữ** |
+
+  - Giả thuyết "PhoWhisper chậm vì luôn sinh chữ tới giới hạn token" **sai**: siết giới hạn không nhanh hơn chút nào,
+    lại cắt mất lời (dù thống kê token lời thật — trung vị 8,1, cao nhất 12,8 token/giây — cho thấy giới hạn 12 lẽ ra đủ;
+    cơ chế chưa rõ, không theo đuổi vì không có lợi về tốc độ). Giữ giới hạn cũ.
+  - Số luồng: đặt bằng số nhân thật (tự đếm bằng psutil) là mặc định mới.
+  - Bộ lọc câu kết video mới, chấm lại trên kết quả cũ: large-v3 bỏ thêm 7 đoạn bịa (32,7% → 32,2%), medium và
+    PhoWhisper bỏ thêm 0 đoạn → không loại nhầm lời thật.
+  - Máy chỉ có 2 nhân: ngay cả medium cũng mất ~3,3 lần độ dài ghi âm. Điều kiện tốc độ C1 (≤ 1,5x) có thể là giới
+    hạn phần cứng; cần đo chỗ tốn thời gian thật (bundle 30: đo thời gian từng bước) và một model nhỏ làm chế độ nhanh.
+- **Đổi mặc định (bundle 30):** `chuyen_giong_noi.py` có 2 chế độ: `chinh_xac` (mặc định, PhoWhisper + đệm im lặng)
+  và `nhanh` (medium). Căn cứ: PhoWhisper + đệm TỐT HƠN THẬT medium ở bộ họp, không bộ nào tệ hơn thật (đúng quy
+  tắc đổi mặc định). Chưa có model PhoWhisper đã chuyển đổi thì tự lùi về medium và báo cách tạo. Còn phải xác nhận
+  trên file dài 5 phút với đúng cấu hình mặc định (bundle 30); nếu tệ hơn thì quay lại medium.
+
 ---
 
 ## 4. Phạm vi đã thu hẹp
@@ -203,8 +226,8 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 ---
 
 ## 5. Việc tiếp theo
-1. Tăng tốc PhoWhisper (giới hạn token theo số đo, số luồng CPU) rồi đổi mặc định sang PhoWhisper + đệm im lặng,
-   giữ medium làm chế độ nhanh.
+1. Xác nhận chế độ chính xác trên file dài; đo thời gian từng bước để biết PhoWhisper chậm ở đâu; thử model nhỏ
+   (small) làm chế độ nhanh cho máy yếu.
 2. Tạo bộ kiểm tra giữ riêng (≥ 100 đoạn mỗi bộ, chưa từng dùng để chỉnh) + 15–20 phút họp thật tự ghi.
 3. Bật/tắt từng thành phần để chắc thành phần nào cũng có ích.
 4. Tăng tốc độ, thử file 2 giờ, thêm luật sửa lỗi từ các cặp hay nghe nhầm.
@@ -232,6 +255,7 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 | 15/10 | Tìm nguyên nhân PhoWhisper bịa (int8, đệm, mốc thời gian, gợi ý, beam): dừng, ghi là giới hạn thư viện |
 | 15/10 | Luật bỏ chữ ngoài âm thanh thật; tài liệu định dạng đầu ra; kiểm thử tự chạy trên GitHub |
 | 15–16/10 | Đo 8 cấu hình / 5 model qua đêm: PhoWhisper + đệm im lặng chính xác nhất (TỐT HƠN THẬT), chốt A1; còn tốc độ |
+| 16/10 | Thử giới hạn token (sai hướng, bỏ) và số luồng CPU (nhanh hơn 17%, giữ); đổi mặc định sang chế độ chính xác |
 
 **Về điểm số trong các báo cáo tiến độ:** thang 10 điểm và 16 điều kiện "hoàn thiện" do nhóm tự đặt
 (không phải thang của học phần). Mức hoàn thiện = tổng điểm 16 điều kiện ÷ 16 (Đạt = 1, Một phần = 0,5, Chưa = 0),

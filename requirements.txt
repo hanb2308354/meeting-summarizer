@@ -1,5 +1,7 @@
 ﻿# Phần nhận dạng giọng nói 
 faster-whisper==1.2.1
+# Đếm số nhân CPU thật để đặt số luồng cho model (nhanh hơn ~17% so với mặc định)
+psutil
 # av bản 19 trở lên làm faster-whisper 1.2.1 lỗi khi đọc file ghi âm
 av<19
 numpy

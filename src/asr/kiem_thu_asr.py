@@ -33,6 +33,9 @@ SR = asr.TAN_SO_MAU
 # cả file; chế độ từng lượt có ca kiểm thử riêng (truyền tung_luot=True)
 TUNG_LUOT_GOC = asr.TUNG_LUOT_MAC_DINH
 asr.TUNG_LUOT_MAC_DINH = False
+# Kiểm thử không phụ thuộc máy có sẵn model PhoWhisper hay chưa: coi như chưa có (chế độ chính xác
+# tự lùi về medium); ca kiểm thử chế độ tự tạo thư mục model giả
+asr.MODEL_CHINH_XAC = Path(tempfile.gettempdir()) / "khong_co_model_phowhisper"
 CAC_CA = []
 
 
@@ -1140,7 +1143,7 @@ def mac_dinh_la_tung_luot_va_ten_model_tu_thu_muc():
                 chay_main(Path(tm), [], [str(Path(tm) / "hop.wav")])
     finally:
         asr.nhan_dang, asr.TUNG_LUOT_MAC_DINH = goc
-    if da_goi != [{"tung_luot": True}]:
+    if [k.get("tung_luot") for k in da_goi] != [True]:
         return f"chuyen_giong_noi.py phải nhận dạng từng lượt: {da_goi}"
     for model, ten in (("medium", "medium"), ("models/phowhisper-medium-ct2", "phowhisper-medium-ct2"),
                        ("C:\\x\\models\\PhoWhisper-Medium-ct2", "phowhisper-medium-ct2")):
@@ -1456,6 +1459,78 @@ def thong_ke_token_tim_gioi_han_khong_cat_loi():
     if "| 1 lượt" not in " ".join(dong.get("8 x giây + 10", "").split()) \
             or "| 0 lượt" not in " ".join(dong.get("10 x giây + 10", "").split()):
         return f"thống kê sai:\n{bao_cao}"
+
+
+@ca
+def che_do_chinh_xac_dung_phowhisper_dem_im_lang_va_lui_ve_medium():
+    goc = asr.MODEL_CHINH_XAC
+    try:
+        with tempfile.TemporaryDirectory() as tm:
+            asr.MODEL_CHINH_XAC = Path(tm) / "phowhisper-medium-ct2"
+            thieu = asr.chon_che_do("chinh_xac")
+            asr.MODEL_CHINH_XAC.mkdir()
+            (asr.MODEL_CHINH_XAC / "model.bin").write_bytes(b"x")
+            co = asr.chon_che_do("chinh_xac")
+            nhanh = asr.chon_che_do("nhanh")
+            tu_chon = asr.chon_che_do("chinh_xac", "models/khac-ct2")
+            # main: model chính xác + đệm im lặng truyền tới nhan_dang
+            da_tao, da_nghe = [], []
+            goc_nhan_dang = asr.nhan_dang
+            ghi_wav(Path(tm) / "hop.wav", tieng_noi_gia(2))
+            asr.THU_MUC_KET_QUA = Path(tm) / "transcripts"
+            asr.WhisperModel = lambda ten, **k: (da_tao.append(ten), ModelGia([]))[1]
+            asr.nhan_dang = lambda *a, **k: (da_nghe.append(k.get("dem_im_lang")), ([], 0))[1]
+            sys.argv = ["chuyen_giong_noi.py", str(Path(tm) / "hop.wav")]
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    try:
+                        asr.main()
+                    except SystemExit:
+                        pass
+            finally:
+                asr.nhan_dang = goc_nhan_dang
+    finally:
+        asr.MODEL_CHINH_XAC = goc
+    if thieu[:2] != (asr.TEN_MODEL, False) or not thieu[2] or "chuyen_doi_model.py" not in thieu[2]:
+        return f"thiếu model chính xác phải lùi về {asr.TEN_MODEL} và báo cách tạo: {thieu}"
+    if not co[0].endswith("phowhisper-medium-ct2") or co[1] is not True or co[2]:
+        return f"có model chính xác mà không dùng: {co}"
+    if nhanh != (asr.TEN_MODEL, False, None) or tu_chon != ("models/khac-ct2", True, None):
+        return f"chế độ nhanh / tự chọn model sai: {nhanh}, {tu_chon}"
+    if len(da_tao) != 1 or not da_tao[0].endswith("phowhisper-medium-ct2") or da_nghe != [True]:
+        return f"main không dùng model chính xác + đệm im lặng: {da_tao}, {da_nghe}"
+
+
+@ca
+def do_thoi_gian_dem_tung_buoc_cua_model():
+    import danh_gia_bo as dg
+
+    class KetQua:
+        sequences_ids = [[1, 2, 3, 4]]
+
+    class Ct2Gia:
+        is_multilingual = True
+
+        def encode(self, x, to_cpu=False):
+            return "enc"
+
+        def generate(self, enc, prompt, **k):
+            return [KetQua()]
+
+        def align(self, *a, **k):
+            return []
+
+    bo = dg.DoThoiGian(Ct2Gia())
+    if not bo.is_multilingual or bo.encode(1, to_cpu=True) != "enc":
+        return "không chuyển tiếp thuộc tính / lời gọi"
+    bo.generate("enc", [[1]])
+    bo.generate("enc", [[1]])
+    bo.align()
+    if (bo.so_lan["encode"], bo.so_lan["generate"], bo.so_lan["align"], bo.so_token) != (1, 2, 1, 8):
+        return f"đếm sai: {bo.so_lan}, {bo.so_token}"
+    bao_cao = bo.bao_cao(10.0, 5.0, 1)
+    if "2.0x" not in bao_cao or "2.00" not in bao_cao:
+        return f"báo cáo sai:\n{bao_cao}"
 
 
 if __name__ == "__main__":
