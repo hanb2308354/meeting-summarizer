@@ -290,6 +290,26 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
     thông tin người nói nên không giới hạn được số đoạn mỗi người ở bộ giữ riêng; nhiều quyết định chọn trên 30 đoạn
     (đã so hơn 20 cấu hình) nên số trên bộ chỉnh lạc quan — số chính thức lấy từ bộ giữ riêng.
 
+- **Phản biện lần hai (18/10)** — người review thứ hai kiểm lại từng ý của lần một trên code và mã nguồn
+  faster-whisper / CTranslate2; chấm 8,5/10 (đồ án) và 5,5/10 (chuẩn "hoàn hảo"). Kết luận chính và cách xử lý:
+  - **Luật dừng ở chỗ hết lời (bundle 33) vào mặc định trước khi đo**, và giả định "cuối lượt = hết lời + 0,4 giây"
+    sai khi lề VAD bị cụt: lượt bị cắt cứng ở 25 giây, lượt tách ở khoảng ngừng ngắn (lề chỉ bằng nửa khoảng
+    ngừng), lượt cuối file. → Chỉ dùng luật này khi lượt chắc chắn có đủ lề (còn khoảng trống tới lượt sau / chưa
+    chạm cuối file); ghi nhật ký mỗi lần dừng; đo lại so với bản trước (bundle 35). Bộ giữ riêng ở bundle 33 chạy với
+    bản chưa sửa: nếu bản sửa cho chữ giống hệt trên bộ chỉnh thì giữ số bộ giữ riêng; nếu khác thì chạy lại và
+    ghi rõ lý do (sửa lỗi, không phải chỉnh tham số).
+  - **Khoảng tin cậy của file dài sai** (bốc lẻ ~100 đoạn con trong chỉ 4 file, các đoạn con không độc lập) →
+    bốc theo cụm file. Với 4 file, khoảng tin cậy chỉ để tham khảo; con số [−13,9; −0,1] cũ (từng lượt so với cả
+    file) không còn được coi là "tốt hơn thật".
+  - **Mốc thời gian theo từ:** CTranslate2 dùng "alignment heads" mặc định nếu model gốc không ghi → kiểm bằng
+    `sua_alignment_heads.py`, nếu đúng là mặc định thì tạo bản dùng danh sách của Whisper medium và đo so sánh.
+  - Ý "cắt cứng 25 giây hay làm đứt chữ" và "mốc <|30.00|> giữa lượt" bị đánh giá là phóng đại (VAD chỉ cắt cứng
+    khi không có khoảng ngừng ≥ 98 ms; faster-whisper ghi đè mốc cuối đoạn bằng mốc từ cuối).
+  - Ghi nhận thêm: bộ dữ liệu bỏ đoạn dưới 3 từ nên lượt rất ngắn ("dạ", "ừ") gần như không được đo; so sánh
+    wav2vec2 không có mô hình ngôn ngữ và không có dấu câu nên chưa hoàn toàn công bằng; câu "cảm ơn các bạn đã
+    lắng nghe" (kết họp thật) có thể bị bộ lọc loại khi đệm im lặng làm model "không chắc" — cần kiểm trên họp thật;
+    chế độ nhanh giữ câu gợi ý dựa trên chênh lệch không có ý nghĩa thống kê (25,6% so với 25,8%).
+
 ---
 
 ## 4. Phạm vi đã thu hẹp

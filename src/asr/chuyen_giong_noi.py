@@ -588,7 +588,8 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
     if tung_luot:
         cac_luot = gop_luot(cat_luot_noi(song_am), gop)
 
-        def nghe_doan(tu, den, **doi):
+        def nghe_doan(tu, den, co_le=False, **doi):
+            # co_le: cuối lượt chắc chắn có đủ lề im lặng VAD thêm vào (xem dưới)
             # Không chạy VAD lần nữa trong lượt: đã đo bật VAD ở đây thì TỆ HƠN cả hai bộ
             # (file dài 30,5% -> 31,8%, 30 đoạn ngắn 27,7% -> 29,3%) mà vẫn không hết bịa câu
             so_token = int(token_moi_giay * (den - tu) / TAN_SO_MAU) + token_cong_them
@@ -602,8 +603,15 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
             het = (den - tu) / TAN_SO_MAU + LE_CUOI_LUOT
             if not cat_ngoai:
                 return [doi_moc_thoi_gian(d, tu / TAN_SO_MAU) for d in doan]
-            het_loi = (den - tu) / TAN_SO_MAU - THONG_SO_VAD["speech_pad_ms"] / 1000 if dem_im_lang else None
-            doan, chu_bo = cat_ngoai_am_thanh(dung_khi_qua_am_thanh(doan, het, het_loi), het)
+            # Chỗ hết lời = cuối lượt trừ lề VAD. Chỉ dùng khi chắc lề đủ 0,4 giây: lượt bị VAD cắt cứng ở 25 giây,
+            # lượt tách ở khoảng ngừng ngắn (lề chỉ bằng nửa khoảng ngừng) hay lượt cuối file (lề bị cụt) thì
+            # cuối lượt sát lời nói, trừ 0,4 giây sẽ rơi vào giữa lời (phản biện lần hai, 18/10)
+            het_loi = (den - tu) / TAN_SO_MAU - THONG_SO_VAD["speech_pad_ms"] / 1000 \
+                if dem_im_lang and co_le else None
+            lay = dung_khi_qua_am_thanh(doan, het, het_loi)
+            if nhat_ky is not None and het_loi is not None and lay and het_loi <= lay[-1].end < het:
+                nhat_ky.append({"dung_o_cho_het_loi": round(tu / TAN_SO_MAU + lay[-1].end, 2)})
+            doan, chu_bo = cat_ngoai_am_thanh(lay, het)
             if chu_bo:
                 print(f"  [LOẠI - ngoài âm thanh thật của lượt] {chu_bo}")
                 if nhat_ky is not None:
@@ -614,7 +622,10 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
         for i, (bat_dau, ket_thuc) in enumerate(cac_luot):
             if nhat_ky is not None:
                 nhat_ky.append({"luot": [round(bat_dau / TAN_SO_MAU, 2), round(ket_thuc / TAN_SO_MAU, 2)]})
-            doan_luot = nghe_doan(bat_dau, ket_thuc)
+            # Lượt có đủ lề nếu sau khi VAD thêm lề vẫn còn khoảng trống tới lượt sau (lượt sau chạm sát
+            # = lề bị chia đôi hoặc bị cắt cứng), hoặc với lượt cuối: chưa chạm cuối file
+            co_le = ket_thuc < (cac_luot[i + 1][0] if i + 1 < len(cac_luot) else len(song_am))
+            doan_luot = nghe_doan(bat_dau, ket_thuc, co_le=co_le)
             if nghe_lai and luot_hong(doan_luot, bat_dau, ket_thuc, goi_y):
                 doan_luot = nghe_lai_luot(nghe_doan, cac_luot, i, doan_luot, nhat_ky, goi_y)
             cac_doan.extend(doan_luot)

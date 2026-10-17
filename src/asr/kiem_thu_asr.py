@@ -1134,8 +1134,16 @@ def file_dai_chia_loi_ve_tung_doan_ghep():
             dg.THU_MUC_BO = goc
     if chia != [(4, 1), (4, 4), (4, 1)]:
         return f"chia lỗi sai: {chia}"
-    if "lấy mẫu trên 30 đoạn ngắn đã ghép thành 10 file" not in bao_cao or "bằng nhau 0" not in bao_cao:
-        return "so sánh file dài không lấy mẫu theo đoạn ghép:\n" + bao_cao
+    if "chia lỗi về 30 đoạn ngắn đã ghép, bốc mẫu theo 10 file" not in bao_cao or "bằng nhau 0" not in bao_cao:
+        return "so sánh file dài không chia lỗi theo đoạn ghép / không bốc theo file:\n" + bao_cao
+    # Bốc theo cụm: đoạn con cùng file chung một cụm. Hai đoạn con, cùng file, lỗi ngược chiều nhau:
+    # bốc theo cụm thì chênh lệch luôn 0 (cả file luôn đi cùng nhau); bốc lẻ thì dao động
+    import danh_gia_bo as dg
+    cap = [(10, 0, 5), (10, 5, 0)]
+    _, duoi, tren = dg.khoang_tin_cay(cap, cum=["f", "f"])
+    _, duoi_le, tren_le = dg.khoang_tin_cay(cap)
+    if (duoi, tren) != (0.0, 0.0) or tren_le - duoi_le <= 0:
+        return f"bốc theo cụm sai: cụm [{duoi}, {tren}], lẻ [{duoi_le}, {tren_le}]"
 
 
 @ca
@@ -1744,6 +1752,52 @@ def danh_gia_hf_ghi_ket_qua_dung_dinh_dang_va_lam_tiep():
         return f"kết quả sai định dạng: {luu}"
     if hf.ten_cau_hinh_hf("nguyenvulebinh/wav2vec2-base-vietnamese-250h") != "wav2vec2-base-vietnamese-250h_hf":
         return "tên cấu hình sai"
+
+
+@ca
+def chi_dung_o_cho_het_loi_khi_luot_co_du_le():
+    """het_loi = cuối lượt - 0,4 giây lề VAD chỉ đúng khi lề thật sự đủ. Lượt sát lượt sau (bị cắt cứng /
+    khoảng ngừng ngắn) hay lượt chạm cuối file: không được dừng sớm, kẻo mất mấy chữ cuối."""
+    dau = doan(chuoi_tu(0.2, "Bạn Lan làm slide"))                 # hết 1,75 s, >= 2,0 - 0,4
+    cuoi = doan(chuoi_tu(1.8, "nha"))                               # chữ thật còn lại trong cửa sổ
+
+    class ModelHaiDoan(ModelGia):
+        def transcribe(self, am_thanh, **tham_so):
+            return iter([dau, cuoi]), None
+
+    goc = asr.cat_luot_noi
+    ket = {}
+    try:
+        for ten, luot, dai in (("có lề", [(0, 2 * SR), (3 * SR, 5 * SR)], 6),
+                               ("sát lượt sau", [(0, 2 * SR), (2 * SR, 5 * SR)], 6),
+                               ("cuối file", [(0, 2 * SR)], 2)):
+            asr.cat_luot_noi = lambda s, luot=luot: luot[:1] if len(luot) == 1 else luot
+            with contextlib.redirect_stdout(io.StringIO()):
+                cac_tu, _ = asr.nhan_dang(ModelHaiDoan([]), np.zeros(dai * SR, dtype=np.float32),
+                                          tung_luot=True, dem_im_lang=True, nghe_lai=False)
+            ket[ten] = "nha" in asr.ghep_tu([t for t in cac_tu if t.start < 2.5])
+    finally:
+        asr.cat_luot_noi = goc
+    if ket != {"có lề": False, "sát lượt sau": True, "cuối file": True}:
+        return f"dừng ở chỗ hết lời sai trường hợp: {ket}"
+
+
+@ca
+def sua_alignment_heads_tao_ban_moi_khong_dung_ban_goc():
+    import sua_alignment_heads as ah
+    if len(ah.heads_mac_dinh(24, 16)) != 192 or ah.heads_mac_dinh(4, 2) != [[2, 0], [2, 1], [3, 0], [3, 1]]:
+        return "danh sách mặc định sai"
+    with tempfile.TemporaryDirectory() as tm:
+        goc = Path(tm) / "pho-ct2"
+        goc.mkdir()
+        (goc / "model.bin").write_bytes(b"trong so")
+        (goc / "config.json").write_text(json.dumps({"alignment_heads": ah.heads_mac_dinh(4, 2), "x": 1}))
+        dich = Path(tm) / "pho-ct2-ah"
+        ah.tao_ban_sua(goc, dich, [[3, 1]])
+        if ah.doc_heads(goc) != ah.heads_mac_dinh(4, 2) or ah.doc_heads(dich) != [[3, 1]]:
+            return "sửa nhầm bản gốc hoặc bản mới sai"
+        if (dich / "model.bin").read_bytes() != b"trong so" or json.loads((dich / "config.json").read_text())["x"] != 1:
+            return "bản mới thiếu trọng số / mất cấu hình khác"
 
 
 if __name__ == "__main__":

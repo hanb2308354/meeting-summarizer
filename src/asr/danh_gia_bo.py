@@ -456,13 +456,20 @@ def so_sanh_cau_hinh(ten_bo, cac_cau_hinh):
 SO_LAN_LAY_MAU = 2000
 
 
-def khoang_tin_cay(cac_cap, so_lan=SO_LAN_LAY_MAU, hat_giong=0):
-    """Bootstrap ghép cặp: bốc ngẫu nhiên có lặp lại các đoạn, tính lại chênh WER (B - A) nhiều lần.
+def khoang_tin_cay(cac_cap, so_lan=SO_LAN_LAY_MAU, hat_giong=0, cum=None):
+    """Bootstrap ghép cặp: bốc ngẫu nhiên có lặp lại các đơn vị, tính lại chênh WER (B - A) nhiều lần.
 
     cac_cap: [(số từ, lỗi cấu hình A, lỗi cấu hình B)] trên CÙNG các đoạn.
+    cum: nhãn cụm của từng phần tử (cùng file dài = cùng cụm). Bốc theo CỤM: các đoạn con của một file dài
+    chung ranh giới VAD, chung giọng, không độc lập; bốc lẻ từng đoạn con làm khoảng tin cậy hẹp sai
+    (góp ý phản biện 18/10). Không có cum: mỗi phần tử là một cụm (giống cách cũ).
     Trả về (chênh WER, cận dưới 95%, cận trên 95%) tính bằng tỉ lệ (0.01 = 1 điểm).
     """
     tu, a, b = (np.array(c, dtype=float) for c in zip(*cac_cap))
+    if cum is not None:
+        nhan = {k: i for i, k in enumerate(dict.fromkeys(cum))}
+        so_cum = np.array([nhan[k] for k in cum])
+        tu, a, b = (np.bincount(so_cum, weights=x, minlength=len(nhan)) for x in (tu, a, b))
     chi_so = np.random.default_rng(hat_giong).integers(0, len(tu), (so_lan, len(tu)))
     tong_tu = tu[chi_so].sum(axis=1)
     chenh = (b[chi_so].sum(axis=1) - a[chi_so].sum(axis=1)) / np.maximum(tong_tu, 1)
@@ -511,7 +518,7 @@ def khac_biet_that_hay_ngau_nhien(chung, ket):
     goc = cac_ch[0]
     d = [f"\nKHÁC BIỆT THẬT HAY NGẪU NHIÊN? (so với {goc}, khoảng tin cậy 95%, bootstrap theo đoạn)"]
     for ch in cac_ch[1:]:
-        cac_cap, tot, te, so_muc = [], 0, 0, 0
+        cac_cap, cum, tot, te, so_muc = [], [], 0, 0, 0
         for muc in chung:
             ka, kb = ket[goc][muc["id"]], ket[ch][muc["id"]]
             dap_an = chuan_hoa_danh_gia(muc["text"])
@@ -527,11 +534,13 @@ def khac_biet_that_hay_ngau_nhien(chung, ket):
                 chia_b = loi_theo_doan_ghep(muc, chuan_hoa_danh_gia(kb["du_doan"]))
                 if chia_a and chia_b:
                     cac_cap += [(tu, a, b) for (tu, a), (_, b) in zip(chia_a, chia_b)]
+                    cum += [muc["id"]] * len(chia_a)
                     continue
             cac_cap.append((len(dap_an.split()), la, lb))
+            cum.append(muc["id"])
         if not cac_cap:
             continue
-        chenh, duoi, tren = khoang_tin_cay(cac_cap)
+        chenh, duoi, tren = khoang_tin_cay(cac_cap, cum=cum)
         if duoi > 0:
             ket_luan = "TỆ HƠN THẬT"
         elif tren < 0:
@@ -541,9 +550,9 @@ def khac_biet_that_hay_ngau_nhien(chung, ket):
         d.append(f"  {ch[:40]:<40} WER {chenh * 100:+.1f} điểm  [95%: {duoi * 100:+.1f} .. {tren * 100:+.1f}]"
                  f"  -> {ket_luan} | tốt hơn ở {tot} đoạn, tệ hơn ở {te}, bằng nhau {so_muc - tot - te}")
         if len(cac_cap) > so_muc:
-            d.append(f"      (file dài: lấy mẫu trên {len(cac_cap)} đoạn ngắn đã ghép thành {so_muc} file)")
-        if len(cac_cap) < 20:
-            d.append(f"      (chỉ có {len(cac_cap)} đơn vị: khoảng tin cậy kém chính xác, nên đo thêm)")
+            d.append(f"      (file dài: chia lỗi về {len(cac_cap)} đoạn ngắn đã ghép, bốc mẫu theo {so_muc} file)")
+        if so_muc < 20:
+            d.append(f"      (chỉ có {so_muc} đơn vị độc lập: khoảng tin cậy kém chính xác, chỉ để tham khảo)")
     return d
 
 
