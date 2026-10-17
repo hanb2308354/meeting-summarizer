@@ -6,7 +6,8 @@ Luồng xử lý:
     1. Kiểm tra đầu vào  : file có tồn tại, đúng định dạng, đọc được, có tiếng nói
     2. Tiền xử lý âm thanh: bỏ lệch DC, lọc tiếng ù tần số thấp, chuẩn hóa âm lượng,
                             (tùy chọn) giảm tạp âm
-    3. Nhận dạng giọng nói: faster-whisper + VAD + từ khóa gợi ý cho MỌI đoạn
+    3. Nhận dạng giọng nói: faster-whisper, cắt từng lượt nói bằng VAD; chế độ chính xác dùng
+                            PhoWhisper + đệm im lặng (xem CHE_DO), chế độ nhanh dùng Whisper medium
     4. Lọc lỗi nhận dạng  : bỏ đoạn "bịa chữ" ở chỗ im lặng/nhiễu, bỏ câu bị lặp
     5. Tách câu           : theo dấu câu, theo khoảng ngừng, và cắt câu quá dài
     6. Ghi JSON           : ghi an toàn, đúng format đã thống nhất với phần NLP
@@ -64,9 +65,8 @@ TUNG_LUOT_MAC_DINH = True
 #              lỗi nhiều hơn thật (họp 31,0%, giọng miền 13,7%)
 # Model chính xác phải tự chuyển đổi một lần (src/asr/chuyen_doi_model.py); chưa có thì tự dùng chế độ nhanh.
 CHE_DO_MAC_DINH = "chinh_xac"
-# Kiểu tính của model trên CPU. int8: nhanh, đủ chính xác với Whisper gốc. Model tinh chỉnh
-# (PhoWhisper) bản int8 không biết dừng, nối câu bịa sau lời thật, trong khi bản gốc (transformers,
-# float32) dừng đúng chỗ: đang đo float32 (--kieu-tinh trong danh_gia_bo.py)
+# Kiểu tính của model trên CPU. int8: nhanh, đủ chính xác. Đã đo: PhoWhisper bản float32 cũng không biết
+# dừng y như int8 (lỗi nằm ở cách faster-whisper đệm cửa sổ, đã xử lý bằng đệm im lặng + cắt ngoài âm thanh)
 KIEU_TINH = "int8"
 # Đệm im lặng thật cho mỗi lượt nói đủ 30 giây trước khi nhận dạng (chế độ từng lượt).
 # faster-whisper đệm phần thiếu của cửa sổ 30 giây bằng SỐ 0 trên phổ âm thanh đã tính, mà 0 không phải
@@ -131,7 +131,7 @@ GOI_Y_MAC_DINH = "cau_mo_dau"
 # 1.0; trên bộ đánh giá các đoạn bị kẹt (81-347 giây cho 4 giây âm thanh) đều ra chữ bịa
 # hoặc trống, nên chỉ thử tới 0.4: không đổi WER, nhanh hơn, không còn đoạn kẹt.
 NHIET_DO_THU_LAI = (0.0, 0.2, 0.4)
-SO_KHUC_MOI_LO = 4   # chế độ theo khúc: số khúc nhận dạng cùng lúc (CPU 4 nhân)
+SO_KHUC_MOI_LO = 4   # chế độ theo khúc (chỉ để so sánh, đã bỏ): số khúc nhận dạng cùng lúc
 # Thông số VAD (Silero) dùng chung cho mọi chế độ
 THONG_SO_VAD = {
     "threshold": 0.5,
@@ -447,8 +447,12 @@ def chuan_hoa_so_sanh(van_ban):
     return re.sub(r"\W+", " ", van_ban.lower()).strip()
 
 
-def ly_do_loai(doan):
-    """Trả về lý do nếu đoạn có dấu hiệu Whisper "bịa chữ", ngược lại trả về None."""
+def ly_do_loai(doan, goi_y="day_du"):
+    """Trả về lý do nếu đoạn có dấu hiệu Whisper "bịa chữ", ngược lại trả về None.
+
+    goi_y: cách gợi ý đã dùng khi nhận dạng. Luật "đọc lại từ khóa / câu mở đầu" chỉ bật khi đã
+    gợi ý đúng thứ đó: không gợi ý thì model không thể đọc lại, mà luật có thể xóa nhầm câu liệt kê thật
+    ("Frontend, backend, database, API, deploy") — góp ý phản biện 18/10."""
     van_ban = doan.text.strip()
     if not van_ban:
         return "rỗng"
@@ -474,12 +478,14 @@ def ly_do_loai(doan):
     # "Hôm nay mình review, test, demo.". Người họp cũng có thể liệt kê thật
     # ("Frontend, backend, database, API."), nên chuỗi 4 cụm chỉ loại khi model
     # không chắc; từ SO_CUM_LUON_LOAI cụm trở lên thì gần như chắc là đọc lại gợi ý.
-    if (len(cum) >= 4 and all(len(c.split()) <= 2 for c in cum)
+    if (goi_y in ("day_du", "tu_khoa") and len(cum) >= 4 and all(len(c.split()) <= 2 for c in cum)
             and sum(c in TAP_TU_GOI_Y for c in cum) / len(cum) >= 0.8
             and (model_khong_chac or len(cum) >= SO_CUM_LUON_LOAI)):
         return "đọc lại từ khóa gợi ý"
     # Đọc lại câu mở đầu, kể cả chỉ một phần ("Còn một số từ tiếng Anh."): đo trên bộ
     # đánh giá thấy ở đoạn khó nghe (điện thoại) model chép lại gợi ý thay vì lời thật
+    if goi_y not in ("day_du", "cau_mo_dau"):
+        return None
     cac_tu = chuan_hoa_so_sanh(van_ban).split()
     if len(cac_tu) <= SO_TU_TOI_DA_CAU_BIA and any(
             " ".join(cac_tu[i:i + 4]) in CUM_4_TU_MO_DAU for i in range(len(cac_tu) - 3)):
@@ -512,6 +518,24 @@ def cat_luot_noi(song_am):
     return [(d["start"], d["end"]) for d in get_speech_timestamps(song_am, vad, sampling_rate=TAN_SO_MAU)]
 
 
+def gop_luot(cac_luot, toi_da_giay):
+    """Gộp các lượt nói liền nhau thành nhóm dài tối đa toi_da_giay (từ đầu lượt đầu tới cuối lượt cuối,
+    giữ nguyên khoảng lặng thật ở giữa). 0 = không gộp.
+
+    Vì sao: mỗi lần nghe tốn trọn một cửa sổ 30 giây (~21 giây trên máy 2 nhân) dù lượt chỉ dài 1 giây
+    ("dạ", "ừ"); họp thật có rất nhiều lượt ngắn như vậy. Gộp lại thì ít cửa sổ hơn (góp ý phản biện 18/10).
+    Đang đo: có giữ được độ chính xác không."""
+    if toi_da_giay <= 0:
+        return list(cac_luot)
+    nhom = []
+    for bat_dau, ket_thuc in cac_luot:
+        if nhom and (ket_thuc - nhom[-1][0]) / TAN_SO_MAU <= toi_da_giay:
+            nhom[-1] = (nhom[-1][0], ket_thuc)
+        else:
+            nhom.append((bat_dau, ket_thuc))
+    return nhom
+
+
 def doi_moc_thoi_gian(doan, lech):
     """Cộng thêm `lech` giây vào mốc thời gian của đoạn và các từ (lượt nói nằm giữa file)."""
     cac_tu = [dataclasses.replace(t, start=t.start + lech, end=t.end + lech) for t in doan.words] \
@@ -521,7 +545,7 @@ def doi_moc_thoi_gian(doan, lech):
 
 def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, theo_khuc=False,
               tung_luot=False, nhat_ky=None, khong_moc_thoi_gian=False, dem_im_lang=None, beam=None,
-              token_moi_giay=None, token_cong_them=None, nghe_lai=True, cat_ngoai=True):
+              token_moi_giay=None, token_cong_them=None, nghe_lai=True, cat_ngoai=True, gop=0):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
     Các tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
@@ -541,6 +565,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
     token_moi_giay, token_cong_them: giới hạn số token model được sinh mỗi lượt
                (= token_moi_giay x số giây + token_cong_them, tối đa TOKEN_TOI_DA); None = mặc định.
                PhoWhisper không biết dừng nên luôn sinh tới giới hạn: giới hạn càng sát càng nhanh
+    gop     : gộp các lượt liền nhau thành nhóm dài tối đa chừng này giây (gop_luot); 0 = không gộp
     nghe_lai, cat_ngoai: chỉ để đo bật/tắt từng thành phần (False = tắt nhận dạng lại lượt hỏng /
                tắt cắt chữ sau cuối âm thanh thật của lượt)
     nhat_ky  : truyền vào một list để ghi chi tiết từng đoạn model trả về (mốc thời gian, độ tin cậy,
@@ -561,7 +586,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
                          hotwords=TU_KHOA_GOI_Y if dung_tu_khoa else None,
                          word_timestamps=True, without_timestamps=khong_moc_thoi_gian)
     if tung_luot:
-        cac_luot = cat_luot_noi(song_am)
+        cac_luot = gop_luot(cat_luot_noi(song_am), gop)
 
         def nghe_doan(tu, den, **doi):
             # Không chạy VAD lần nữa trong lượt: đã đo bật VAD ở đây thì TỆ HƠN cả hai bộ
@@ -590,10 +615,10 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
             if nhat_ky is not None:
                 nhat_ky.append({"luot": [round(bat_dau / TAN_SO_MAU, 2), round(ket_thuc / TAN_SO_MAU, 2)]})
             doan_luot = nghe_doan(bat_dau, ket_thuc)
-            if nghe_lai and luot_hong(doan_luot, bat_dau, ket_thuc):
-                doan_luot = nghe_lai_luot(nghe_doan, cac_luot, i, doan_luot, nhat_ky)
+            if nghe_lai and luot_hong(doan_luot, bat_dau, ket_thuc, goi_y):
+                doan_luot = nghe_lai_luot(nghe_doan, cac_luot, i, doan_luot, nhat_ky, goi_y)
             cac_doan.extend(doan_luot)
-        return loc_doan(cac_doan, nhat_ky)
+        return loc_doan(cac_doan, nhat_ky, goi_y)
     if theo_khuc:
         bo_nhan_dang = BatchedInferencePipeline(model)
         them["batch_size"] = SO_KHUC_MOI_LO
@@ -604,7 +629,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
         them["condition_on_previous_text"] = False
     cac_doan, _ = bo_nhan_dang.transcribe(song_am, **tham_so_chung, **them,
                                           vad_filter=True, vad_parameters=dict(THONG_SO_VAD))
-    return loc_doan(cac_doan, nhat_ky)
+    return loc_doan(cac_doan, nhat_ky, goi_y)
 
 
 def chi_tiet_doan(doan, ly_do):
@@ -615,15 +640,15 @@ def chi_tiet_doan(doan, ly_do):
             "so_token": len(doan.tokens or []), "loai": ly_do}
 
 
-def so_chu_that(cac_doan):
+def so_chu_that(cac_doan, goi_y="day_du"):
     """Số chữ còn lại sau khi bỏ các đoạn bộ lọc coi là bịa."""
-    return sum(len(d.text.split()) for d in cac_doan if not ly_do_loai(d))
+    return sum(len(d.text.split()) for d in cac_doan if not ly_do_loai(d, goi_y))
 
 
-def luot_hong(cac_doan, bat_dau, ket_thuc):
+def luot_hong(cac_doan, bat_dau, ket_thuc, goi_y="day_du"):
     """Lượt nói đủ dài mà ra quá ít chữ thật: model đã nghe hỏng (thường là bịa câu kết video)."""
     giay = (ket_thuc - bat_dau) / TAN_SO_MAU
-    return giay >= LUOT_XET_MAT_DO and so_chu_that(cac_doan) < MAT_DO_TOI_THIEU * giay
+    return giay >= LUOT_XET_MAT_DO and so_chu_that(cac_doan, goi_y) < MAT_DO_TOI_THIEU * giay
 
 
 def cat_theo_khoang(cac_doan, tu_giay, den_giay):
@@ -686,12 +711,13 @@ def cat_ngoai_am_thanh(cac_doan, den_giay):
     return giu, " ".join(b for b in bo if b)
 
 
-def nghe_lai_luot(nghe_doan, cac_luot, i, ban_dau, nhat_ky=None):
+def nghe_lai_luot(nghe_doan, cac_luot, i, ban_dau, nhat_ky=None, goi_y="day_du"):
     """Nhận dạng lại một lượt bị hỏng, thử lần lượt:
         1. bỏ câu mở đầu (gợi ý có thể đẩy model sang "giọng" kết video)
         2. nghe cả lượt trước và lượt sau cho đủ ngữ cảnh (giống chế độ mặc định, vốn nghe đúng
            đoạn 0000186), rồi chỉ giữ chữ nằm trong lượt này
     Lấy cách đầu tiên đạt mật độ chữ; không cách nào đạt thì lấy cách ra nhiều chữ thật nhất.
+    Không dùng câu mở đầu (chế độ chính xác) thì bỏ cách 1: chạy lại y hệt, tốn thêm một lần nghe.
     """
     bat_dau, ket_thuc = cac_luot[i]
     tu = cac_luot[i - 1][0] if i > 0 else bat_dau
@@ -700,35 +726,36 @@ def nghe_lai_luot(nghe_doan, cac_luot, i, ban_dau, nhat_ky=None):
         tu, den = (bat_dau, den) if (den - bat_dau) / TAN_SO_MAU <= DO_DAI_LUOT_TOI_DA else (tu, ket_thuc)
         if (den - tu) / TAN_SO_MAU > DO_DAI_LUOT_TOI_DA:
             tu, den = bat_dau, ket_thuc
-    cac_cach = [("bỏ câu mở đầu", lambda: nghe_doan(bat_dau, ket_thuc, initial_prompt=None))]
+    cac_cach = ([("bỏ câu mở đầu", lambda: nghe_doan(bat_dau, ket_thuc, initial_prompt=None))]
+                if goi_y in ("day_du", "cau_mo_dau") else [])
     if (tu, den) != (bat_dau, ket_thuc):
         cac_cach.append(("nghe kèm lượt bên cạnh", lambda: cat_theo_khoang(
             nghe_doan(tu, den), bat_dau / TAN_SO_MAU, ket_thuc / TAN_SO_MAU)))
     tot_nhat, ten_tot = ban_dau, "giữ kết quả đầu"
     if nhat_ky is not None:
-        nhat_ky.append({"thu_lai": "lần đầu", "so_chu": so_chu_that(ban_dau),
+        nhat_ky.append({"thu_lai": "lần đầu", "so_chu": so_chu_that(ban_dau, goi_y),
                         "chu": " ".join(d.text.strip() for d in ban_dau)[:150]})
     for ten, cach in cac_cach:
         thu = cach()
         if nhat_ky is not None:
-            nhat_ky.append({"thu_lai": ten, "so_chu": so_chu_that(thu),
+            nhat_ky.append({"thu_lai": ten, "so_chu": so_chu_that(thu, goi_y),
                             "chu": " ".join(d.text.strip() for d in thu)[:150]})
-        if not luot_hong(thu, bat_dau, ket_thuc) or so_chu_that(thu) > so_chu_that(tot_nhat):
+        if not luot_hong(thu, bat_dau, ket_thuc, goi_y) or so_chu_that(thu, goi_y) > so_chu_that(tot_nhat, goi_y):
             tot_nhat, ten_tot = thu, ten
-        if not luot_hong(thu, bat_dau, ket_thuc):
+        if not luot_hong(thu, bat_dau, ket_thuc, goi_y):
             break
     if nhat_ky is not None:
         nhat_ky.append({"thu_lai": "chọn", "cach": ten_tot})
     return tot_nhat
 
 
-def loc_doan(cac_doan, nhat_ky=None):
+def loc_doan(cac_doan, nhat_ky=None, goi_y="day_du"):
     """Bỏ các đoạn nghi bịa chữ, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại."""
     cac_tu = []
     so_doan_bi_loai = 0
     hai_doan_truoc = []  # chữ của 2 đoạn được giữ gần nhất
     for doan in cac_doan:
-        ly_do = ly_do_loai(doan)
+        ly_do = ly_do_loai(doan, goi_y)
         # Đoạn đủ dài mà lặp y hệt 1 trong 2 đoạn ngay trước -> model bị kẹt
         # (bắt cả kiểu A, A và kiểu A, B, A, B). Đoạn bị bỏ giống hệt đoạn đã giữ nên không mất chữ.
         van_ban = chuan_hoa_so_sanh(doan.text)

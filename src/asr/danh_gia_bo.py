@@ -176,6 +176,8 @@ def ten_cau_hinh(args):
         ten += f"_beam{args.beam}"
     if (args.token_moi_giay, args.token_cong_them) != (asr.TOKEN_MOI_GIAY, asr.TOKEN_CONG_THEM):
         ten += f"_token{args.token_moi_giay}-{args.token_cong_them}"
+    if args.gop_luot:
+        ten += f"_gop{args.gop_luot:g}"
     if args.khong_nghe_lai:
         ten += "_khong_nghe_lai"
     if args.khong_cat_ngoai:
@@ -204,7 +206,8 @@ def nhan_dang_mot_doan(model, duong_dan, args):
                                   khong_moc_thoi_gian=args.khong_moc_thoi_gian, dem_im_lang=args.dem_im_lang,
                                   beam=args.beam, token_moi_giay=args.token_moi_giay,
                                   token_cong_them=args.token_cong_them,
-                                  nghe_lai=not args.khong_nghe_lai, cat_ngoai=not args.khong_cat_ngoai)
+                                  nghe_lai=not args.khong_nghe_lai, cat_ngoai=not args.khong_cat_ngoai,
+                                  gop=args.gop_luot)
     return {
         "du_doan": " ".join(cau["text"] for cau in asr.tach_cau(cac_tu)),
         "bi_loai": [d.strip() for d in dau_ra.getvalue().splitlines() if "[LOẠI" in d],
@@ -702,6 +705,14 @@ def khong_loc(ten_bo, cau_hinh):
     return ten_moi, so_tra_lai
 
 
+def goi_y_cua(cau_hinh):
+    """Cách gợi ý suy ra từ tên cấu hình (vd ..._khong_goi_y_... -> "khong"); không thấy thì "day_du"."""
+    for goi_y, hau_to in HAU_TO_GOI_Y.items():
+        if hau_to and hau_to + "_" in cau_hinh + "_":
+            return goi_y
+    return "day_du"
+
+
 def loc_lai(ten_bo, cau_hinh):
     """Chấm lại kết quả ĐÃ LƯU với bộ lọc [LOẠI] hiện tại, không chạy lại nhận dạng (vài giây).
 
@@ -723,7 +734,7 @@ def loc_lai(ten_bo, cau_hinh):
         for c in cac_doan:
             doan = SimpleNamespace(text=c["text"], start=c["start"], end=c["end"], avg_logprob=c["do_tin_cay"],
                                    no_speech_prob=c["khong_co_tieng"], compression_ratio=c["ty_le_nen"], words=None)
-            ly_do = c["loai"] or asr.ly_do_loai(doan)
+            ly_do = c["loai"] or asr.ly_do_loai(doan, goi_y_cua(cau_hinh))
             (bi_loai if ly_do else giu).append((c, ly_do))
         so_doan_bo += sum(1 for c, _ in bi_loai if not c["loai"])
         moi[id_doan] = dict(kq, du_doan=" ".join(c["text"] for c, _ in giu),
@@ -883,6 +894,8 @@ def main():
                         help=f"(mặc định {asr.TOKEN_CONG_THEM})")
     parser.add_argument("--so-luong", type=int, default=asr.SO_LUONG_CPU,
                         help="Số luồng CPU cho model (mặc định 0 = 4 luồng của faster-whisper)")
+    parser.add_argument("--gop-luot", type=float, default=0,
+                        help="Gộp các lượt nói liền nhau thành nhóm dài tối đa chừng này giây (ít cửa sổ hơn, nhanh hơn)")
     parser.add_argument("--khong-nghe-lai", action="store_true",
                         help="Đo bật/tắt: không nhận dạng lại lượt nói bị nghe hỏng")
     parser.add_argument("--khong-cat-ngoai", action="store_true",

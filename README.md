@@ -144,7 +144,7 @@ python src/nlp/kiem_cau.py
 
 Định dạng file JSON đầu ra (hợp đồng với phần tóm tắt): xem `docs/dinh_dang_dau_ra.md`.
 
-**Hai chế độ** (`--che-do`): `chinh_xac` (mặc định) dùng PhoWhisper-medium của VinAI + đệm im lặng: lỗi họp 20,4% so với 25,4% của Whisper medium (tốt hơn thật, khoảng tin cậy 95%), giọng miền 5,6% so với 8,2%, nhưng chậm hơn (đang tối ưu, xem nhật ký). `nhanh` dùng Whisper medium. `nhanh_nhat` dùng Whisper small cho máy yếu (1,3–1,5 lần độ dài ghi âm trên máy 2 nhân, nhưng lỗi nhiều hơn rõ: họp 31,0%, giọng miền 13,7%). Model PhoWhisper phải chuyển đổi một lần (`python src/asr/chuyen_doi_model.py`, cần `pip install torch transformers`); chưa có thì chương trình tự dùng chế độ nhanh và báo cách tạo.
+**Hai chế độ** (`--che-do`): `chinh_xac` (mặc định) dùng PhoWhisper-medium của VinAI + đệm im lặng, không câu gợi ý: trên bộ dùng để chỉnh, lỗi họp 19,1% so với 25,4% của Whisper medium, giọng miền 4,5% so với 8,2% (số chính thức trên bộ kiểm tra giữ riêng: xem `docs/nhat_ky_asr.md`), nhưng chậm hơn (đang tối ưu). WER ở đây tính theo âm tiết. `nhanh` dùng Whisper medium. `nhanh_nhat` dùng Whisper small cho máy yếu (1,3–1,5 lần độ dài ghi âm trên máy 2 nhân, nhưng lỗi nhiều hơn rõ: họp 31,0%, giọng miền 13,7%). Model PhoWhisper phải chuyển đổi một lần (`python src/asr/chuyen_doi_model.py`, cần `pip install torch transformers`); chưa có thì chương trình tự dùng chế độ nhanh và báo cách tạo.
 
 Lần đầu chạy cần **internet** để tải model `medium` (khoảng 1,5 GB); các lần sau dùng bản đã lưu trên máy.
 

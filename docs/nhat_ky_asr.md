@@ -10,14 +10,17 @@ File ghi âm → Làm sạch âm thanh → Nhận dạng giọng nói (Whisper) 
            → Làm sạch văn bản (sửa lỗi nhận dạng, bỏ từ đệm, câu xã giao) → Văn bản sạch cho phần tóm tắt
 ```
 
-**Kết quả hiện tại** (WER = tỉ lệ từ sai, càng thấp càng tốt):
+**Kết quả hiện tại** (WER = tỉ lệ lỗi theo **âm tiết** — tiếng Việt viết tách âm tiết nên "từ" ở đây là âm tiết;
+không so thẳng với WER tiếng Anh. Càng thấp càng tốt. Số trên bộ dùng để chỉnh 30 + 30 đoạn; số chính thức sẽ lấy
+từ bộ kiểm tra giữ riêng 100 + 100 đoạn):
 
-| Loại âm thanh | WER lúc bắt đầu đo | WER hiện tại |
-|---|---|---|
-| Họp, hội nghị, gọi điện (đoạn ngắn) | 28,2% | 25,4% |
-| Cuộc họp dài 5 phút | 36,4% | 29,9% |
-| Giọng các miền | 8,3% | 8,2% |
-| Model bị kẹt (chạy hàng trăm giây cho vài giây âm thanh) | có | 0 |
+| Loại âm thanh | Lúc bắt đầu (medium) | Medium sau chỉnh | Chế độ chính xác (PhoWhisper) |
+|---|---|---|---|
+| Họp, hội nghị, gọi điện (đoạn ngắn) | 28,2% | 25,4% | 19,1% (không gợi ý) |
+| Cuộc họp dài 5 phút (ghép nhân tạo) | 36,4% | 29,9% | 27,6% |
+| Giọng các miền | 8,3% | 8,2% | 4,5% (không gợi ý) |
+| Tốc độ trên máy 2 nhân (lần độ dài ghi âm) | — | 3,3–3,8x | 5,8–9,0x (đang tối ưu) |
+| Model bị kẹt | có | 0 | 0 |
 
 **Cấu hình đang dùng:** chế độ chính xác = PhoWhisper-medium + đệm im lặng, không gợi ý (chế độ nhanh = Whisper
 `medium` + câu gợi ý mở đầu), CPU, số luồng = số nhân thật · nhận dạng từng lượt nói · lượt nào ra quá ít chữ thì nhận dạng lại · lọc câu bịa (kể cả câu có tốc độ nói bất khả thi).
@@ -271,6 +274,21 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
     → **Đổi chế độ chính xác sang không gợi ý** (đúng quy tắc: tốt hơn thật ở một bộ, không bộ nào tệ hơn).
   - **Bộ kiểm tra giữ riêng đã tải (D1):** 100 đoạn họp/gọi điện + 100 đoạn giọng miền, không trùng đoạn nào của bộ
     dùng để chỉnh. Chạy lần đầu ở bundle 33 cho cả medium và cấu hình cuối.
+
+- **Phản biện độc lập (18/10)** — một người review đọc code và nhật ký, chấm 8,5/10 như đồ án sinh viên, 6/10 so với
+  chuẩn "hoàn hảo". Đã xử lý:
+  - Bộ lọc "đọc lại câu mở đầu / từ khóa" chỉ bật khi thật sự gợi ý thứ đó (trước đây vẫn chạy ở chế độ chính xác
+    không gợi ý, có thể xóa nhầm câu liệt kê thật); bỏ lần nghe lại "bỏ câu mở đầu" vô ích khi không có câu mở đầu.
+  - Đo thêm (bundle 34): model ngoài họ Whisper (wav2vec2 tiếng Việt, `danh_gia_hf.py`), PhoWhisper bản gốc
+    (transformers), PhoWhisper-small cho chế độ nhanh, large-v3 với đệm + cắt + không gợi ý (lần trước thử chưa công
+    bằng), gộp lượt ngắn liền nhau vào một cửa sổ (`--gop-luot`) để bớt số lần nghe.
+  - Không dùng số theo nhóm nhỏ (3–6 đoạn mỗi nhóm) để kết luận; báo cáo chỉ dùng số tổng.
+  - Dữ liệu huấn luyện PhoWhisper (theo bài báo): CMV-Vi 14, VIVOS, VLSP 2020 Task-1 và 586 giờ dữ liệu riêng; không
+    có LSVSC hay DataStudio, nhưng phần dữ liệu riêng không kiểm được → WER giọng miền thấp có thể bị lạc quan; họp
+    thật tự ghi là phép thử không thể trùng.
+  - Hạn chế ghi nhận, chưa sửa: file dài ghép nhân tạo có khoảng lặng sạch (dễ cho VAD hơn họp thật); bộ họp không có
+    thông tin người nói nên không giới hạn được số đoạn mỗi người ở bộ giữ riêng; nhiều quyết định chọn trên 30 đoạn
+    (đã so hơn 20 cấu hình) nên số trên bộ chỉnh lạc quan — số chính thức lấy từ bộ giữ riêng.
 
 ---
 
