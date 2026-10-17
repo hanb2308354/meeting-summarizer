@@ -136,8 +136,15 @@ python src/nlp/kiem_cau.py
 | ----------------------- | ------------------------------------------------------------ |
 | `chuyen_giong_noi.py`   | **Code chính**: file ghi âm → JSON                           |
 | `danh_gia_wer.py`       | Đo tỷ lệ lỗi từ (WER) so với văn bản gốc trong `data/dap_an/` |
-| `kiem_thu_asr.py`       | Kiểm thử tự động (không cần tải model)                       |
+| `tai_bo_danh_gia.py`    | Tải mẫu các bộ giọng nói tiếng Việt có lời gốc (ViMD, VietSuperSpeech) |
+| `danh_gia_bo.py`        | Chạy ASR trên các bộ đã tải, đo WER và phân tích lỗi         |
+| `ghep_file_dai.py`      | Ghép đoạn ngắn thành file dài giống cuộc họp để thử ASR      |
+| `kiem_thu_asr.py`       | Kiểm thử tự động (không cần tải model); tự chạy trên GitHub mỗi lần push (`.github/workflows/kiem_thu.yml`) |
 | `thu_faster_whisper.py` | Chỉ dùng để thử nghiệm chọn model, không dùng trong hệ thống |
+
+Định dạng file JSON đầu ra (hợp đồng với phần tóm tắt): xem `docs/dinh_dang_dau_ra.md`.
+
+**Hai chế độ** (`--che-do`): `chinh_xac` (mặc định) dùng PhoWhisper-medium của VinAI + đệm im lặng: lỗi họp 20,4% so với 25,4% của Whisper medium (tốt hơn thật, khoảng tin cậy 95%), giọng miền 5,6% so với 8,2%, nhưng chậm hơn (đang tối ưu, xem nhật ký). `nhanh` dùng Whisper medium. `nhanh_nhat` dùng Whisper small cho máy yếu (1,3–1,5 lần độ dài ghi âm trên máy 2 nhân, nhưng lỗi nhiều hơn rõ: họp 31,0%, giọng miền 13,7%). Model PhoWhisper phải chuyển đổi một lần (`python src/asr/chuyen_doi_model.py`, cần `pip install torch transformers`); chưa có thì chương trình tự dùng chế độ nhanh và báo cách tạo.
 
 Lần đầu chạy cần **internet** để tải model `medium` (khoảng 1,5 GB); các lần sau dùng bản đã lưu trên máy.
 
@@ -160,6 +167,94 @@ python src/asr/danh_gia_wer.py hop_01
 ```
 
 Mỗi lần chạy ghi đè `data/transcripts/hop_01.json`, nên đo WER ngay sau từng lần. Các dòng `[LOẠI - ...]` in ra khi chạy là đoạn bị bỏ vì nghi Whisper "bịa chữ"; nên đọc lại để đếm câu thật bị loại oan.
+
+### Đánh giá ASR trên nhiều giọng, nhiều kiểu nói
+
+Vài file tự thu chưa đủ để biết ASR sai ở đâu. Hai lệnh dưới lấy ngẫu nhiên các đoạn từ bộ dữ liệu công khai có lời gốc, chạy ASR rồi phân tích lỗi:
+
+| Bộ (tên trong lệnh)  | Nguồn trên Hugging Face                  | Có gì                                         | Tải về       |
+| -------------------- | ---------------------------------------- | --------------------------------------------- | ------------ |
+| `hop_va_dien_thoai`  | DataStudio/Vietnamese_ASR_TestingData    | 200 đoạn họp trực tuyến, gọi điện, nói tự nhiên | ~83 MB       |
+| `phuong_ngu`         | doof-ferb/LSVSC (CC BY 4.0)              | Nhãn phương ngữ, chủ đề, giới tính, độ tuổi   | ~390 MB      |
+| `tu_nhien`           | thanhnew2001/VietSuperSpeech             | Trò chuyện, vlog YouTube (lời gốc có thể do máy tạo) | vài MB |
+| `vimd` (không mặc định) | nguyendv02/ViMD_Dataset (CC BY-NC-ND 4.0) | Giọng 63 tỉnh                               | ~1,3 GB      |
+
+```powershell
+pip install -r requirements.txt                   # cần pyarrow để đọc file .parquet
+python src/asr/tai_bo_danh_gia.py --so-mau 30     # 30 đoạn mỗi bộ vào data/bo_danh_gia/ (không lên git)
+python src/asr/danh_gia_bo.py                     # nhận dạng (cấu hình như chuyen_giong_noi.py) + báo cáo
+python src/asr/danh_gia_bo.py --goi-y khong       # so sánh cách gợi ý: day_du | tu_khoa | cau_mo_dau | khong
+python src/asr/danh_gia_bo.py --thu-lai day_du    # so sánh: thử lại tới nhiệt độ 1.0 như faster-whisper gốc
+python src/asr/danh_gia_bo.py --khong-tien-xu-ly  # so sánh: tắt tiền xử lý âm thanh
+python src/asr/danh_gia_bo.py hop_va_dien_thoai --so-sanh medium medium_chi_cau_mo_dau_gioi_han_thu_lai
+                                                  # không chạy ASR: so các cấu hình đã chạy, kèm khoảng tin cậy 95%
+                                                  # (khoảng chứa 0 = chênh lệch có thể chỉ do ngẫu nhiên, chưa đủ để đổi mặc định)
+python src/asr/danh_gia_bo.py --kiem-sua-loi      # không chạy ASR: bảng sửa lỗi của src/tien_xu_ly sửa đúng hay sai
+python src/asr/danh_gia_bo.py hop_va_dien_thoai --loc-lai medium_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot
+                                                  # không chạy ASR: chấm lại kết quả cũ với bộ lọc mới (ước tính nhanh)
+python src/asr/danh_gia_bo.py hop_va_dien_thoai --chi-doan hop_va_dien_thoai_0000186
+python src/asr/danh_gia_bo.py hop_va_dien_thoai --thong-ke-token CAU_HINH   # không chạy ASR: token lời thật mỗi lượt, giới hạn token sát nhất
+python src/asr/danh_gia_bo.py hop_va_dien_thoai --token-moi-giay 12 --token-cong-them 10 --so-luong 8   # đo tốc độ
+                                                  # chạy lại 1 đoạn: lỗi theo vị trí, các lượt VAD, chỉ số từng đoạn model trả về
+```
+
+- Thử model khác (cùng bộ đánh giá, so bằng `--so-sanh`):
+  `--model large-v3-turbo` (faster-whisper tự tải), hoặc PhoWhisper của VinAI sau khi chuyển đổi 1 lần
+  bằng `python src/asr/chuyen_doi_model.py` rồi `--model models/phowhisper-medium-ct2`.
+  Chế độ từng lượt là mặc định; `--ca-file` để so với cách nhận dạng cả file như trước.
+- Mẫu được chia đều theo nhóm (loại nội dung, phương ngữ, kênh) và giới hạn số đoạn cùng người nói / cùng video. Cùng `--hat-giong` thì lần nào cũng ra cùng tập đoạn, nên kết quả các lần so được với nhau.
+- Chạy lại với `--so-mau` lớn hơn chỉ tải bù; file gốc đã tải giữ trong `data/bo_danh_gia/<bộ>/_tai_ve/` nên không tải lại.
+- Hugging Face giới hạn số lần tải khi không đăng nhập (lỗi 429). Code tự chờ rồi thử lại; nếu vẫn hay bị, tạo token loại Read trên huggingface.co rồi chạy `$env:HF_TOKEN="hf_..."` trước lệnh tải (không đưa token lên git).
+- `danh_gia_bo.py` lưu kết quả sau từng đoạn: ngắt giữa chừng rồi chạy lại sẽ làm tiếp.
+- Báo cáo gồm: WER từng bộ và từng nhóm, các cặp từ hay nghe nhầm (để thêm luật sửa lỗi), từ hay bị sót / bị thêm, đoạn bị bộ lọc `[LOẠI]` cắt (để chỉnh ngưỡng), 15 đoạn sai nhiều nhất, đoạn xử lý lâu bất thường (model bị kẹt).
+- Số được đưa về cùng cách viết trước khi so ("20" và "hai mươi" là một), nên WER chỉ tính lỗi nghe sai.
+- Các bộ này không phải cuộc họp nhóm có chia việc, deadline: vẫn cần vài cuộc họp tự thu để đo trọn luồng đến phần tóm tắt.
+
+**Kết quả đã đo** (model medium, CPU; 30 đoạn mỗi bộ, cùng tập đoạn cho mọi cấu hình):
+
+| Cấu hình (`hop_va_dien_thoai`)                   | WER    | Xử lý / độ dài | Đoạn bị kẹt |
+| ------------------------------------------------ | ------ | -------------- | ----------- |
+| Câu mở đầu + từ khóa gợi ý (cấu hình cũ)         | 28,2%  | 5,4x           | 1           |
+| Chỉ từ khóa gợi ý                                | 35,8%  | 5,6x           | 2           |
+| Không gợi ý                                      | 25,8%  | 4,0x           | 0           |
+| **Chỉ câu mở đầu** (mặc định mới)                | **25,6%** | 4,2x        | 1           |
+
+| **Chỉ câu mở đầu + thử lại tới nhiệt độ 0.4** (mặc định mới) | **25,6%** | **4,0x** | **0** |
+
+| Bộ `phuong_ngu` (30 đoạn) | Tổng | Bắc  | Trung | Nam   | Tây Nguyên | Xử lý / độ dài |
+| ------------------------- | ---- | ---- | ----- | ----- | ---------- | -------------- |
+| Cấu hình cũ               | 8,3% | 3,0% | 5,6%  | 11,0% | 13,9%      | 6,2x           |
+| Mặc định mới              | 8,2% | 3,0% | 4,1%  | 13,2% | 13,9%      | 5,4x           |
+
+**Mặc định mới trên 100 đoạn mỗi bộ** (7.150 từ, số liệu dùng cho báo cáo):
+
+| Bộ                  | Từ    | WER       | Chi tiết                                                                       |
+| ------------------- | ----- | --------- | ------------------------------------------------------------------------------ |
+| `hop_va_dien_thoai` | 4.294 | **25,6%** | Tranh luận 8,8%, hội nghị 12,9%, thuyết trình 16,3%, họp trực tuyến 24,4%, gọi điện 58,1% |
+| `phuong_ngu`        | 2.856 | **10,2%** | Bắc 8,4%, Trung 10,4%, Nam 12,6%, Tây Nguyên 12,6%                              |
+
+Từ khóa gợi ý làm model rút câu thành dạng liệt kê ("check customer, check staff, check row"), bịa câu kiểu YouTube và bị kẹt hàng trăm giây, nên đã bỏ. Mặc định mới giữ câu mở đầu (tốt nhất cho đoạn họp trực tuyến: 23,2%) và chỉ thử lại tới nhiệt độ 0.4 (các đoạn kẹt đều ra chữ bịa hoặc trống): WER họp/gọi điện giảm 28,2% → 25,6%, chạy nhanh hơn khoảng 25%, bộ phương ngữ giữ nguyên (chênh lệch giữa các miền chỉ vài từ, trong mức dao động của 30 đoạn).
+
+Điểm còn yếu (để cải tiến tiếp): gọi điện thoại (~58%, âm thanh băng hẹp, model bịa câu xã giao, đã có bộ lọc chặn phần lớn), giọng Nam / Tây Nguyên ("bả" → "bà", "luật" → "lục"), từ tiếng Anh chen giữa câu ("certificate" → "thiên tế"), câu nói hoàn toàn bằng tiếng Anh bị model DỊCH sang tiếng Việt (do cố định language="vi"), đôi khi mất vài từ đầu đoạn; tốc độ khoảng 4-5 lần độ dài ghi âm trên CPU.
+
+**Thử file dài như cuộc họp** (không cần thu âm): ghép các đoạn ngắn thành file 5 phút, xen khoảng lặng ngắn/dài và tiếng ồn nền nhẹ. Lời gốc là lời các đoạn nối lại, nên vẫn đo WER chính xác; báo cáo so luôn với WER khi nghe từng đoạn ngắn.
+
+```powershell
+python src/asr/ghep_file_dai.py hop_va_dien_thoai            # 4 file x 5 phút -> bộ hop_va_dien_thoai_dai
+python src/asr/danh_gia_bo.py hop_va_dien_thoai_dai
+```
+
+Kết quả lần đầu (4 file x 5 phút, cấu hình mặc định): **file dài WER 36,4%, nghe từng đoạn ngắn 27,0%** trên cùng lời. Lỗi tăng chủ yếu do **mất chữ** (841 từ bị sót so với 494 từ nghe nhầm): khi trượt cửa sổ 30 giây trên cả file, model bỏ qua cả khúc lời. Tốc độ trên file dài tốt hơn đoạn ngắn: 1,8 lần độ dài ghi âm.
+
+| Cách nhận dạng file dài                                   | File dài WER | Mất chữ | 30 đoạn ngắn |
+| --------------------------------------------------------- | ------------ | ------- | ------------ |
+| Trượt cửa sổ 30 giây trên cả file (mặc định)              | 36,4%        | 841 từ  | 25,5%        |
+| `--theo-khuc`: theo lô của faster-whisper                 | 47,0% (tệ hơn) | 1.486 từ | 26,8%      |
+| `--tung-luot` (lần 1, tắt VAD trong từng lượt)            | **30,5%** (tốc độ 2,9x) | 568 từ | 27,7%: bằng mặc định, trừ 1 đoạn thuyết trình bị bịa câu ở đầu |
+| `--tung-luot` (lần 2, bật VAD lần nữa trong từng lượt)     | 31,8% (2,9x) | 649 từ  | 29,3%: tệ hơn lần 1 ở cả hai bộ, đã bỏ |
+| `--tung-luot` (lần 3, lượt ra quá ít chữ thì nhận dạng lại) | **29,9%** (3,0x) | 507 từ | **25,4%**: bằng mặc định (25,5%), đoạn bịa câu 88% -> 42% |
+
+(Đã thử gộp các lượt nói dưới 2 giây: kết quả không đổi 30,4% / 27,8%, nên bỏ.)
 
 ## Văn bản sạch: src/tien_xu_ly (Hân)
 
