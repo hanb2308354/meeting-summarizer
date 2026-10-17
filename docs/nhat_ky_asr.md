@@ -214,6 +214,27 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
   tắc đổi mặc định). Chưa có model PhoWhisper đã chuyển đổi thì tự lùi về medium và báo cách tạo. Còn phải xác nhận
   trên file dài 5 phút với đúng cấu hình mặc định (bundle 30); nếu tệ hơn thì quay lại medium.
 
+- **Kết quả bundle 30 (16–17/10):**
+  - **Tìm ra chỗ chậm thật (đo thời gian từng bước, 6 đoạn, 62 giây âm thanh, máy 2 nhân):**
+
+    | | Gọi nhận dạng | Lần nghe cửa sổ 30 giây | Nghe | Sinh chữ | Dò mốc thời gian | Tổng |
+    |---|---|---|---|---|---|---|
+    | medium | 6 | 6 | 129s (49%) | 112s (42%) | 22s | 266s (4,3x) |
+    | PhoWhisper + đệm | 6 | **15** | 265s (52%) | 195s (39%) | 44s | 505s (8,1x) |
+
+    Mỗi lần nghe một cửa sổ mất ~21 giây trên máy này. PhoWhisper không biết dừng nên faster-whisper mở thêm cửa
+    sổ ngay trong phần im lặng đệm (2,5 cửa sổ mỗi lượt), chữ ra ở đó đằng nào cũng bị cắt. Đây mới là lý do chậm,
+    không phải số token (bundle 29) hay thử lại nhiệt độ (không có lần thử lại nào).
+    **Sửa (bundle 31):** đọc kết quả từng cửa sổ và dừng ngay khi gặp đoạn bắt đầu sau cuối âm thanh thật — các
+    cửa sổ sau chỉ còn phần đệm nên không mất lời thật; chữ ra phải giống hệt, chỉ nhanh hơn. Đang đo.
+  - **Chế độ chính xác trên file dài 5 phút (xác nhận đổi mặc định):** 27,7% so với medium 29,9% (−2,2 điểm,
+    tốt hơn ở 3/4 file, chưa chắc) → không tệ hơn, **giữ mặc định**.
+  - **Model `small` cho chế độ nhanh:** họp 31,0% (medium 25,4%), giọng miền 13,7% (8,2%), tốc độ 1,3x / 1,5x
+    (đạt mức ≤ 1,5x). Nhanh gấp ~2,8 lần medium nhưng lỗi nhiều hơn rõ. Ghi nhận làm phương án cho máy yếu,
+    chưa thay chế độ nhanh.
+- **Độ bền file rất dài (C2, `src/asr/thu_do_ben.py`):** đo trên máy phát triển: file 1 giờ dùng tối đa ~1,1 GB RAM
+  cho đọc + tiền xử lý + cắt lượt nói (khoảng 4–5 lần dung lượng sóng âm); file 2 giờ ước ~2 GB. Đo trên máy Hân ở bundle 31.
+
 ---
 
 ## 4. Phạm vi đã thu hẹp
@@ -256,6 +277,7 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 | 15/10 | Luật bỏ chữ ngoài âm thanh thật; tài liệu định dạng đầu ra; kiểm thử tự chạy trên GitHub |
 | 15–16/10 | Đo 8 cấu hình / 5 model qua đêm: PhoWhisper + đệm im lặng chính xác nhất (TỐT HƠN THẬT), chốt A1; còn tốc độ |
 | 16/10 | Thử giới hạn token (sai hướng, bỏ) và số luồng CPU (nhanh hơn 17%, giữ); đổi mặc định sang chế độ chính xác |
+| 17/10 | Đo thời gian từng bước: PhoWhisper nghe thêm cửa sổ trong phần đệm (15 so với 6) → sửa; file dài xác nhận chế độ chính xác |
 
 **Về điểm số trong các báo cáo tiến độ:** thang 10 điểm và 16 điều kiện "hoàn thiện" do nhóm tự đặt
 (không phải thang của học phần). Mức hoàn thiện = tổng điểm 16 điều kiện ÷ 16 (Đạt = 1, Một phần = 0,5, Chưa = 0),

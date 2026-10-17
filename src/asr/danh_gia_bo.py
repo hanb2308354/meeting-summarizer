@@ -749,8 +749,10 @@ class DoThoiGian:
         con_lai = tong_giay - sum(self.giay.values())
         d.append(f"  {'khác':<9} {'phổ âm thanh, VAD, lọc, tách câu':<32} {'':>4}       {con_lai:7.1f}s "
                  f"({con_lai / max(tong_giay, 1e-9):5.1%})")
-        d.append(f"  token đã sinh: {self.so_token} | lần sinh chữ / lần gọi nhận dạng: "
-                 f"{self.so_lan['generate'] / max(so_lan_nghe, 1):.2f}  ← > 1 là có thử lại ở nhiệt độ cao hơn")
+        d.append(f"  token đã sinh: {self.so_token} | mỗi lần gọi nhận dạng: nghe "
+                 f"{self.so_lan['encode'] / max(so_lan_nghe, 1):.2f} cửa sổ, sinh chữ "
+                 f"{self.so_lan['generate'] / max(so_lan_nghe, 1):.2f} lần"
+                 "  ← nghe > 1: mở thêm cửa sổ; sinh chữ > nghe: thử lại ở nhiệt độ cao hơn")
         return "\n".join(d)
 
 

@@ -562,7 +562,8 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
             if dem_im_lang and len(am_thanh) < SO_MAU_CUA_SO:
                 am_thanh = np.pad(am_thanh, (0, SO_MAU_CUA_SO - len(am_thanh)))
             doan, _ = model.transcribe(am_thanh, **tham_so)
-            doan, chu_bo = cat_ngoai_am_thanh(list(doan), (den - tu) / TAN_SO_MAU + LE_CUOI_LUOT)
+            het = (den - tu) / TAN_SO_MAU + LE_CUOI_LUOT
+            doan, chu_bo = cat_ngoai_am_thanh(dung_khi_qua_am_thanh(doan, het), het)
             if chu_bo:
                 print(f"  [LOẠI - ngoài âm thanh thật của lượt] {chu_bo}")
                 if nhat_ky is not None:
@@ -619,6 +620,23 @@ def cat_theo_khoang(cac_doan, tu_giay, den_giay):
             ket_qua.append(dataclasses.replace(doan, start=cac_tu[0].start, end=cac_tu[-1].end, words=cac_tu,
                                                text="".join(t.word for t in cac_tu)))
     return ket_qua
+
+
+def dung_khi_qua_am_thanh(cac_doan, het_giay):
+    """Lấy các đoạn faster-whisper trả về (lần lượt từng cửa sổ 30 giây), dừng ngay khi gặp đoạn bắt đầu
+    sau cuối âm thanh thật.
+
+    Khi đệm im lặng, PhoWhisper không biết dừng: faster-whisper thấy câu chưa kết thúc liền mở THÊM cửa
+    sổ ngay trong phần đệm, mỗi cửa sổ phải nghe lại 30 giây (đo trên máy 2 nhân: ~21 giây mỗi lần;
+    6 lượt nói thành 15 lần nghe, medium chỉ 6). Đoạn bắt đầu sau cuối âm thanh thật nghĩa là các cửa
+    sổ sau cũng chỉ còn phần đệm, nên ngừng lấy tiếp không mất lời thật nào (các đoạn đó đằng nào cũng
+    bị cat_ngoai_am_thanh bỏ)."""
+    lay = []
+    for doan in cac_doan:
+        lay.append(doan)
+        if doan.start >= het_giay:
+            break
+    return lay
 
 
 def cat_ngoai_am_thanh(cac_doan, den_giay):

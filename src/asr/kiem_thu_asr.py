@@ -1533,6 +1533,73 @@ def do_thoi_gian_dem_tung_buoc_cua_model():
         return f"báo cáo sai:\n{bao_cao}"
 
 
+@ca
+def khong_nghe_them_cua_so_khi_da_qua_am_thanh_that():
+    """PhoWhisper + đệm im lặng: faster-whisper mở thêm cửa sổ trong phần đệm (mỗi lần nghe lại 30 giây).
+    Gặp đoạn bắt đầu sau cuối lượt thì phải dừng, không đòi cửa sổ tiếp theo."""
+    that = doan(chuoi_tu(0.2, "Bạn Lan làm slide nha mọi người."))      # lượt dài 4 giây
+    bia = doan(chuoi_tu(6.0, "cảm ơn và hẹn gặp lại"))
+
+    class ModelNhieuCuaSo(ModelGia):
+        def transcribe(self, am_thanh, **tham_so):
+            inspect.signature(WhisperModel.transcribe).bind(None, am_thanh, **tham_so)
+
+            def cac_cua_so():
+                yield that
+                yield bia
+                raise AssertionError("đã nghe thêm cửa sổ trong phần đệm")
+            return cac_cua_so(), None
+
+    goc = asr.cat_luot_noi
+    try:
+        asr.cat_luot_noi = lambda s: [(0, 4 * SR)]
+        with contextlib.redirect_stdout(io.StringIO()):
+            cac_tu, _ = asr.nhan_dang(ModelNhieuCuaSo([]), np.zeros(5 * SR, dtype=np.float32),
+                                      tung_luot=True, dem_im_lang=True)
+    finally:
+        asr.cat_luot_noi = goc
+    if asr.ghep_tu(cac_tu) != "Bạn Lan làm slide nha mọi người.":
+        return f"chữ sai: {asr.ghep_tu(cac_tu)!r}"
+    # Lời thật kéo dài qua nhiều cửa sổ (chưa qua cuối âm thanh) thì vẫn lấy hết
+    nhieu = [doan(chuoi_tu(0.0, "một hai")), doan(chuoi_tu(10.0, "ba bốn")), doan(chuoi_tu(20.0, "năm sáu"))]
+    if len(asr.dung_khi_qua_am_thanh(iter(nhieu), 25.5)) != 3:
+        return "dừng sớm khi lời thật còn tiếp"
+
+
+@ca
+def doc_file_stereo_44100hz_va_mp3():
+    """Ghi âm điện thoại / máy tính hay là stereo 44,1 kHz hoặc mp3: phải đọc thành 16 kHz, 1 kênh, đúng độ dài."""
+    import av
+    t = np.arange(int(3.0 * 44100)) / 44100
+    trai = 0.2 * np.sin(2 * np.pi * 200 * t)
+    phai = 0.2 * np.sin(2 * np.pi * 300 * t)
+    with tempfile.TemporaryDirectory() as tm:
+        tep = Path(tm) / "stereo.wav"
+        with wave.open(str(tep), "wb") as f:
+            f.setnchannels(2)
+            f.setsampwidth(2)
+            f.setframerate(44100)
+            f.writeframes((np.stack([trai, phai], axis=1) * 32767).astype(np.int16).tobytes())
+        x = asr.doc_am_thanh(tep)
+        if x.ndim != 1 or abs(len(x) - 3 * SR) > SR // 50:
+            return f"stereo 44,1 kHz đọc sai: {x.shape}"
+        # mp3 (tạo bằng chính thư viện đọc file của faster-whisper)
+        mp3 = Path(tm) / "hop.mp3"
+        with av.open(str(mp3), "w") as ra:
+            luong = ra.add_stream("mp3", rate=44100)
+            luong.layout = "stereo"
+            khung = av.AudioFrame.from_ndarray(
+                (np.stack([trai, phai]) * 32767).astype(np.int16).reshape(1, -1), format="s16", layout="stereo")
+            khung.sample_rate = 44100
+            for goi in luong.encode(khung):
+                ra.mux(goi)
+            for goi in luong.encode(None):
+                ra.mux(goi)
+        y = asr.doc_am_thanh(mp3)
+        if y.ndim != 1 or abs(len(y) - 3 * SR) > SR // 5:
+            return f"mp3 stereo đọc sai: {y.shape}"
+
+
 if __name__ == "__main__":
     so_dat = 0
     goc = (asr.THU_MUC_KET_QUA, asr.WhisperModel, list(sys.argv))
