@@ -176,6 +176,10 @@ def ten_cau_hinh(args):
         ten += f"_beam{args.beam}"
     if (args.token_moi_giay, args.token_cong_them) != (asr.TOKEN_MOI_GIAY, asr.TOKEN_CONG_THEM):
         ten += f"_token{args.token_moi_giay}-{args.token_cong_them}"
+    if args.khong_nghe_lai:
+        ten += "_khong_nghe_lai"
+    if args.khong_cat_ngoai:
+        ten += "_khong_cat_ngoai"
     if args.so_luong != asr.SO_LUONG_CPU:   # chỉ đổi tốc độ, nhưng để riêng cho số "xử lý ...x" so được
         ten += f"_luong{args.so_luong}"
     if args.khong_tien_xu_ly:
@@ -199,7 +203,8 @@ def nhan_dang_mot_doan(model, duong_dan, args):
                                   theo_khuc=args.theo_khuc, tung_luot=args.tung_luot, nhat_ky=nhat_ky,
                                   khong_moc_thoi_gian=args.khong_moc_thoi_gian, dem_im_lang=args.dem_im_lang,
                                   beam=args.beam, token_moi_giay=args.token_moi_giay,
-                                  token_cong_them=args.token_cong_them)
+                                  token_cong_them=args.token_cong_them,
+                                  nghe_lai=not args.khong_nghe_lai, cat_ngoai=not args.khong_cat_ngoai)
     return {
         "du_doan": " ".join(cau["text"] for cau in asr.tach_cau(cac_tu)),
         "bi_loai": [d.strip() for d in dau_ra.getvalue().splitlines() if "[LOẠI" in d],
@@ -679,6 +684,24 @@ def kiem_sua_loi(ten_bo, cau_hinh):
 # ======================================================================
 # CHƯƠNG TRÌNH CHÍNH
 # ======================================================================
+def khong_loc(ten_bo, cau_hinh):
+    """Chấm lại kết quả ĐÃ LƯU nhưng giữ mọi đoạn model trả về, kể cả đoạn bộ lọc [LOẠI] đã bỏ.
+    Ghi ra cấu hình <cau_hinh>_khong_loc để so bằng --so-sanh. Trả về số đoạn được trả lại."""
+    thu_muc = THU_MUC_BO / ten_bo
+    cu = doc_json(thu_muc / f"ket_qua__{cau_hinh}.json", {})
+    moi, so_tra_lai = {}, 0
+    for id_doan, kq in cu.items():
+        cac_doan = [c for c in kq.get("chi_tiet", []) if "text" in c]
+        if "loi" in kq or not cac_doan:
+            moi[id_doan] = kq
+            continue
+        so_tra_lai += sum(1 for c in cac_doan if c["loai"])
+        moi[id_doan] = dict(kq, du_doan=" ".join(c["text"] for c in cac_doan), bi_loai=[])
+    ten_moi = f"{cau_hinh}_khong_loc"
+    ghi_json(moi, thu_muc / f"ket_qua__{ten_moi}.json")
+    return ten_moi, so_tra_lai
+
+
 def loc_lai(ten_bo, cau_hinh):
     """Chấm lại kết quả ĐÃ LƯU với bộ lọc [LOẠI] hiện tại, không chạy lại nhận dạng (vài giây).
 
@@ -860,6 +883,13 @@ def main():
                         help=f"(mặc định {asr.TOKEN_CONG_THEM})")
     parser.add_argument("--so-luong", type=int, default=asr.SO_LUONG_CPU,
                         help="Số luồng CPU cho model (mặc định 0 = 4 luồng của faster-whisper)")
+    parser.add_argument("--khong-nghe-lai", action="store_true",
+                        help="Đo bật/tắt: không nhận dạng lại lượt nói bị nghe hỏng")
+    parser.add_argument("--khong-cat-ngoai", action="store_true",
+                        help="Đo bật/tắt: không cắt chữ sau cuối âm thanh thật của lượt")
+    parser.add_argument("--khong-loc", metavar="CAU_HINH",
+                        help="Không chạy ASR: chấm lại kết quả đã lưu nhưng GIỮ cả các đoạn bộ lọc [LOẠI] đã bỏ "
+                             "(đo bộ lọc có ích không)")
     parser.add_argument("--do-thoi-gian", action="store_true",
                         help="Dùng với --chi-doan: đo thời gian từng bước (nghe, sinh chữ, dò mốc thời gian)")
     parser.add_argument("--thong-ke-token", metavar="CAU_HINH",
@@ -906,6 +936,12 @@ def main():
             tep = THU_MUC_BAO_CAO / f"{ten_bo}__kiem_sua_loi.txt"
             tep.write_text(bao_cao + "\n", encoding="utf-8")
             print("\n" + bao_cao + f"\n\nĐã lưu: {asr.hien_thi(tep)}")
+        return
+
+    if args.khong_loc:
+        for ten_bo in cac_bo:
+            ten_moi, so = khong_loc(ten_bo, args.khong_loc)
+            print(f"{ten_bo}: trả lại {so} đoạn bộ lọc đã bỏ -> cấu hình {ten_moi}")
         return
 
     if args.loc_lai:

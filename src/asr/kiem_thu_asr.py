@@ -672,6 +672,7 @@ def tai_bo_parquet_chia_deu_tach_am_thanh_va_tai_bu():
             with contextlib.redirect_stdout(io.StringIO()):
                 lan_1 = tb.tai_mot_bo("phuong_ngu", 20, 42)
                 lan_2 = tb.tai_mot_bo("phuong_ngu", 25, 42)   # tải bù: không tải lại file gốc
+                giu_rieng = tb.tai_mot_bo("phuong_ngu", 20, 2026, giu_rieng=True)
         finally:
             tb.THU_MUC_BO, tb.tai_file = goc
             tb._bo_nho_parquet.clear()
@@ -688,6 +689,11 @@ def tai_bo_parquet_chia_deu_tach_am_thanh_va_tai_bu():
         return f"tải bù sai: tải file gốc {len(so_lan_tai)} lần, {len(lan_2)} đoạn"
     if sai_am_thanh:
         return f"âm thanh tách ra không khớp dòng: {sai_am_thanh[:3]}"
+    trung = {m["row_idx"] for m in giu_rieng} & {m["row_idx"] for m in lan_2}
+    if len(giu_rieng) != 20 or trung or len(so_lan_tai) != 1:
+        return f"bộ giữ riêng sai: {len(giu_rieng)} đoạn, trùng {sorted(trung)}, tải file gốc {len(so_lan_tai)} lần"
+    if not all(m["id"].startswith("phuong_ngu_giu_rieng_") for m in giu_rieng):
+        return f"tên đoạn bộ giữ riêng sai: {giu_rieng[0]['id']}"
 
 
 @ca
@@ -1246,7 +1252,8 @@ def kieu_tinh_vao_ten_cau_hinh_va_truyen_cho_model():
     from types import SimpleNamespace
     co_ban = dict(model="medium", goi_y="cau_mo_dau", thu_lai="gioi_han", theo_khuc=False, tung_luot=True,
                   khong_moc_thoi_gian=False, dem_im_lang=False, beam=5, khong_tien_xu_ly=False, loc_nhieu=False,
-                  token_moi_giay=asr.TOKEN_MOI_GIAY, token_cong_them=asr.TOKEN_CONG_THEM, so_luong=asr.SO_LUONG_CPU)
+                  token_moi_giay=asr.TOKEN_MOI_GIAY, token_cong_them=asr.TOKEN_CONG_THEM, so_luong=asr.SO_LUONG_CPU,
+                  khong_nghe_lai=False, khong_cat_ngoai=False)
     ten_int8 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="int8"))
     ten_f32 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="float32"))
     if ten_int8 != "medium_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot" or ten_f32 != "medium_chi_cau_mo_dau_float32_gioi_han_thu_lai_tung_luot":
@@ -1413,7 +1420,8 @@ def so_luong_cpu_truyen_cho_model_va_vao_ten_cau_hinh():
     co_ban = dict(model="models/phowhisper-medium-ct2", goi_y="cau_mo_dau", thu_lai="gioi_han", theo_khuc=False,
                   tung_luot=True, khong_moc_thoi_gian=False, dem_im_lang=True, beam=5, khong_tien_xu_ly=False,
                   loc_nhieu=False, kieu_tinh="int8")
-    ten = dg.ten_cau_hinh(SimpleNamespace(**co_ban, token_moi_giay=12, token_cong_them=10, so_luong=8))
+    ten = dg.ten_cau_hinh(SimpleNamespace(**co_ban, token_moi_giay=12, token_cong_them=10, so_luong=8,
+                                          khong_nghe_lai=False, khong_cat_ngoai=False))
     if ten != "phowhisper-medium-ct2_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot_dem_lang_token12-10_luong8":
         return f"tên cấu hình sai: {ten}"
     da_tao = []
@@ -1495,6 +1503,8 @@ def che_do_chinh_xac_dung_phowhisper_dem_im_lang_va_lui_ve_medium():
         return f"thiếu model chính xác phải lùi về {asr.TEN_MODEL} và báo cách tạo: {thieu}"
     if not co[0].endswith("phowhisper-medium-ct2") or co[1] is not True or co[2]:
         return f"có model chính xác mà không dùng: {co}"
+    if asr.chon_che_do("nhanh_nhat") != ("small", False, None):
+        return f"chế độ nhanh nhất sai: {asr.chon_che_do('nhanh_nhat')}"
     if nhanh != (asr.TEN_MODEL, False, None) or tu_chon != ("models/khac-ct2", True, None):
         return f"chế độ nhanh / tự chọn model sai: {nhanh}, {tu_chon}"
     if len(da_tao) != 1 or not da_tao[0].endswith("phowhisper-medium-ct2") or da_nghe != [True]:
@@ -1564,6 +1574,18 @@ def khong_nghe_them_cua_so_khi_da_qua_am_thanh_that():
     nhieu = [doan(chuoi_tu(0.0, "một hai")), doan(chuoi_tu(10.0, "ba bốn")), doan(chuoi_tu(20.0, "năm sáu"))]
     if len(asr.dung_khi_qua_am_thanh(iter(nhieu), 25.5)) != 3:
         return "dừng sớm khi lời thật còn tiếp"
+    # Đoạn dở dang cuối cửa sổ đầu: bắt đầu trong lượt, kéo tới hết 30 giây -> không mở cửa sổ sau
+    do_dang = doan(chuoi_tu(3.0, "nha cảm ơn và hẹn gặp lại"))
+    do_dang = dataclasses.replace(do_dang, end=30.0)
+
+    def cua_so():
+        yield doan(chuoi_tu(0.2, "Bạn Lan làm slide"))
+        yield do_dang
+        raise AssertionError("đã nghe thêm cửa sổ sau đoạn dở dang")
+    lay = asr.dung_khi_qua_am_thanh(cua_so(), 4.5)
+    giu, _ = asr.cat_ngoai_am_thanh(lay, 4.5)
+    if asr.ghep_tu([t for d in giu for t in d.words]) != "Bạn Lan làm slide nha cảm ơn và":
+        return f"giữ chữ trong lượt sai: {[d.text for d in giu]}"
 
 
 @ca
@@ -1598,6 +1620,52 @@ def doc_file_stereo_44100hz_va_mp3():
         y = asr.doc_am_thanh(mp3)
         if y.ndim != 1 or abs(len(y) - 3 * SR) > SR // 5:
             return f"mp3 stereo đọc sai: {y.shape}"
+
+
+@ca
+def tat_tung_thanh_phan_de_do_co_ich_khong():
+    """A2: tắt nghe lại lượt hỏng / tắt cắt ngoài âm thanh / giữ đoạn bộ lọc bỏ (chấm lại không chạy model)."""
+    import danh_gia_bo as dg
+    goi = []
+
+    class ModelHong(ModelGia):   # lượt 5 giây chỉ ra 1 chữ: lượt hỏng
+        def transcribe(self, am_thanh, **tham_so):
+            goi.append(1)
+            return super().transcribe(am_thanh, **tham_so)
+
+    bia = doan(chuoi_tu(6.0, "cảm ơn và hẹn gặp lại"))
+    goc = asr.cat_luot_noi
+    try:
+        asr.cat_luot_noi = lambda s: [(0, 5 * SR)]
+        with contextlib.redirect_stdout(io.StringIO()):
+            asr.nhan_dang(ModelHong([doan([tu(0.1, "dạ")])]), np.zeros(6 * SR, dtype=np.float32),
+                          tung_luot=True, nghe_lai=False)
+            co_cat, _ = asr.nhan_dang(ModelGia([doan(chuoi_tu(0.1, "Bạn Lan làm slide.")), bia]),
+                                      np.zeros(6 * SR, dtype=np.float32), tung_luot=True, dem_im_lang=True)
+            khong_cat, _ = asr.nhan_dang(ModelGia([doan(chuoi_tu(0.1, "Bạn Lan làm slide.")), bia]),
+                                         np.zeros(6 * SR, dtype=np.float32), tung_luot=True, dem_im_lang=True,
+                                         cat_ngoai=False)
+    finally:
+        asr.cat_luot_noi = goc
+    if goi != [1]:
+        return f"tắt nghe lại mà vẫn nhận dạng lại: {len(goi)} lần"
+    if "hẹn gặp lại" in asr.ghep_tu(co_cat) or "hẹn gặp lại" not in asr.ghep_tu(khong_cat):
+        return f"tắt cắt ngoài âm thanh sai: {asr.ghep_tu(co_cat)!r} / {asr.ghep_tu(khong_cat)!r}"
+    chi_tiet = [{"start": 0, "end": 1, "text": "bạn lan làm slide", "loai": None},
+                {"start": 2, "end": 3, "text": "hãy đăng ký kênh", "loai": "câu bịa kiểu YouTube"}]
+    goc_bo = dg.THU_MUC_BO
+    with tempfile.TemporaryDirectory() as tm:
+        (Path(tm) / "bo").mkdir()
+        (Path(tm) / "bo" / "ket_qua__x.json").write_text(json.dumps(
+            {"a": {"du_doan": "bạn lan làm slide", "chi_tiet": chi_tiet}}, ensure_ascii=False), encoding="utf-8")
+        try:
+            dg.THU_MUC_BO = Path(tm)
+            ten, so = dg.khong_loc("bo", "x")
+            moi = json.loads((Path(tm) / "bo" / f"ket_qua__{ten}.json").read_text(encoding="utf-8"))
+        finally:
+            dg.THU_MUC_BO = goc_bo
+    if ten != "x_khong_loc" or so != 1 or moi["a"]["du_doan"] != "bạn lan làm slide hãy đăng ký kênh":
+        return f"chấm lại không lọc sai: {ten}, {so}, {moi}"
 
 
 if __name__ == "__main__":

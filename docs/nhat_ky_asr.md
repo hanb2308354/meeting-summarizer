@@ -235,6 +235,19 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 - **Độ bền file rất dài (C2, `src/asr/thu_do_ben.py`):** đo trên máy phát triển: file 1 giờ dùng tối đa ~1,1 GB RAM
   cho đọc + tiền xử lý + cắt lượt nói (khoảng 4–5 lần dung lượng sóng âm); file 2 giờ ước ~2 GB. Đo trên máy Hân ở bundle 31.
 
+- **Kết quả bundle 31 (17/10):**
+  - Bản sửa thứ nhất (dừng khi đoạn BẮT ĐẦU sau cuối âm thanh): chữ ra **giống hệt** (20,4% / 5,6%, file dài 27,7%),
+    lần nghe cửa sổ 15 → 12, thời gian 6 đoạn 505s → 421s (−17%). So với lần đo cũ (còn 4 luồng CPU): 10,2x → 7,5x,
+    12,6x → 9,4x, file dài 9,2x → 6,9x.
+  - Vẫn 2 cửa sổ mỗi lượt: đoạn dở dang cuối cửa sổ đầu kéo tới hết 30 giây nên chưa làm dừng.
+    **Sửa lần hai (bundle 32):** dừng khi đoạn KÉO QUA cuối âm thanh thật. Các đoạn nối tiếp nhau theo thời gian
+    nên mọi đoạn sau nó đều nằm trong phần đệm: vẫn không mất lời. Đang đo.
+  - **File 2 giờ (C2):** đọc + tiền xử lý + cắt lượt nói chạy hết trong 48 giây, RAM cao nhất 2,0 GB / 8,5 GB (23%).
+    Nhận dạng xử lý từng lượt ≤ 25 giây nên RAM phần đó không tăng theo độ dài file → **đạt**.
+- **Bổ sung bundle 32:** chế độ `nhanh_nhat` (Whisper small) cho máy yếu (C1: phần chậm do máy — mỗi cửa sổ ~21 giây
+  trên 2 nhân — và có cấu hình ≤ 1,5x thay thế); tải bộ kiểm tra giữ riêng (`--giu-rieng`, không trùng đoạn nào của
+  bộ dùng để chỉnh, hạt giống khác); cờ tắt từng thành phần để đo A2.
+
 ---
 
 ## 4. Phạm vi đã thu hẹp
@@ -278,7 +291,8 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 | 15–16/10 | Đo 8 cấu hình / 5 model qua đêm: PhoWhisper + đệm im lặng chính xác nhất (TỐT HƠN THẬT), chốt A1; còn tốc độ |
 | 16/10 | Thử giới hạn token (sai hướng, bỏ) và số luồng CPU (nhanh hơn 17%, giữ); đổi mặc định sang chế độ chính xác |
 | 17/10 | Đo thời gian từng bước: PhoWhisper nghe thêm cửa sổ trong phần đệm (15 so với 6) → sửa; file dài xác nhận chế độ chính xác |
+| 17/10 | Bản sửa tốc độ: −17–26%, chữ giống hệt; file 2 giờ dùng 2 GB RAM; thêm chế độ nhanh nhất, bộ giữ riêng, đo bật/tắt |
 
 **Về điểm số trong các báo cáo tiến độ:** thang 10 điểm và 16 điều kiện "hoàn thiện" do nhóm tự đặt
 (không phải thang của học phần). Mức hoàn thiện = tổng điểm 16 điều kiện ÷ 16 (Đạt = 1, Một phần = 0,5, Chưa = 0),
-hiện là 7,5/16 ≈ 47% (E1, A1 đạt). Điểm chất lượng hiện là 7,75/10.
+hiện là 9,5/16 ≈ 59%. Điểm chất lượng hiện là 8,25/10.

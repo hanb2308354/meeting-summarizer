@@ -290,8 +290,9 @@ def ten_nguon(dong, row_idx, cau_hinh):
     return str(cau_hinh["nguon"](dong)) if cau_hinh["nguon"] else str(row_idx)
 
 
-def chon_dong(cac_dong, cau_hinh, so_mau, da_co, chia_deu=True):
+def chon_dong(cac_dong, cau_hinh, so_mau, da_co, chia_deu=True, loai_tru=()):
     """Chọn dòng theo hạn mức mỗi nhóm và mỗi nguồn. da_co: các mục đã tải từ trước.
+    loai_tru: row_idx không được chọn (bộ giữ riêng không trùng đoạn nào của bộ dùng để chỉnh).
 
     chia_deu=False: bỏ hạn mức nhóm (dùng khi có ít nhóm hơn dự kiến), vẫn giữ hạn mức nguồn.
     """
@@ -299,7 +300,7 @@ def chon_dong(cac_dong, cau_hinh, so_mau, da_co, chia_deu=True):
     toi_da_nguon = cau_hinh["toi_da_moi_nguon"]
     dem_nhom = Counter(muc["nhom"] for muc in da_co)
     dem_nguon = Counter(muc["nguon"] for muc in da_co)
-    da_lay = {muc["row_idx"] for muc in da_co}
+    da_lay = {muc["row_idx"] for muc in da_co} | set(loai_tru)
     chon = []
     for row_idx, dong in cac_dong:
         if len(da_co) + len(chon) >= so_mau:
@@ -344,14 +345,24 @@ def luu_am_thanh(ten_bo, row_idx, dong, cau_hinh, thu_muc):
     return tep
 
 
-def tai_mot_bo(ten_bo, so_mau, hat_giong):
+def tai_mot_bo(ten_bo, so_mau, hat_giong, giu_rieng=False):
+    """giu_rieng=True: tải bộ KIỂM TRA GIỮ RIÊNG <tên bộ>_giu_rieng, không trùng đoạn nào đã tải vào bộ
+    dùng để chỉnh (kể cả đoạn chưa dùng), dùng chung file gốc đã tải. Chỉ chạy bộ này một lần ở bước
+    xác nhận cuối, không dùng để chỉnh."""
     cau_hinh = CAC_BO[ten_bo]
+    thu_muc_goc_bo = THU_MUC_BO / ten_bo
+    loai_tru = set()
+    if giu_rieng:
+        loai_tru = {m["row_idx"] for m in doc_nhan(thu_muc_goc_bo / "nhan.json")}
+        ten_bo = f"{ten_bo}_giu_rieng"
     thu_muc = THU_MUC_BO / ten_bo
     (thu_muc / "audio").mkdir(parents=True, exist_ok=True)
     tep_nhan = thu_muc / "nhan.json"
     cac_muc = doc_nhan(tep_nhan)
 
     print(f"\n=== {ten_bo}: {cau_hinh['mo_ta']} ===")
+    if giu_rieng:
+        print(f"Bộ kiểm tra giữ riêng: bỏ {len(loai_tru)} đoạn đã có trong bộ dùng để chỉnh")
     print(f"Nguồn: huggingface.co/datasets/{cau_hinh['dataset']} ({cau_hinh['giay_phep']})")
     if len(cac_muc) >= so_mau:
         print(f"Đã có {len(cac_muc)} đoạn, không cần tải thêm.")
@@ -359,8 +370,9 @@ def tai_mot_bo(ten_bo, so_mau, hat_giong):
     if cac_muc:
         print(f"Đã có {len(cac_muc)} đoạn, tải bù {so_mau - len(cac_muc)} đoạn.")
 
-    cac_dong = (cac_dong_parquet(cau_hinh, thu_muc) if cau_hinh["kieu"] == "parquet"
-                else cac_dong_danh_sach(cau_hinh, thu_muc))
+    # File gốc tải về nằm ở bộ chính, bộ giữ riêng dùng chung (khỏi tải lại vài trăm MB)
+    cac_dong = (cac_dong_parquet(cau_hinh, thu_muc_goc_bo) if cau_hinh["kieu"] == "parquet"
+                else cac_dong_danh_sach(cau_hinh, thu_muc_goc_bo))
     if not cac_dong:
         raise LoiTai("Không đọc được dòng dữ liệu nào (định dạng bộ dữ liệu đã đổi?).")
     # Thứ tự ngẫu nhiên cố định theo hạt giống: chạy lại vẫn ra cùng tập đoạn,
@@ -370,7 +382,7 @@ def tai_mot_bo(ten_bo, so_mau, hat_giong):
     so_loi_tai = 0
     # Lượt 1 chia đều theo nhóm; bộ có ít nhóm hơn dự kiến thì lượt 2 lấy bù không chia đều
     for chia_deu in (True, False):
-        for row_idx, dong in chon_dong(cac_dong, cau_hinh, so_mau, cac_muc, chia_deu):
+        for row_idx, dong in chon_dong(cac_dong, cau_hinh, so_mau, cac_muc, chia_deu, loai_tru):
             try:
                 tep = luu_am_thanh(ten_bo, row_idx, dong, cau_hinh, thu_muc)
             except LoiTai as loi:
@@ -403,9 +415,14 @@ def main():
     parser.add_argument("bo", nargs="*",
                         help=f"Tên bộ: {', '.join(CAC_BO)} (bỏ trống = {', '.join(mac_dinh)})")
     parser.add_argument("--so-mau", type=int, default=30, help="Số đoạn mỗi bộ (mặc định 30)")
-    parser.add_argument("--hat-giong", type=int, default=42,
-                        help="Hạt giống ngẫu nhiên (giữ nguyên để lần nào cũng ra cùng tập đoạn)")
+    parser.add_argument("--hat-giong", type=int, default=None,
+                        help="Hạt giống ngẫu nhiên (giữ nguyên để lần nào cũng ra cùng tập đoạn); "
+                             "mặc định 42, bộ giữ riêng 2026")
+    parser.add_argument("--giu-rieng", action="store_true",
+                        help="Tải bộ kiểm tra giữ riêng <bộ>_giu_rieng: không trùng đoạn nào của bộ dùng để chỉnh")
     args = parser.parse_args()
+    if args.hat_giong is None:
+        args.hat_giong = 2026 if args.giu_rieng else 42
     if args.so_mau < 1:
         sys.exit("--so-mau phải từ 1 trở lên.")
     sai_ten = [b for b in args.bo if b not in CAC_BO]
@@ -415,7 +432,7 @@ def main():
     so_bo_loi = 0
     for ten_bo in args.bo or mac_dinh:
         try:
-            tai_mot_bo(ten_bo, args.so_mau, args.hat_giong)
+            tai_mot_bo(ten_bo, args.so_mau, args.hat_giong, args.giu_rieng)
         except LoiTai as loi:
             so_bo_loi += 1
             print(f"  ✗ {ten_bo}: {loi}")

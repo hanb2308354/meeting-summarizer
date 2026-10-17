@@ -60,6 +60,8 @@ TUNG_LUOT_MAC_DINH = True
 #   chinh_xac: PhoWhisper-medium (VinAI, tinh chỉnh cho tiếng Việt) + đệm im lặng thật + cắt chữ ngoài âm thanh:
 #              họp 25,4% -> 20,4% (TỐT HƠN THẬT [-8,6; -1,0]), giọng miền 8,2% -> 5,6%; chậm hơn ~2,7 lần
 #   nhanh    : Whisper medium (đệm im lặng không giúp gì cho medium nên tắt)
+#   nhanh_nhat: Whisper small, cho máy yếu: 1,3-1,5x độ dài ghi âm trên máy 2 nhân (medium ~3,3x) nhưng
+#              lỗi nhiều hơn thật (họp 31,0%, giọng miền 13,7%)
 # Model chính xác phải tự chuyển đổi một lần (src/asr/chuyen_doi_model.py); chưa có thì tự dùng chế độ nhanh.
 CHE_DO_MAC_DINH = "chinh_xac"
 # Kiểu tính của model trên CPU. int8: nhanh, đủ chính xác với Whisper gốc. Model tinh chỉnh
@@ -97,6 +99,7 @@ LE_CUOI_LUOT = 0.5
 THU_MUC_GOC = Path(__file__).resolve().parents[2]
 THU_MUC_KET_QUA = THU_MUC_GOC / "data" / "transcripts"
 MODEL_CHINH_XAC = THU_MUC_GOC / "models" / "phowhisper-medium-ct2"
+MODEL_NHANH_NHAT = "small"
 
 
 def chon_che_do(che_do, model=None):
@@ -109,6 +112,8 @@ def chon_che_do(che_do, model=None):
         return TEN_MODEL, False, (
             f"Chưa có model chính xác ({hien_thi(Path(MODEL_CHINH_XAC))}), tạm dùng chế độ nhanh ({TEN_MODEL}). "
             "Tạo model một lần: python src/asr/chuyen_doi_model.py")
+    if che_do == "nhanh_nhat":
+        return model or MODEL_NHANH_NHAT, False, None
     return model or TEN_MODEL, False, None
 DUOI_HO_TRO = {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac", ".wma", ".webm", ".mp4"}
 
@@ -511,7 +516,7 @@ def doi_moc_thoi_gian(doan, lech):
 
 def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, theo_khuc=False,
               tung_luot=False, nhat_ky=None, khong_moc_thoi_gian=False, dem_im_lang=None, beam=None,
-              token_moi_giay=None, token_cong_them=None):
+              token_moi_giay=None, token_cong_them=None, nghe_lai=True, cat_ngoai=True):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
     Các tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
@@ -531,6 +536,8 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
     token_moi_giay, token_cong_them: giới hạn số token model được sinh mỗi lượt
                (= token_moi_giay x số giây + token_cong_them, tối đa TOKEN_TOI_DA); None = mặc định.
                PhoWhisper không biết dừng nên luôn sinh tới giới hạn: giới hạn càng sát càng nhanh
+    nghe_lai, cat_ngoai: chỉ để đo bật/tắt từng thành phần (False = tắt nhận dạng lại lượt hỏng /
+               tắt cắt chữ sau cuối âm thanh thật của lượt)
     nhat_ky  : truyền vào một list để ghi chi tiết từng đoạn model trả về (mốc thời gian, độ tin cậy,
                xác suất không có tiếng, nhiệt độ đã dùng, có bị loại không) và các lượt VAD cắt ra.
                Dùng để chẩn đoán vì sao một đoạn bị sai (danh_gia_bo.py --chi-doan)
@@ -563,6 +570,8 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
                 am_thanh = np.pad(am_thanh, (0, SO_MAU_CUA_SO - len(am_thanh)))
             doan, _ = model.transcribe(am_thanh, **tham_so)
             het = (den - tu) / TAN_SO_MAU + LE_CUOI_LUOT
+            if not cat_ngoai:
+                return [doi_moc_thoi_gian(d, tu / TAN_SO_MAU) for d in doan]
             doan, chu_bo = cat_ngoai_am_thanh(dung_khi_qua_am_thanh(doan, het), het)
             if chu_bo:
                 print(f"  [LOẠI - ngoài âm thanh thật của lượt] {chu_bo}")
@@ -575,7 +584,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
             if nhat_ky is not None:
                 nhat_ky.append({"luot": [round(bat_dau / TAN_SO_MAU, 2), round(ket_thuc / TAN_SO_MAU, 2)]})
             doan_luot = nghe_doan(bat_dau, ket_thuc)
-            if luot_hong(doan_luot, bat_dau, ket_thuc):
+            if nghe_lai and luot_hong(doan_luot, bat_dau, ket_thuc):
                 doan_luot = nghe_lai_luot(nghe_doan, cac_luot, i, doan_luot, nhat_ky)
             cac_doan.extend(doan_luot)
         return loc_doan(cac_doan, nhat_ky)
@@ -623,18 +632,20 @@ def cat_theo_khoang(cac_doan, tu_giay, den_giay):
 
 
 def dung_khi_qua_am_thanh(cac_doan, het_giay):
-    """Lấy các đoạn faster-whisper trả về (lần lượt từng cửa sổ 30 giây), dừng ngay khi gặp đoạn bắt đầu
-    sau cuối âm thanh thật.
+    """Lấy các đoạn faster-whisper trả về (lần lượt từng cửa sổ 30 giây), dừng ngay sau đoạn đầu tiên
+    kéo qua cuối âm thanh thật.
 
     Khi đệm im lặng, PhoWhisper không biết dừng: faster-whisper thấy câu chưa kết thúc liền mở THÊM cửa
     sổ ngay trong phần đệm, mỗi cửa sổ phải nghe lại 30 giây (đo trên máy 2 nhân: ~21 giây mỗi lần;
-    6 lượt nói thành 15 lần nghe, medium chỉ 6). Đoạn bắt đầu sau cuối âm thanh thật nghĩa là các cửa
-    sổ sau cũng chỉ còn phần đệm, nên ngừng lấy tiếp không mất lời thật nào (các đoạn đó đằng nào cũng
-    bị cat_ngoai_am_thanh bỏ)."""
+    6 lượt nói thành 15 lần nghe, medium chỉ 6). Các đoạn nối tiếp nhau theo thời gian, nên mọi đoạn sau
+    một đoạn đã kéo qua cuối âm thanh thật đều nằm hẳn trong phần đệm: ngừng lấy tiếp không mất lời thật
+    nào (chữ ở đó đằng nào cũng bị cat_ngoai_am_thanh bỏ). Đoạn kéo qua thì vẫn giữ, cắt theo từ sau.
+    Bản đầu chỉ dừng khi đoạn BẮT ĐẦU sau cuối âm thanh: 15 -> 12 lần nghe, vì đoạn dở dang cuối cửa sổ
+    đầu (kéo tới hết 30 giây) chưa làm nó dừng."""
     lay = []
     for doan in cac_doan:
         lay.append(doan)
-        if doan.start >= het_giay:
+        if doan.end >= het_giay:
             break
     return lay
 
@@ -898,9 +909,10 @@ def main():
         description="Chuyển file ghi âm cuộc họp thành transcript JSON."
     )
     parser.add_argument("duong_dan", nargs="+", help="File ghi âm hoặc thư mục chứa file ghi âm")
-    parser.add_argument("--che-do", choices=["chinh_xac", "nhanh"], default=CHE_DO_MAC_DINH,
-                        help="chinh_xac (mặc định): PhoWhisper, lỗi ít hơn, chậm hơn ~2,7 lần; "
-                             f"nhanh: Whisper {TEN_MODEL}")
+    parser.add_argument("--che-do", choices=["chinh_xac", "nhanh", "nhanh_nhat"], default=CHE_DO_MAC_DINH,
+                        help="chinh_xac (mặc định): PhoWhisper, lỗi ít nhất; "
+                             f"nhanh: Whisper {TEN_MODEL}; nhanh_nhat: Whisper {MODEL_NHANH_NHAT} cho máy yếu, "
+                             "lỗi nhiều hơn rõ")
     parser.add_argument("--model", default=None,
                         help="Đổi model (tên model của faster-whisper hoặc thư mục model CTranslate2)")
     parser.add_argument("--kieu-tinh", default=KIEU_TINH, choices=["int8", "int8_float32", "float32"],
