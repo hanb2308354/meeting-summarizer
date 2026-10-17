@@ -1359,9 +1359,10 @@ def tung_luot_bo_chu_nam_sau_cuoi_am_thanh_that():
         return f"giữ/bỏ sai: {chu!r}"
     if abs(cac_tu[0].start - 1.2) > 1e-6:
         return f"mốc thời gian không cộng lệch lượt: {cac_tu[0].start}"
+    # Câu bịa trong phần đệm: hoặc không bao giờ được đọc tới (đã dừng ở chỗ hết lời), hoặc bị cắt và ghi nhật ký
     bo = [c for c in nhat_ky if "ngoai_am_thanh" in c]
-    if len(bo) != 1 or not bo[0]["ngoai_am_thanh"].startswith("Cảm ơn"):
-        return f"nhật ký không ghi chữ đã bỏ: {bo}"
+    if len(bo) > 1 or (bo and not bo[0]["ngoai_am_thanh"].startswith("Cảm ơn")):
+        return f"nhật ký ghi chữ đã bỏ sai: {bo}"
     # Một đoạn vắt qua cuối lượt: chỉ cắt phần đuôi, giữ phần đầu
     giu, chu_bo = asr.cat_ngoai_am_thanh([doan(chuoi_tu(3.0, "một hai ba bốn năm"))], 4.5)
     if [asr.ghep_tu(d.words) for d in giu] != ["một hai ba bốn"] or chu_bo != "năm" or giu[0].end != 4.55:
@@ -1487,7 +1488,7 @@ def che_do_chinh_xac_dung_phowhisper_dem_im_lang_va_lui_ve_medium():
             ghi_wav(Path(tm) / "hop.wav", tieng_noi_gia(2))
             asr.THU_MUC_KET_QUA = Path(tm) / "transcripts"
             asr.WhisperModel = lambda ten, **k: (da_tao.append(ten), ModelGia([]))[1]
-            asr.nhan_dang = lambda *a, **k: (da_nghe.append(k.get("dem_im_lang")), ([], 0))[1]
+            asr.nhan_dang = lambda *a, **k: (da_nghe.append((k.get("dem_im_lang"), k.get("goi_y"))), ([], 0))[1]
             sys.argv = ["chuyen_giong_noi.py", str(Path(tm) / "hop.wav")]
             try:
                 with contextlib.redirect_stdout(io.StringIO()):
@@ -1499,15 +1500,15 @@ def che_do_chinh_xac_dung_phowhisper_dem_im_lang_va_lui_ve_medium():
                 asr.nhan_dang = goc_nhan_dang
     finally:
         asr.MODEL_CHINH_XAC = goc
-    if thieu[:2] != (asr.TEN_MODEL, False) or not thieu[2] or "chuyen_doi_model.py" not in thieu[2]:
+    if thieu[:3] != (asr.TEN_MODEL, False, asr.GOI_Y_MAC_DINH) or not thieu[3] or "chuyen_doi_model.py" not in thieu[3]:
         return f"thiếu model chính xác phải lùi về {asr.TEN_MODEL} và báo cách tạo: {thieu}"
-    if not co[0].endswith("phowhisper-medium-ct2") or co[1] is not True or co[2]:
+    if not co[0].endswith("phowhisper-medium-ct2") or co[1:] != (True, "khong", None):
         return f"có model chính xác mà không dùng: {co}"
-    if asr.chon_che_do("nhanh_nhat") != ("small", False, None):
+    if asr.chon_che_do("nhanh_nhat") != ("small", False, asr.GOI_Y_MAC_DINH, None):
         return f"chế độ nhanh nhất sai: {asr.chon_che_do('nhanh_nhat')}"
-    if nhanh != (asr.TEN_MODEL, False, None) or tu_chon != ("models/khac-ct2", True, None):
+    if nhanh != (asr.TEN_MODEL, False, asr.GOI_Y_MAC_DINH, None) or tu_chon != ("models/khac-ct2", True, "khong", None):
         return f"chế độ nhanh / tự chọn model sai: {nhanh}, {tu_chon}"
-    if len(da_tao) != 1 or not da_tao[0].endswith("phowhisper-medium-ct2") or da_nghe != [True]:
+    if len(da_tao) != 1 or not da_tao[0].endswith("phowhisper-medium-ct2") or da_nghe != [(True, "khong")]:
         return f"main không dùng model chính xác + đệm im lặng: {da_tao}, {da_nghe}"
 
 
@@ -1583,6 +1584,13 @@ def khong_nghe_them_cua_so_khi_da_qua_am_thanh_that():
         yield do_dang
         raise AssertionError("đã nghe thêm cửa sổ sau đoạn dở dang")
     lay = asr.dung_khi_qua_am_thanh(cua_so(), 4.5)
+    # Cửa sổ đầu kết thúc gọn ở chỗ hết lời (theo VAD): không mở cửa sổ mới vào phần lề / đệm
+
+    def gon():
+        yield doan(chuoi_tu(0.2, "Bạn Lan làm slide nha"))   # hết lúc 2,15 giây; hết lời theo VAD: 2,1 giây
+        raise AssertionError("đã mở cửa sổ mới sau chỗ hết lời")
+    if len(asr.dung_khi_qua_am_thanh(gon(), 3.1, 2.1)) != 1:
+        return "không dừng ở chỗ hết lời"
     giu, _ = asr.cat_ngoai_am_thanh(lay, 4.5)
     if asr.ghep_tu([t for d in giu for t in d.words]) != "Bạn Lan làm slide nha cảm ơn và":
         return f"giữ chữ trong lượt sai: {[d.text for d in giu]}"

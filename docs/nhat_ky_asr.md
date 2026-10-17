@@ -19,8 +19,8 @@ File ghi âm → Làm sạch âm thanh → Nhận dạng giọng nói (Whisper) 
 | Giọng các miền | 8,3% | 8,2% |
 | Model bị kẹt (chạy hàng trăm giây cho vài giây âm thanh) | có | 0 |
 
-**Cấu hình đang dùng:** chế độ chính xác = PhoWhisper-medium + đệm im lặng (chế độ nhanh = Whisper `medium`),
-CPU, số luồng = số nhân thật · chỉ dùng câu gợi ý mở đầu · nhận dạng từng lượt nói · lượt nào ra quá ít chữ thì nhận dạng lại · lọc câu bịa (kể cả câu có tốc độ nói bất khả thi).
+**Cấu hình đang dùng:** chế độ chính xác = PhoWhisper-medium + đệm im lặng, không gợi ý (chế độ nhanh = Whisper
+`medium` + câu gợi ý mở đầu), CPU, số luồng = số nhân thật · nhận dạng từng lượt nói · lượt nào ra quá ít chữ thì nhận dạng lại · lọc câu bịa (kể cả câu có tốc độ nói bất khả thi).
 
 **Đang làm:** chọn model tốt nhất. PhoWhisper (bản Whisper được huấn luyện thêm cho tiếng Việt) hứa hẹn
 giảm lỗi họp còn ~21% và giọng miền còn ~5% (đã xác nhận bằng chạy thật, chưa chắc về thống kê), nhưng chạy qua
@@ -248,6 +248,30 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
   trên 2 nhân — và có cấu hình ≤ 1,5x thay thế); tải bộ kiểm tra giữ riêng (`--giu-rieng`, không trùng đoạn nào của
   bộ dùng để chỉnh, hạt giống khác); cờ tắt từng thành phần để đo A2.
 
+- **Kết quả bundle 32 (17–18/10):**
+  - Sửa tốc độ lần hai: chữ vẫn **giống hệt** (họp 20,3%, giọng miền 5,6%, file dài 27,6%), nhanh thêm:
+    đoạn ngắn 7,5x → 7,0x, 9,4x → 9,0x; **file dài 6,9x → 5,8x**. Tổng cộng so với trước khi sửa:
+    10,2x → 7,0x và file dài 9,2x → 5,8x (nhanh hơn 31–37%) mà không mất chữ nào.
+    Vẫn còn 2 cửa sổ mỗi lượt ở 6 đoạn đo: cửa sổ đầu kết thúc gọn đúng chỗ hết lời, faster-whisper mở cửa sổ
+    mới từ đó (toàn phần đệm). **Sửa lần ba (bundle 33):** dừng khi đoạn đã chạm chỗ hết lời theo VAD (cuối lượt
+    trừ 0,4 giây lề VAD tự thêm).
+  - **Đo bật/tắt từng thành phần trên PhoWhisper (A2), 30 + 30 đoạn, so với cấu hình đang dùng (20,3% / 5,6%):**
+
+    | Tắt thành phần | Họp | Giọng miền | Tốc độ | Kết luận |
+    |---|---|---|---|---|
+    | cắt chữ ngoài âm thanh thật | 69,4% | 74,5% | 10,2x | **TỆ HƠN THẬT (+49 / +69)** → bắt buộc giữ |
+    | câu gợi ý mở đầu (bỏ gợi ý) | **19,1%** | **4,5% (TỐT HƠN THẬT)** | 6,3x / 8,6x | gợi ý **có hại** với PhoWhisper → **bỏ** |
+    | đệm im lặng | 21,2% | 5,2% | 11,0x / 13,3x | chữ ngang nhau, nhưng đệm nhanh hơn ~35% → giữ |
+    | nhận dạng từng lượt (nghe cả file) | 21,0% | 5,2% | 10,9x / 14,2x | ngang nhau, từng lượt nhanh hơn và tốt hơn ở file dài → giữ |
+    | tiền xử lý âm thanh | 19,9% | 6,0% | 6,5x / 8,9x | ngang nhau (bộ dữ liệu ít tiếng ù) → giữ, kiểm lại trên họp thật |
+    | giới hạn thử lại nhiệt độ | 20,0% | 5,6% | 7,0x / 8,8x | ngang nhau; giữ vì chống kẹt ở medium |
+    | nhận dạng lại lượt hỏng | 20,3% | 5,6% | 6,9x / 9,0x | không lượt nào hỏng với PhoWhisper; giữ (có ích với medium, không tốn gì khi không dùng) |
+    | bộ lọc [LOẠI] | 20,4% | 5,6% | — | chỉ 1 đoạn bị loại, không loại nhầm; giữ để chặn câu bịa |
+
+    → **Đổi chế độ chính xác sang không gợi ý** (đúng quy tắc: tốt hơn thật ở một bộ, không bộ nào tệ hơn).
+  - **Bộ kiểm tra giữ riêng đã tải (D1):** 100 đoạn họp/gọi điện + 100 đoạn giọng miền, không trùng đoạn nào của bộ
+    dùng để chỉnh. Chạy lần đầu ở bundle 33 cho cả medium và cấu hình cuối.
+
 ---
 
 ## 4. Phạm vi đã thu hẹp
@@ -292,7 +316,8 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 | 16/10 | Thử giới hạn token (sai hướng, bỏ) và số luồng CPU (nhanh hơn 17%, giữ); đổi mặc định sang chế độ chính xác |
 | 17/10 | Đo thời gian từng bước: PhoWhisper nghe thêm cửa sổ trong phần đệm (15 so với 6) → sửa; file dài xác nhận chế độ chính xác |
 | 17/10 | Bản sửa tốc độ: −17–26%, chữ giống hệt; file 2 giờ dùng 2 GB RAM; thêm chế độ nhanh nhất, bộ giữ riêng, đo bật/tắt |
+| 17–18/10 | Đo bật/tắt từng thành phần: bỏ câu gợi ý cho PhoWhisper; tốc độ −31–37% không mất chữ; tải bộ kiểm tra giữ riêng |
 
 **Về điểm số trong các báo cáo tiến độ:** thang 10 điểm và 16 điều kiện "hoàn thiện" do nhóm tự đặt
 (không phải thang của học phần). Mức hoàn thiện = tổng điểm 16 điều kiện ÷ 16 (Đạt = 1, Một phần = 0,5, Chưa = 0),
-hiện là 9,5/16 ≈ 59%. Điểm chất lượng hiện là 8,25/10.
+hiện là 10,5/16 ≈ 66%. Điểm chất lượng hiện là 8,5/10.

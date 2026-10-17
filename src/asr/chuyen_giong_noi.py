@@ -100,21 +100,26 @@ THU_MUC_GOC = Path(__file__).resolve().parents[2]
 THU_MUC_KET_QUA = THU_MUC_GOC / "data" / "transcripts"
 MODEL_CHINH_XAC = THU_MUC_GOC / "models" / "phowhisper-medium-ct2"
 MODEL_NHANH_NHAT = "small"
+GOI_Y_CHINH_XAC = "khong"
 
 
 def chon_che_do(che_do, model=None):
-    """Trả về (model dùng, có đệm im lặng không, cảnh báo hoặc None)."""
+    """Trả về (model dùng, có đệm im lặng không, cách gợi ý, cảnh báo hoặc None).
+
+    Chế độ chính xác không dùng câu gợi ý mở đầu: đo bật/tắt trên PhoWhisper (17/10), bỏ gợi ý thì
+    giọng miền 5,6% -> 4,5% (TỐT HƠN THẬT), họp 20,3% -> 19,1%, lại nhanh hơn. (Với medium câu gợi ý
+    vẫn có ích: 28,2% -> 25,6% lúc chọn cách gợi ý.)"""
     if che_do == "chinh_xac":
         if model:
-            return model, True, None
+            return model, True, GOI_Y_CHINH_XAC, None
         if (Path(MODEL_CHINH_XAC) / "model.bin").exists():
-            return str(MODEL_CHINH_XAC), True, None
-        return TEN_MODEL, False, (
+            return str(MODEL_CHINH_XAC), True, GOI_Y_CHINH_XAC, None
+        return TEN_MODEL, False, GOI_Y_MAC_DINH, (
             f"Chưa có model chính xác ({hien_thi(Path(MODEL_CHINH_XAC))}), tạm dùng chế độ nhanh ({TEN_MODEL}). "
             "Tạo model một lần: python src/asr/chuyen_doi_model.py")
     if che_do == "nhanh_nhat":
-        return model or MODEL_NHANH_NHAT, False, None
-    return model or TEN_MODEL, False, None
+        return model or MODEL_NHANH_NHAT, False, GOI_Y_MAC_DINH, None
+    return model or TEN_MODEL, False, GOI_Y_MAC_DINH, None
 DUOI_HO_TRO = {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac", ".wma", ".webm", ".mp4"}
 
 # Câu mở đầu (initial_prompt): chỉ có tác dụng ở ~30 giây đầu, giúp model vào đúng
@@ -572,7 +577,8 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
             het = (den - tu) / TAN_SO_MAU + LE_CUOI_LUOT
             if not cat_ngoai:
                 return [doi_moc_thoi_gian(d, tu / TAN_SO_MAU) for d in doan]
-            doan, chu_bo = cat_ngoai_am_thanh(dung_khi_qua_am_thanh(doan, het), het)
+            het_loi = (den - tu) / TAN_SO_MAU - THONG_SO_VAD["speech_pad_ms"] / 1000 if dem_im_lang else None
+            doan, chu_bo = cat_ngoai_am_thanh(dung_khi_qua_am_thanh(doan, het, het_loi), het)
             if chu_bo:
                 print(f"  [LOẠI - ngoài âm thanh thật của lượt] {chu_bo}")
                 if nhat_ky is not None:
@@ -631,7 +637,7 @@ def cat_theo_khoang(cac_doan, tu_giay, den_giay):
     return ket_qua
 
 
-def dung_khi_qua_am_thanh(cac_doan, het_giay):
+def dung_khi_qua_am_thanh(cac_doan, het_giay, het_loi=None):
     """Lấy các đoạn faster-whisper trả về (lần lượt từng cửa sổ 30 giây), dừng ngay sau đoạn đầu tiên
     kéo qua cuối âm thanh thật.
 
@@ -641,11 +647,15 @@ def dung_khi_qua_am_thanh(cac_doan, het_giay):
     một đoạn đã kéo qua cuối âm thanh thật đều nằm hẳn trong phần đệm: ngừng lấy tiếp không mất lời thật
     nào (chữ ở đó đằng nào cũng bị cat_ngoai_am_thanh bỏ). Đoạn kéo qua thì vẫn giữ, cắt theo từ sau.
     Bản đầu chỉ dừng khi đoạn BẮT ĐẦU sau cuối âm thanh: 15 -> 12 lần nghe, vì đoạn dở dang cuối cửa sổ
-    đầu (kéo tới hết 30 giây) chưa làm nó dừng."""
+    đầu (kéo tới hết 30 giây) chưa làm nó dừng.
+
+    het_loi: chỗ hết lời theo VAD (cuối lượt trừ lề VAD tự thêm). Đo 17/10: vẫn 2 cửa sổ mỗi lượt vì
+    cửa sổ đầu kết thúc gọn ở cuối lời (mốc < cuối lượt), faster-whisper liền mở cửa sổ mới từ đó, toàn
+    phần đệm. Đoạn đã chạm chỗ hết lời thì phần còn lại chỉ là lề im lặng VAD thêm vào: dừng."""
     lay = []
     for doan in cac_doan:
         lay.append(doan)
-        if doan.end >= het_giay:
+        if doan.end >= het_giay or (het_loi is not None and doan.end >= het_loi):
             break
     return lay
 
@@ -846,7 +856,7 @@ def luu_json(ket_qua, duong_dan_am_thanh):
 # ======================================================================
 # CHƯƠNG TRÌNH CHÍNH
 # ======================================================================
-def xu_ly_mot_file(model, duong_dan, loc_nhieu, tien_xu_ly_bat, dem_im_lang=False):
+def xu_ly_mot_file(model, duong_dan, loc_nhieu, tien_xu_ly_bat, dem_im_lang=False, goi_y=None):
     print(f"\n=== {duong_dan.name} ===")
     bat_dau = time.time()
 
@@ -863,7 +873,8 @@ def xu_ly_mot_file(model, duong_dan, loc_nhieu, tien_xu_ly_bat, dem_im_lang=Fals
         print("Tiền xử lý: tắt")
 
     print("Đang nhận dạng giọng nói, vui lòng chờ...")
-    cac_tu, so_bi_loai = nhan_dang(model, song_am, tung_luot=TUNG_LUOT_MAC_DINH, dem_im_lang=dem_im_lang)
+    cac_tu, so_bi_loai = nhan_dang(model, song_am, goi_y=goi_y or GOI_Y_MAC_DINH,
+                                   tung_luot=TUNG_LUOT_MAC_DINH, dem_im_lang=dem_im_lang)
     ket_qua = tach_cau(cac_tu)
     if not ket_qua:
         # Không ghi file rỗng: src/tien_xu_ly/doc_transcript.py coi danh sách rỗng là lỗi
@@ -926,7 +937,7 @@ def main():
     parser.add_argument("--ghi-de", action="store_true",
                         help="Khi chạy cả thư mục: chạy lại cả những file đã có JSON")
     args = parser.parse_args()
-    args.model, dem_im_lang, canh_bao = chon_che_do(args.che_do, args.model)
+    args.model, dem_im_lang, goi_y, canh_bao = chon_che_do(args.che_do, args.model)
 
     cac_file = liet_ke_file(args.duong_dan, args.ghi_de)
 
@@ -975,7 +986,7 @@ def main():
 
     for duong_dan in hop_le:
         try:
-            xu_ly_mot_file(model, duong_dan, args.loc_nhieu, not args.khong_tien_xu_ly, dem_im_lang)
+            xu_ly_mot_file(model, duong_dan, args.loc_nhieu, not args.khong_tien_xu_ly, dem_im_lang, goi_y)
         except LoiDauVao as loi:
             so_loi += 1
             print(f"  ✗ {loi}")
