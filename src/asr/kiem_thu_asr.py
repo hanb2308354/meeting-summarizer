@@ -1266,7 +1266,7 @@ def kieu_tinh_vao_ten_cau_hinh_va_truyen_cho_model():
     co_ban = dict(model="medium", goi_y="cau_mo_dau", thu_lai="gioi_han", theo_khuc=False, tung_luot=True,
                   khong_moc_thoi_gian=False, dem_im_lang=False, beam=5, khong_tien_xu_ly=False, loc_nhieu=False,
                   token_moi_giay=asr.TOKEN_MOI_GIAY, token_cong_them=asr.TOKEN_CONG_THEM, so_luong=asr.SO_LUONG_CPU,
-                  khong_nghe_lai=False, khong_cat_ngoai=False, gop_luot=0)
+                  khong_nghe_lai=False, khong_cat_ngoai=False, gop_luot=0, le_cuoi_luot=None)
     ten_int8 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="int8"))
     ten_f32 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="float32"))
     if ten_int8 != "medium_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot" or ten_f32 != "medium_chi_cau_mo_dau_float32_gioi_han_thu_lai_tung_luot":
@@ -1435,7 +1435,8 @@ def so_luong_cpu_truyen_cho_model_va_vao_ten_cau_hinh():
                   tung_luot=True, khong_moc_thoi_gian=False, dem_im_lang=True, beam=5, khong_tien_xu_ly=False,
                   loc_nhieu=False, kieu_tinh="int8")
     ten = dg.ten_cau_hinh(SimpleNamespace(**co_ban, token_moi_giay=12, token_cong_them=10, so_luong=8,
-                                          khong_nghe_lai=False, khong_cat_ngoai=False, gop_luot=0))
+                                          khong_nghe_lai=False, khong_cat_ngoai=False, gop_luot=0,
+                                          le_cuoi_luot=None))
     if ten != "phowhisper-medium-ct2_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot_dem_lang_token12-10_luong8":
         return f"tên cấu hình sai: {ten}"
     da_tao = []
@@ -1755,31 +1756,16 @@ def danh_gia_hf_ghi_ket_qua_dung_dinh_dang_va_lam_tiep():
 
 
 @ca
-def chi_dung_o_cho_het_loi_khi_luot_co_du_le():
-    """het_loi = cuối lượt - 0,4 giây lề VAD chỉ đúng khi lề thật sự đủ. Lượt sát lượt sau (bị cắt cứng /
-    khoảng ngừng ngắn) hay lượt chạm cuối file: không được dừng sớm, kẻo mất mấy chữ cuối."""
-    dau = doan(chuoi_tu(0.2, "Bạn Lan làm slide"))                 # hết 1,75 s, >= 2,0 - 0,4
-    cuoi = doan(chuoi_tu(1.8, "nha"))                               # chữ thật còn lại trong cửa sổ
+def tu_that_cuoi_luot_bi_do_moc_keo_dai_van_giu():
+    """Từ thật cuối lượt bị dò mốc kéo dài sang phần đệm (bắt đầu trong lượt, kết thúc xa ngoài lượt):
+    phải giữ, vì xét theo mốc BẮT ĐẦU; câu bịa bắt đầu hẳn trong phần đệm thì vẫn bỏ."""
+    keo = Word(start=3.8, end=6.0, word=" hợp.", probability=0.9)      # điểm giữa 4,9 > 4,5 nhưng bắt đầu 3,8
+    that = doan(chuoi_tu(1.0, "hai trường") + [keo])
+    bia = doan(chuoi_tu(6.5, "cảm ơn và hẹn gặp lại"))
+    giu, bo = asr.cat_ngoai_am_thanh([that, bia], 4.5)
+    if asr.ghep_tu([t for d in giu for t in d.words]) != "hai trường hợp." or "hẹn gặp lại" not in bo:
+        return f"giữ/bỏ sai: {[d.text for d in giu]} | bỏ {bo!r}"
 
-    class ModelHaiDoan(ModelGia):
-        def transcribe(self, am_thanh, **tham_so):
-            return iter([dau, cuoi]), None
-
-    goc = asr.cat_luot_noi
-    ket = {}
-    try:
-        for ten, luot, dai in (("có lề", [(0, 2 * SR), (3 * SR, 5 * SR)], 6),
-                               ("sát lượt sau", [(0, 2 * SR), (2 * SR, 5 * SR)], 6),
-                               ("cuối file", [(0, 2 * SR)], 2)):
-            asr.cat_luot_noi = lambda s, luot=luot: luot[:1] if len(luot) == 1 else luot
-            with contextlib.redirect_stdout(io.StringIO()):
-                cac_tu, _ = asr.nhan_dang(ModelHaiDoan([]), np.zeros(dai * SR, dtype=np.float32),
-                                          tung_luot=True, dem_im_lang=True, nghe_lai=False)
-            ket[ten] = "nha" in asr.ghep_tu([t for t in cac_tu if t.start < 2.5])
-    finally:
-        asr.cat_luot_noi = goc
-    if ket != {"có lề": False, "sát lượt sau": True, "cuối file": True}:
-        return f"dừng ở chỗ hết lời sai trường hợp: {ket}"
 
 
 @ca

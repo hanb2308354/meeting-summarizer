@@ -310,6 +310,43 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
     lắng nghe" (kết họp thật) có thể bị bộ lọc loại khi đệm im lặng làm model "không chắc" — cần kiểm trên họp thật;
     chế độ nhanh giữ câu gợi ý dựa trên chênh lệch không có ý nghĩa thống kê (25,6% so với 25,8%).
 
+- **KẾT QUẢ CHÍNH THỨC — bộ kiểm tra giữ riêng (bundle 33, 18/10), 100 + 100 đoạn chưa từng dùng để chỉnh,
+  chạy một lần:**
+
+  | | Whisper medium (mặc định cũ) | Chế độ chính xác (PhoWhisper + đệm + không gợi ý) | Chênh lệch (khoảng tin cậy 95%) |
+  |---|---|---|---|
+  | Họp / gọi điện | 23,3% | **18,1%** | −5,1 điểm [−7,4; −3,2] **TỐT HƠN THẬT**, tốt hơn ở 58 đoạn, tệ hơn ở 24 |
+  | Giọng các miền | 10,1% | **6,8%** | −3,3 điểm [−5,4; −1,2] **TỐT HƠN THẬT**, tốt hơn ở 53 đoạn, tệ hơn ở 18 |
+  | Tốc độ | 3,45x / 5,1x | 3,53x / 5,3x | **ngang nhau** |
+
+  → Các lựa chọn trên bộ chỉnh giữ nguyên trên dữ liệu mới, không phải "khớp riêng" 30 đoạn. Từ thừa của
+  PhoWhisper (225 so với 107) chủ yếu là từ đệm có thật trong lời nói ("là", "ờ", "cái", "thì") mà đáp án không ghi.
+- **Bundle 33/35 — các phép đo khác (bộ chỉnh 30 + 30 đoạn):**
+
+  | Cấu hình | Họp | Giọng miền | Tốc độ | Kết luận |
+  |---|---|---|---|---|
+  | Chế độ chính xác, dừng ở chỗ hết lời mọi lượt (sửa lần 3) | **18,6%** | 4,5% | **4,1x / 4,6x**; file dài 26,6%, **3,5x** | lỗi thiếu Y HỆT bản trước (63 / 9 / 466 từ) → không mất chữ; nhanh ngang medium |
+  | Như trên nhưng chỉ dừng khi lượt chắc có lề (theo phản biện lần hai) | 19,1% | 4,5% | 6,2x / 8,6x; file dài 3,9x | không cứu thêm chữ nào, chậm hơn nhiều → **quay lại dừng mọi lượt** |
+  | Gộp lượt ngắn ≤ 20 giây | 18,5% | 4,5% | file dài **3,3x** (26,3%) | nhanh hơn ở file dài, chữ ngang → đo tiếp với bản dừng mọi lượt |
+  | PhoWhisper bản gốc (transformers, float32) | 18,1% | 4,4% | 12,3x / 15,2x | chính xác ngang bản đang dùng (18,6% / 4,5%), chậm gấp 3 → **cách chạy của dự án không làm mất độ chính xác của model** |
+  | PhoWhisper-small | 27,4% | 8,7% | 2,3x / 3,0x | ứng viên chế độ nhanh |
+  | wav2vec2 tiếng Việt (CTC, ngoài họ Whisper) | 30,5% | 8,2% | **0,3x** | rất nhanh, nhưng thua PhoWhisper rõ và không có dấu câu |
+  | large-v3 có đệm + cắt + không gợi ý (thử lại cho công bằng) | 26,7% | 8,3% | 7,3x / 9,1x | không hơn → **bỏ hẳn** |
+  | Whisper small | 31,0% | 13,7% | 1,3x / 1,5x | thua wav2vec2 và PhoWhisper-small ở mọi mặt trừ tốc độ |
+
+  - **Alignment heads:** bản PhoWhisper đã chuyển đổi có sẵn 6 heads từ model gốc, giống Whisper medium → mốc thời gian
+    theo từ không bị dùng danh sách mặc định; lo ngại của phản biện không xảy ra.
+  - **Giới hạn model:** đã thử 10 cách (medium, small, turbo, large-v3 ×2, PhoWhisper small/medium/large, PhoWhisper bản
+    gốc, wav2vec2). PhoWhisper-medium tốt nhất; bản gốc của nó chỉ hơn bản đang dùng 0,5 điểm ở họp (trong mức ngẫu
+    nhiên) và bằng ở giọng miền → **đã chạm giới hạn của model tốt nhất có thể chạy trên máy này**. Chưa thử (tên chưa
+    xác minh / cần thư viện khác): Zipformer, Chunkformer, EraX-WoW-Turbo — ghi vào hướng phát triển.
+  - **Chế độ nhanh cần chọn lại:** medium giờ không nhanh hơn chế độ chính xác (3,45x so với 3,53x) mà lỗi nhiều hơn.
+    Ứng viên: PhoWhisper-small (đo lại với bản dừng mọi lượt ở bundle 36).
+  - **Bộ lọc cắt oan từ thật (B2) phát hiện trên bộ giữ riêng:** luật cắt chữ ngoài âm thanh xét theo điểm giữa của từ;
+    từ thật cuối lượt bị dò mốc kéo dài sang phần đệm nên bị cắt ("...hai trường hợp" mất "hợp", "bye bye sếp", khoảng
+    8 từ / 7.500). **Sửa (bundle 36):** xét theo mốc BẮT ĐẦU của từ; đo thêm lề 1,0 giây. Bộ giữ riêng sẽ chạy lại
+    với bản sửa — ghi rõ: lần chạy thứ hai là để kiểm một lỗi tìm thấy, không phải chỉnh tham số theo bộ giữ riêng.
+
 ---
 
 ## 4. Phạm vi đã thu hẹp
@@ -358,4 +395,4 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 
 **Về điểm số trong các báo cáo tiến độ:** thang 10 điểm và 16 điều kiện "hoàn thiện" do nhóm tự đặt
 (không phải thang của học phần). Mức hoàn thiện = tổng điểm 16 điều kiện ÷ 16 (Đạt = 1, Một phần = 0,5, Chưa = 0),
-hiện là 10,5/16 ≈ 66%. Điểm chất lượng hiện là 8,5/10.
+hiện là 10,5/16 ≈ 66% (điều kiện còn thiếu: B1, B2, B3, B5, B6, C4, D1, D2, E2 chưa đạt trọn). Điểm chất lượng hiện là 9,0/10.

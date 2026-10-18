@@ -545,7 +545,8 @@ def doi_moc_thoi_gian(doan, lech):
 
 def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, theo_khuc=False,
               tung_luot=False, nhat_ky=None, khong_moc_thoi_gian=False, dem_im_lang=None, beam=None,
-              token_moi_giay=None, token_cong_them=None, nghe_lai=True, cat_ngoai=True, gop=0):
+              token_moi_giay=None, token_cong_them=None, nghe_lai=True, cat_ngoai=True, gop=0,
+              le_cuoi=None):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
     Các tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
@@ -565,6 +566,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
     token_moi_giay, token_cong_them: giới hạn số token model được sinh mỗi lượt
                (= token_moi_giay x số giây + token_cong_them, tối đa TOKEN_TOI_DA); None = mặc định.
                PhoWhisper không biết dừng nên luôn sinh tới giới hạn: giới hạn càng sát càng nhanh
+    le_cuoi : lề sau cuối lượt (giây) khi cắt chữ ngoài âm thanh thật; None = LE_CUOI_LUOT
     gop     : gộp các lượt liền nhau thành nhóm dài tối đa chừng này giây (gop_luot); 0 = không gộp
     nghe_lai, cat_ngoai: chỉ để đo bật/tắt từng thành phần (False = tắt nhận dạng lại lượt hỏng /
                tắt cắt chữ sau cuối âm thanh thật của lượt)
@@ -574,6 +576,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
     """
     if dem_im_lang is None:
         dem_im_lang = DEM_IM_LANG
+    le_cuoi = LE_CUOI_LUOT if le_cuoi is None else le_cuoi
     token_moi_giay = TOKEN_MOI_GIAY if token_moi_giay is None else token_moi_giay
     token_cong_them = TOKEN_CONG_THEM if token_cong_them is None else token_cong_them
     if goi_y not in ("day_du", "tu_khoa", "cau_mo_dau", "khong"):
@@ -588,8 +591,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
     if tung_luot:
         cac_luot = gop_luot(cat_luot_noi(song_am), gop)
 
-        def nghe_doan(tu, den, co_le=False, **doi):
-            # co_le: cuối lượt chắc chắn có đủ lề im lặng VAD thêm vào (xem dưới)
+        def nghe_doan(tu, den, **doi):
             # Không chạy VAD lần nữa trong lượt: đã đo bật VAD ở đây thì TỆ HƠN cả hai bộ
             # (file dài 30,5% -> 31,8%, 30 đoạn ngắn 27,7% -> 29,3%) mà vẫn không hết bịa câu
             so_token = int(token_moi_giay * (den - tu) / TAN_SO_MAU) + token_cong_them
@@ -600,14 +602,14 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
             if dem_im_lang and len(am_thanh) < SO_MAU_CUA_SO:
                 am_thanh = np.pad(am_thanh, (0, SO_MAU_CUA_SO - len(am_thanh)))
             doan, _ = model.transcribe(am_thanh, **tham_so)
-            het = (den - tu) / TAN_SO_MAU + LE_CUOI_LUOT
+            het = (den - tu) / TAN_SO_MAU + le_cuoi
             if not cat_ngoai:
                 return [doi_moc_thoi_gian(d, tu / TAN_SO_MAU) for d in doan]
-            # Chỗ hết lời = cuối lượt trừ lề VAD. Chỉ dùng khi chắc lề đủ 0,4 giây: lượt bị VAD cắt cứng ở 25 giây,
-            # lượt tách ở khoảng ngừng ngắn (lề chỉ bằng nửa khoảng ngừng) hay lượt cuối file (lề bị cụt) thì
-            # cuối lượt sát lời nói, trừ 0,4 giây sẽ rơi vào giữa lời (phản biện lần hai, 18/10)
-            het_loi = (den - tu) / TAN_SO_MAU - THONG_SO_VAD["speech_pad_ms"] / 1000 \
-                if dem_im_lang and co_le else None
+            # Chỗ hết lời = cuối lượt trừ lề VAD. Phản biện lần hai (18/10) lo rằng khi lề bị cụt (lượt cắt cứng,
+            # khoảng ngừng ngắn, lượt cuối file) mốc này rơi vào giữa lời và làm mất chữ. Đã đo cả hai cách:
+            # chỉ dùng khi chắc có lề -> số từ bị thiếu Y HỆT (63/9 đoạn ngắn, 466 file dài) nhưng chậm lại
+            # 4,1x -> 6,2x (đoạn ngắn hầu hết là lượt cuối file). Nên dùng cho mọi lượt; nhật ký vẫn ghi mỗi lần dừng.
+            het_loi = (den - tu) / TAN_SO_MAU - THONG_SO_VAD["speech_pad_ms"] / 1000 if dem_im_lang else None
             lay = dung_khi_qua_am_thanh(doan, het, het_loi)
             if nhat_ky is not None and het_loi is not None and lay and het_loi <= lay[-1].end < het:
                 nhat_ky.append({"dung_o_cho_het_loi": round(tu / TAN_SO_MAU + lay[-1].end, 2)})
@@ -622,10 +624,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
         for i, (bat_dau, ket_thuc) in enumerate(cac_luot):
             if nhat_ky is not None:
                 nhat_ky.append({"luot": [round(bat_dau / TAN_SO_MAU, 2), round(ket_thuc / TAN_SO_MAU, 2)]})
-            # Lượt có đủ lề nếu sau khi VAD thêm lề vẫn còn khoảng trống tới lượt sau (lượt sau chạm sát
-            # = lề bị chia đôi hoặc bị cắt cứng), hoặc với lượt cuối: chưa chạm cuối file
-            co_le = ket_thuc < (cac_luot[i + 1][0] if i + 1 < len(cac_luot) else len(song_am))
-            doan_luot = nghe_doan(bat_dau, ket_thuc, co_le=co_le)
+            doan_luot = nghe_doan(bat_dau, ket_thuc)
             if nghe_lai and luot_hong(doan_luot, bat_dau, ket_thuc, goi_y):
                 doan_luot = nghe_lai_luot(nghe_doan, cac_luot, i, doan_luot, nhat_ky, goi_y)
             cac_doan.extend(doan_luot)
@@ -697,7 +696,11 @@ def dung_khi_qua_am_thanh(cac_doan, het_giay, het_loi=None):
 
 
 def cat_ngoai_am_thanh(cac_doan, den_giay):
-    """Bỏ các từ có điểm giữa >= den_giay (nằm trong phần im lặng đệm thêm, không có tiếng thật).
+    """Bỏ các từ BẮT ĐẦU từ den_giay trở đi (nằm trong phần im lặng đệm thêm, không có tiếng thật).
+
+    Xét theo mốc bắt đầu chứ không theo điểm giữa (đổi 18/10): trên bộ giữ riêng, từ thật cuối lượt đôi khi
+    bị dò mốc kéo dài sang phần đệm ("...hai trường hợp", "bye bye sếp") nên điểm giữa vượt ngưỡng và bị cắt
+    oan; câu bịa thì bắt đầu hẳn trong phần đệm.
 
     Đoạn không mất từ nào giữ nguyên; đoạn mất hết từ thì bỏ; đoạn không có mốc theo từ thì xét
     theo mốc bắt đầu. Trả về (các đoạn giữ lại, chữ đã bỏ).
@@ -710,8 +713,8 @@ def cat_ngoai_am_thanh(cac_doan, den_giay):
             else:
                 bo.append(doan.text.strip())
             continue
-        trong = [t for t in doan.words if (t.start + t.end) / 2 < den_giay]
-        ngoai = [t for t in doan.words if (t.start + t.end) / 2 >= den_giay]
+        trong = [t for t in doan.words if t.start < den_giay]
+        ngoai = [t for t in doan.words if t.start >= den_giay]
         if not ngoai:
             giu.append(doan)
             continue

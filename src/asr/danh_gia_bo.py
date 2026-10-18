@@ -178,6 +178,8 @@ def ten_cau_hinh(args):
         ten += f"_token{args.token_moi_giay}-{args.token_cong_them}"
     if args.gop_luot:
         ten += f"_gop{args.gop_luot:g}"
+    if args.le_cuoi_luot is not None and args.le_cuoi_luot != asr.LE_CUOI_LUOT:
+        ten += f"_le{args.le_cuoi_luot:g}"
     if args.khong_nghe_lai:
         ten += "_khong_nghe_lai"
     if args.khong_cat_ngoai:
@@ -207,7 +209,7 @@ def nhan_dang_mot_doan(model, duong_dan, args):
                                   beam=args.beam, token_moi_giay=args.token_moi_giay,
                                   token_cong_them=args.token_cong_them,
                                   nghe_lai=not args.khong_nghe_lai, cat_ngoai=not args.khong_cat_ngoai,
-                                  gop=args.gop_luot)
+                                  gop=args.gop_luot, le_cuoi=args.le_cuoi_luot)
     return {
         "du_doan": " ".join(cau["text"] for cau in asr.tach_cau(cac_tu)),
         "bi_loai": [d.strip() for d in dau_ra.getvalue().splitlines() if "[LOẠI" in d],
@@ -903,6 +905,8 @@ def main():
                         help=f"(mặc định {asr.TOKEN_CONG_THEM})")
     parser.add_argument("--so-luong", type=int, default=asr.SO_LUONG_CPU,
                         help="Số luồng CPU cho model (mặc định 0 = 4 luồng của faster-whisper)")
+    parser.add_argument("--le-cuoi-luot", type=float, default=None,
+                        help=f"Lề sau cuối lượt khi cắt chữ ngoài âm thanh thật (mặc định {asr.LE_CUOI_LUOT} giây)")
     parser.add_argument("--gop-luot", type=float, default=0,
                         help="Gộp các lượt nói liền nhau thành nhóm dài tối đa chừng này giây (ít cửa sổ hơn, nhanh hơn)")
     parser.add_argument("--khong-nghe-lai", action="store_true",
