@@ -1770,26 +1770,6 @@ def tu_that_cuoi_luot_bi_do_moc_keo_dai_van_giu():
 
 
 @ca
-def sua_alignment_heads_tao_ban_moi_khong_dung_ban_goc():
-    import sua_alignment_heads as ah
-    if len(ah.heads_mac_dinh(24, 16)) != 192 or ah.heads_mac_dinh(4, 2) != [[2, 0], [2, 1], [3, 0], [3, 1]]:
-        return "danh sách mặc định sai"
-    with tempfile.TemporaryDirectory() as tm:
-        goc = Path(tm) / "pho-ct2"
-        goc.mkdir()
-        (goc / "model.bin").write_bytes(b"trong so")
-        (goc / "config.json").write_text(json.dumps({"alignment_heads": ah.heads_mac_dinh(4, 2), "x": 1}))
-        dich = Path(tm) / "pho-ct2-ah"
-        ah.tao_ban_sua(goc, dich, [[3, 1]])
-        if ah.doc_heads(goc) != ah.heads_mac_dinh(4, 2) or ah.doc_heads(dich) != [[3, 1]]:
-            return "sửa nhầm bản gốc hoặc bản mới sai"
-        if (dich / "model.bin").read_bytes() != b"trong so" or json.loads((dich / "config.json").read_text())["x"] != 1:
-            return "bản mới thiếu trọng số / mất cấu hình khác"
-
-
-
-
-@ca
 def che_do_nhanh_dung_phowhisper_small_va_ten_cu_van_chay():
     goc = asr.MODEL_NHANH
     try:

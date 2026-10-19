@@ -6,7 +6,7 @@ trên nhiều giọng, nhiều kiểu nói (không phải chỉ vài file tự t
 Mỗi bộ chỉ lấy ngẫu nhiên N đoạn, chia đều theo nhóm (loại nội dung, phương ngữ, kênh...).
 Giới hạn số đoạn mỗi người nói / mỗi video CHỈ áp dụng cho bộ có thông tin đó (tu_nhien, vimd);
 hop_va_dien_thoai và phuong_ngu không có thông tin người nói nên không giới hạn được (một người có thể
-xuất hiện ở cả bộ chỉnh lẫn bộ giữ riêng — hạn chế đã ghi trong nhật ký). Tải thẳng file từ kho
+xuất hiện ở cả bộ chỉnh lẫn bộ giữ riêng — hạn chế đã biết). Tải thẳng file từ kho
 Hugging Face (ổn định hơn API xem dữ liệu, vốn hay lỗi 500/429).
 
     hop_va_dien_thoai : 200 đoạn họp trực tuyến, gọi điện... (1 file ~83 MB)

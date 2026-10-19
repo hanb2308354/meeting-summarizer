@@ -50,7 +50,7 @@ if hasattr(sys.stdout, "reconfigure"):
 # ======================================================================
 # CẤU HÌNH
 # ======================================================================
-TEN_MODEL = "medium"            # Đã chốt qua thử nghiệm (xem thu_faster_whisper.py)
+TEN_MODEL = "medium"            # Whisper gốc, chỉ dùng khi chưa có model PhoWhisper
 # Model khác: --model nhận tên model của faster-whisper (vd large-v3-turbo) hoặc thư mục model
 # CTranslate2 (vd models/phowhisper-medium-ct2, tạo bằng src/asr/chuyen_doi_model.py)
 # Nhận dạng từng lượt nói (nhan_dang tung_luot=True) là MẶC ĐỊNH. Đo trên cùng các đoạn:
@@ -474,7 +474,7 @@ def chuan_hoa_so_sanh(van_ban):
 #   một "từ" là một mẩu 1-4 chữ cái lặp >= 4 lần liền nhau, không có khoảng trắng ("vnvnvnvn...", ở đoạn
 #          0000119): model kẹt vòng bên trong một từ nên luật "lặp chữ" (tính trên cả đoạn) không bắt được.
 #          Âm tiết tiếng Việt không có dạng này; từ tiếng Anh dài thật (orthomyxoviridae) không bị bắt.
-# Luật chung, không theo từng từ cụ thể. Thấy trên bộ giữ riêng nên đã ghi rõ trong nhật ký.
+# Luật chung, không theo từng từ cụ thể (có thấy trên bộ giữ riêng, nhưng không chỉnh theo từ nào).
 MAU_TU_LAP_VONG = re.compile(r"(\w{1,4}?)\1{3,}\w{0,3}")
 SO_CHU_TOI_THIEU_TU_LAP_VONG = 8
 

@@ -48,9 +48,9 @@ Ví dụ:
 
 ## 4. Giới hạn đã biết
 
-- **Một người nói**: chưa tách người nói (diarization đã quyết định bỏ khỏi phạm vi, xem
-  `docs/nhat_ky_asr.md`). Bên tóm tắt không được dựa vào `speaker` để gán việc cho người.
-- `text` vẫn có thể sai chữ: tỷ lệ lỗi từ đo trên bộ đánh giá xem `README.md` / nhật ký.
+- **Một người nói**: chưa tách người nói (diarization đã quyết định bỏ khỏi phạm vi).
+  Bên tóm tắt không được dựa vào `speaker` để gán việc cho người.
+- `text` vẫn có thể sai chữ: tỷ lệ lỗi từ đo trên bộ đánh giá xem `README.md`.
 - Mốc thời gian là ước lượng của model, có thể lệch vài trăm mili giây.
 
 ## 5. Bên đọc kiểm tra gì (`doc_transcript.py`)

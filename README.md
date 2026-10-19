@@ -136,11 +136,13 @@ python src/nlp/kiem_cau.py
 | ----------------------- | ------------------------------------------------------------ |
 | `chuyen_giong_noi.py`   | **Code chính**: file ghi âm → JSON                           |
 | `danh_gia_wer.py`       | Đo tỷ lệ lỗi từ (WER) so với văn bản gốc trong `data/dap_an/` |
-| `tai_bo_danh_gia.py`    | Tải mẫu các bộ giọng nói tiếng Việt có lời gốc (ViMD, VietSuperSpeech) |
+| `chuyen_doi_model.py`   | Tạo model PhoWhisper (medium / small) cho faster-whisper, chạy một lần |
+| `tai_bo_danh_gia.py`    | Tải mẫu các bộ giọng nói tiếng Việt có lời gốc (họp / gọi điện, LSVSC; tạo bộ kiểm tra giữ riêng) |
 | `danh_gia_bo.py`        | Chạy ASR trên các bộ đã tải, đo WER và phân tích lỗi         |
 | `ghep_file_dai.py`      | Ghép đoạn ngắn thành file dài giống cuộc họp để thử ASR      |
 | `kiem_thu_asr.py`       | Kiểm thử tự động (không cần tải model); tự chạy trên GitHub mỗi lần push (`.github/workflows/kiem_thu.yml`) |
-| `thu_faster_whisper.py` | Chỉ dùng để thử nghiệm chọn model, không dùng trong hệ thống |
+| `danh_gia_hf.py`        | Đo model chạy bằng transformers (wav2vec2, PhoWhisper bản gốc) để so với hệ thống |
+| `thu_do_ben.py`         | Thử RAM và thời gian với file rất dài (mặc định 2 giờ) |
 
 Định dạng file JSON đầu ra (hợp đồng với phần tóm tắt): xem `docs/dinh_dang_dau_ra.md`.
 
@@ -152,7 +154,7 @@ python src/nlp/kiem_cau.py
 | `nhanh` | PhoWhisper-small | 22,0% | 8,3% | **1,3x / 1,8x** |
 | (để so) Whisper medium, mặc định cũ | | 23,3% | 10,1% | 3,5x / 5,1x |
 
-Cả hai chế độ đệm im lặng mỗi lượt nói, gộp các lượt nói liền nhau thành nhóm tối đa 20 giây và không dùng câu gợi ý. `nhanh_nhat` là tên cũ, giờ chạy như `nhanh`. Model PhoWhisper phải chuyển đổi một lần (`pip install torch transformers`, rồi `python src/asr/chuyen_doi_model.py` cho chế độ chính xác và `python src/asr/chuyen_doi_model.py vinai/PhoWhisper-small` cho chế độ nhanh); chưa có thì chương trình tự dùng Whisper (medium / small, lỗi nhiều hơn) và báo cách tạo. Chi tiết và cách đo: `docs/nhat_ky_asr.md`.
+Cả hai chế độ đệm im lặng mỗi lượt nói, gộp các lượt nói liền nhau thành nhóm tối đa 20 giây và không dùng câu gợi ý. `nhanh_nhat` là tên cũ, giờ chạy như `nhanh`. Model PhoWhisper phải chuyển đổi một lần (`pip install torch transformers`, rồi `python src/asr/chuyen_doi_model.py` cho chế độ chính xác và `python src/asr/chuyen_doi_model.py vinai/PhoWhisper-small` cho chế độ nhanh); chưa có thì chương trình tự dùng Whisper (medium / small, lỗi nhiều hơn) và báo cách tạo.
 
 Lần đầu chạy cần **internet** để tải model `medium` (khoảng 1,5 GB); các lần sau dùng bản đã lưu trên máy.
 

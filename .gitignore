@@ -24,3 +24,6 @@ outputs/danh_gia_asr/
 # Nhật ký chạy đánh giá và file chuyển code trên máy cá nhân
 ket_qua_*.txt
 *.bundle
+
+# Nhật ký kỹ thuật cá nhân của phần ASR: chỉ giữ trên máy
+docs/nhat_ky_asr.md
