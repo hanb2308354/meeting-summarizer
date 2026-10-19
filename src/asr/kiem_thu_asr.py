@@ -36,6 +36,7 @@ asr.TUNG_LUOT_MAC_DINH = False
 # Kiểm thử không phụ thuộc máy có sẵn model PhoWhisper hay chưa: coi như chưa có (chế độ chính xác
 # tự lùi về medium); ca kiểm thử chế độ tự tạo thư mục model giả
 asr.MODEL_CHINH_XAC = Path(tempfile.gettempdir()) / "khong_co_model_phowhisper"
+asr.MODEL_NHANH = Path(tempfile.gettempdir()) / "khong_co_model_phowhisper_small"
 CAC_CA = []
 
 
@@ -1266,7 +1267,7 @@ def kieu_tinh_vao_ten_cau_hinh_va_truyen_cho_model():
     co_ban = dict(model="medium", goi_y="cau_mo_dau", thu_lai="gioi_han", theo_khuc=False, tung_luot=True,
                   khong_moc_thoi_gian=False, dem_im_lang=False, beam=5, khong_tien_xu_ly=False, loc_nhieu=False,
                   token_moi_giay=asr.TOKEN_MOI_GIAY, token_cong_them=asr.TOKEN_CONG_THEM, so_luong=asr.SO_LUONG_CPU,
-                  khong_nghe_lai=False, khong_cat_ngoai=False, gop_luot=0, le_cuoi_luot=None)
+                  khong_nghe_lai=False, khong_cat_ngoai=False, gop_luot=0, le_cuoi_luot=None, vad_ngung=0)
     ten_int8 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="int8"))
     ten_f32 = dg.ten_cau_hinh(SimpleNamespace(**co_ban, kieu_tinh="float32"))
     if ten_int8 != "medium_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot" or ten_f32 != "medium_chi_cau_mo_dau_float32_gioi_han_thu_lai_tung_luot":
@@ -1436,7 +1437,7 @@ def so_luong_cpu_truyen_cho_model_va_vao_ten_cau_hinh():
                   loc_nhieu=False, kieu_tinh="int8")
     ten = dg.ten_cau_hinh(SimpleNamespace(**co_ban, token_moi_giay=12, token_cong_them=10, so_luong=8,
                                           khong_nghe_lai=False, khong_cat_ngoai=False, gop_luot=0,
-                                          le_cuoi_luot=None))
+                                          le_cuoi_luot=None, vad_ngung=0))
     if ten != "phowhisper-medium-ct2_chi_cau_mo_dau_gioi_han_thu_lai_tung_luot_dem_lang_token12-10_luong8":
         return f"tên cấu hình sai: {ten}"
     da_tao = []
@@ -1518,10 +1519,10 @@ def che_do_chinh_xac_dung_phowhisper_dem_im_lang_va_lui_ve_medium():
         return f"thiếu model chính xác phải lùi về {asr.TEN_MODEL} và báo cách tạo: {thieu}"
     if not co[0].endswith("phowhisper-medium-ct2") or co[1:] != (True, "khong", None):
         return f"có model chính xác mà không dùng: {co}"
-    if asr.chon_che_do("nhanh_nhat") != ("small", False, asr.GOI_Y_MAC_DINH, None):
-        return f"chế độ nhanh nhất sai: {asr.chon_che_do('nhanh_nhat')}"
-    if nhanh != (asr.TEN_MODEL, False, asr.GOI_Y_MAC_DINH, None) or tu_chon != ("models/khac-ct2", True, "khong", None):
-        return f"chế độ nhanh / tự chọn model sai: {nhanh}, {tu_chon}"
+    if nhanh[:3] != ("small", False, asr.GOI_Y_MAC_DINH) or "PhoWhisper-small" not in (nhanh[3] or ""):
+        return f"thiếu PhoWhisper-small phải lùi về Whisper small và báo cách tạo: {nhanh}"
+    if tu_chon != ("models/khac-ct2", True, "khong", None):
+        return f"tự chọn model sai: {tu_chon}"
     if len(da_tao) != 1 or not da_tao[0].endswith("phowhisper-medium-ct2") or da_nghe != [(True, "khong")]:
         return f"main không dùng model chính xác + đệm im lặng: {da_tao}, {da_nghe}"
 
@@ -1784,6 +1785,104 @@ def sua_alignment_heads_tao_ban_moi_khong_dung_ban_goc():
             return "sửa nhầm bản gốc hoặc bản mới sai"
         if (dich / "model.bin").read_bytes() != b"trong so" or json.loads((dich / "config.json").read_text())["x"] != 1:
             return "bản mới thiếu trọng số / mất cấu hình khác"
+
+
+
+
+@ca
+def che_do_nhanh_dung_phowhisper_small_va_ten_cu_van_chay():
+    goc = asr.MODEL_NHANH
+    try:
+        with tempfile.TemporaryDirectory() as tm:
+            asr.MODEL_NHANH = Path(tm) / "phowhisper-small-ct2"
+            asr.MODEL_NHANH.mkdir()
+            (asr.MODEL_NHANH / "model.bin").write_bytes(b"x")
+            nhanh, cu = asr.chon_che_do("nhanh"), asr.chon_che_do("nhanh_nhat")
+    finally:
+        asr.MODEL_NHANH = goc
+    if not nhanh[0].endswith("phowhisper-small-ct2") or nhanh[1:] != (True, "khong", None) or cu != nhanh:
+        return f"chế độ nhanh phải dùng PhoWhisper-small + đệm im lặng, không gợi ý: {nhanh} / {cu}"
+    # Tự chọn model ở chế độ nhanh: họ PhoWhisper thì cách chạy PhoWhisper, Whisper gốc thì cách chạy Whisper
+    if asr.chon_che_do("nhanh", "models/phowhisper-x-ct2")[1:3] != (True, "khong") \
+            or asr.chon_che_do("nhanh", "medium")[1:3] != (False, asr.GOI_Y_MAC_DINH):
+        return "tự chọn model ở chế độ nhanh dùng sai cách chạy"
+
+
+@ca
+def bo_chu_rac_unk_va_tu_lap_vong_giu_tu_that():
+    for rac in ("unk", " unk.", "UNK,", "vnvnvnvnvnvnvnvn", "hoahoahoahoa", "aaaaaaaaaa."):
+        if not asr.la_tu_rac(rac):
+            return f"không nhận ra chữ rác {rac!r}"
+    for that in ("orthomyxoviridae", "nghiêng", "learning", "hahaha", "mississippi", "unknown", "2023", "ukraine"):
+        if asr.la_tu_rac(that):
+            return f"coi nhầm từ thật là rác: {that!r}"
+    if asr.lam_sach_van_ban("phạm tội unk có thu được lại........") != "phạm tội có thu được lại...":
+        return f"làm sạch văn bản sai: {asr.lam_sach_van_ban('phạm tội unk có thu được lại........')!r}"
+    if asr.ly_do_loai(doan(chuoi_tu(0.0, "unk. unk. unk."))) != "chữ rác":
+        return "đoạn toàn chữ rác phải bị loại"
+    with contextlib.redirect_stdout(io.StringIO()):
+        cac_tu, _ = asr.loc_doan([doan(chuoi_tu(0.0, "nguyên vụ sợi đờn vnvnvnvnvnvnvn unk cúm"))])
+    if asr.ghep_tu(cac_tu) != "nguyên vụ sợi đờn cúm" or cac_tu[-1].start <= cac_tu[0].start:
+        return f"bỏ chữ rác trong đoạn sai: {asr.ghep_tu(cac_tu)!r}"
+
+
+@ca
+def vad_ngung_doi_khoang_lang_va_vao_ten_cau_hinh():
+    import danh_gia_bo as dg
+    from types import SimpleNamespace
+    da_goi = []
+    goc_vad = asr.get_speech_timestamps
+    try:
+        asr.get_speech_timestamps = lambda s, vad, sampling_rate: (da_goi.append(vad.min_silence_duration_ms), [])[1]
+        asr.cat_luot_noi(np.zeros(SR, dtype=np.float32))
+        asr.cat_luot_noi(np.zeros(SR, dtype=np.float32), 500)
+    finally:
+        asr.get_speech_timestamps = goc_vad
+    if da_goi != [1000, 500]:
+        return f"--vad-ngung không tới VAD: {da_goi}"
+    co_ban = dict(model="medium", goi_y="khong", thu_lai="gioi_han", theo_khuc=False, tung_luot=True,
+                  khong_moc_thoi_gian=False, dem_im_lang=True, beam=5, khong_tien_xu_ly=False, loc_nhieu=False,
+                  token_moi_giay=asr.TOKEN_MOI_GIAY, token_cong_them=asr.TOKEN_CONG_THEM, so_luong=asr.SO_LUONG_CPU,
+                  khong_nghe_lai=False, khong_cat_ngoai=False, gop_luot=0, le_cuoi_luot=None, kieu_tinh="int8")
+    ten = dg.ten_cau_hinh(SimpleNamespace(**co_ban, vad_ngung=500))
+    ten_mac_dinh = dg.ten_cau_hinh(SimpleNamespace(**co_ban, vad_ngung=1000))
+    if not ten.endswith("_ngung500") or "ngung" in ten_mac_dinh:
+        return f"tên cấu hình sai: {ten} / {ten_mac_dinh}"
+
+
+@ca
+def file_dai_chia_loi_bien_va_giua_doan_ghep():
+    import danh_gia_bo as dg
+    a = "một hai ba bốn năm sáu bảy tám".split()
+    b = "chín mười mươi mốt hai ba bốn năm".split()
+    # Mất 2 từ ở chỗ nối (cuối a, đầu b) và sai 1 từ ở giữa b
+    du_doan = " ".join(a[:-1] + b[1:4] + ["sai"] + b[5:])
+    dem = dg.loi_theo_vi_tri([a, b], du_doan)
+    if (dem["bien_tu"], dem["giua_tu"]) != (12, 4):
+        return f"đếm từ biên / giữa sai: {dict(dem)}"
+    if (dem["bien_loi"], dem["bien_thieu"], dem["giua_loi"]) != (2, 2, 1):
+        return f"chia lỗi sai: {dict(dem)}"
+
+
+@ca
+def loc_lai_bo_ca_chu_rac_trong_doan_giu():
+    import danh_gia_bo as dg
+    chi_tiet = [{"start": 0, "end": 2, "text": "phạm tội unk có", "loai": None, "do_tin_cay": -0.2,
+                 "khong_co_tieng": 0.01, "ty_le_nen": 1.1}]
+    goc_bo = dg.THU_MUC_BO
+    with tempfile.TemporaryDirectory() as tm:
+        (Path(tm) / "bo").mkdir()
+        (Path(tm) / "bo" / "ket_qua__x_khong_goi_y.json").write_text(json.dumps(
+            {"a": {"du_doan": "phạm tội unk có", "bi_loai": [], "chi_tiet": chi_tiet}}, ensure_ascii=False),
+            encoding="utf-8")
+        try:
+            dg.THU_MUC_BO = Path(tm)
+            ten, _, _ = dg.loc_lai("bo", "x_khong_goi_y")
+            moi = json.loads((Path(tm) / "bo" / f"ket_qua__{ten}.json").read_text(encoding="utf-8"))
+        finally:
+            dg.THU_MUC_BO = goc_bo
+    if moi["a"]["du_doan"] != "phạm tội có":
+        return f"chấm lại không bỏ chữ rác: {moi['a']['du_doan']!r}"
 
 
 if __name__ == "__main__":

@@ -10,8 +10,8 @@ Cần thêm (chỉ để chuyển đổi, không đưa vào requirements.txt):
     pip install transformers
 
 Cách dùng:
-    python src/asr/chuyen_doi_model.py                                   (PhoWhisper-medium)
-    python src/asr/chuyen_doi_model.py vinai/PhoWhisper-small
+    python src/asr/chuyen_doi_model.py                                   (PhoWhisper-medium: chế độ chinh_xac)
+    python src/asr/chuyen_doi_model.py vinai/PhoWhisper-small            (chế độ nhanh)
 Kết quả: models/<tên>-ct2/  (không lên git). Dùng:
     python src/asr/danh_gia_bo.py --model models/phowhisper-medium-ct2
     python src/asr/chuyen_giong_noi.py data/audio/hop.wav --model models/phowhisper-medium-ct2

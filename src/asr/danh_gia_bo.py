@@ -180,6 +180,8 @@ def ten_cau_hinh(args):
         ten += f"_gop{args.gop_luot:g}"
     if args.le_cuoi_luot is not None and args.le_cuoi_luot != asr.LE_CUOI_LUOT:
         ten += f"_le{args.le_cuoi_luot:g}"
+    if args.vad_ngung and args.vad_ngung != asr.THONG_SO_VAD["min_silence_duration_ms"]:
+        ten += f"_ngung{args.vad_ngung}"
     if args.khong_nghe_lai:
         ten += "_khong_nghe_lai"
     if args.khong_cat_ngoai:
@@ -209,7 +211,8 @@ def nhan_dang_mot_doan(model, duong_dan, args):
                                   beam=args.beam, token_moi_giay=args.token_moi_giay,
                                   token_cong_them=args.token_cong_them,
                                   nghe_lai=not args.khong_nghe_lai, cat_ngoai=not args.khong_cat_ngoai,
-                                  gop=args.gop_luot, le_cuoi=args.le_cuoi_luot)
+                                  gop=args.gop_luot, le_cuoi=args.le_cuoi_luot,
+                                  ngung_ms=args.vad_ngung or None)
     return {
         "du_doan": " ".join(cau["text"] for cau in asr.tach_cau(cac_tu)),
         "bi_loai": [d.strip() for d in dau_ra.getvalue().splitlines() if "[LOẠI" in d],
@@ -315,10 +318,42 @@ def dong_so_lieu(ten, s):
             f"| thừa {s['thua']:>4} | WER {wer_cua(s):6.1%} | xử lý {toc_do:.2f}x độ dài")
 
 
+SO_TU_BIEN = 3   # "biên" của một đoạn ghép: 3 từ đầu + 3 từ cuối
+
+
+def loi_theo_vi_tri(cac_doan_tu, du_doan):
+    """Chia lỗi theo vị trí trong từng đoạn ghép: ở BIÊN (SO_TU_BIEN từ đầu / cuối đoạn) hay ở GIỮA.
+
+    cac_doan_tu: [[từ gốc của đoạn 1], [đoạn 2], ...] nối theo thứ tự. Từ thừa tính theo từ gốc đứng
+    ngay trước nó. Để biết file dài tệ hơn vì chỗ nối các đoạn (lượt nói VAD gộp hai người / hai bản ghi
+    khác nhau, đặc thù của file ghép) hay vì nghe kém đều cả file."""
+    vi_tri, cac_tu = [], []
+    for tu in cac_doan_tu:
+        n = len(tu)
+        cac_tu += tu
+        vi_tri += ["bien" if k < SO_TU_BIEN or k >= n - SO_TU_BIEN else "giua" for k in range(n)]
+    dem = Counter()
+    for v in vi_tri:
+        dem[f"{v}_tu"] += 1
+    if not cac_tu:
+        return dem
+    do = jiwer.process_words(" ".join(cac_tu), du_doan or "")
+    for khuc in do.alignments[0]:
+        if khuc.type in ("substitute", "delete"):
+            for k in range(khuc.ref_start_idx, khuc.ref_end_idx):
+                dem[f"{vi_tri[k]}_loi"] += 1
+                if khuc.type == "delete":
+                    dem[f"{vi_tri[k]}_thieu"] += 1
+        elif khuc.type == "insert":
+            dem[f"{vi_tri[max(0, min(khuc.ref_start_idx, len(vi_tri)) - 1)]}_loi"] += khuc.hyp_end_idx - khuc.hyp_start_idx
+    return dem
+
+
 def so_voi_doan_ngan(kq, cau_hinh):
     """Bộ file dài (ghep_file_dai.py): WER khi nghe từng đoạn ngắn của chính các đoạn đã ghép."""
     cac_dong = []
     tong_dai, tong_ngan = Counter(), Counter()
+    vt_dai, vt_ngan = Counter(), Counter()
     for _, muc, ket, dap_an, du_doan in kq["tung_doan"]:
         if "tu_doan" not in muc:
             continue
@@ -330,9 +365,13 @@ def so_voi_doan_ngan(kq, cau_hinh):
                             f"{muc['nguon_bo']} (cấu hình {cau_hinh}) để so")
             continue
         ngan = Counter()
+        cac_doan_tu = []
         for i in muc["tu_doan"]:
             goc = chuan_hoa_danh_gia(nhan[i]["text"])
             ngan.update(tu=len(goc.split()), loi=so_loi(goc, chuan_hoa_danh_gia(ket_ngan[i]["du_doan"])))
+            cac_doan_tu.append(goc.split())
+            vt_ngan.update(loi_theo_vi_tri([goc.split()], chuan_hoa_danh_gia(ket_ngan[i]["du_doan"])))
+        vt_dai.update(loi_theo_vi_tri(cac_doan_tu, du_doan))
         dai = Counter(tu=len(dap_an.split()), loi=so_loi(dap_an, du_doan))
         tong_dai.update(dai)
         tong_ngan.update(ngan)
@@ -346,6 +385,13 @@ def so_voi_doan_ngan(kq, cau_hinh):
     if tong_dai["tu"] and tong_ngan["tu"]:
         d.append(f"  TỔNG: file dài {tong_dai['loi'] / tong_dai['tu']:.1%} | "
                  f"từng đoạn ngắn {tong_ngan['loi'] / tong_ngan['tu']:.1%}")
+    for vt, ten in (("bien", f"{SO_TU_BIEN} từ đầu + {SO_TU_BIEN} từ cuối mỗi đoạn ghép"), ("giua", "phần giữa đoạn")):
+        if vt_dai[f"{vt}_tu"]:
+            n = vt_dai[f"{vt}_tu"]
+            d.append(f"  Lỗi ở {ten} ({n} từ): file dài {vt_dai[f'{vt}_loi'] / n:.1%} (thiếu {vt_dai[f'{vt}_thieu']})"
+                     f" | từng đoạn ngắn {vt_ngan[f'{vt}_loi'] / n:.1%} (thiếu {vt_ngan[f'{vt}_thieu']})")
+    if vt_dai["bien_tu"]:
+        d.append("  (chênh lệch dồn ở biên = lỗi do chỗ nối các bản ghi khác nhau, họp thật ít gặp; dồn ở giữa = lỗi chung)")
     return d
 
 
@@ -748,7 +794,8 @@ def loc_lai(ten_bo, cau_hinh):
             ly_do = c["loai"] or asr.ly_do_loai(doan, goi_y_cua(cau_hinh))
             (bi_loai if ly_do else giu).append((c, ly_do))
         so_doan_bo += sum(1 for c, _ in bi_loai if not c["loai"])
-        moi[id_doan] = dict(kq, du_doan=" ".join(c["text"] for c, _ in giu),
+        # Bỏ cả chữ rác trong đoạn được giữ (unk, "vnvnvn...") như nhan_dang hiện tại làm trên từng từ
+        moi[id_doan] = dict(kq, du_doan=" ".join(asr.lam_sach_van_ban(c["text"]) for c, _ in giu),
                             bi_loai=[f"[LOẠI - {l}] [{c['start']:7.2f} --> {c['end']:7.2f}] {c['text']}"
                                      for c, l in bi_loai])
     ten_moi = f"{cau_hinh}_loc_lai"
@@ -907,6 +954,9 @@ def main():
                         help="Số luồng CPU cho model (mặc định 0 = 4 luồng của faster-whisper)")
     parser.add_argument("--le-cuoi-luot", type=float, default=None,
                         help=f"Lề sau cuối lượt khi cắt chữ ngoài âm thanh thật (mặc định {asr.LE_CUOI_LUOT} giây)")
+    parser.add_argument("--vad-ngung", type=int, default=0,
+                        help="Khoảng ngừng tối thiểu (ms) để VAD tách lượt nói (mặc định "
+                             f"{asr.THONG_SO_VAD['min_silence_duration_ms']}); chỉ để đo")
     parser.add_argument("--gop-luot", type=float, default=0,
                         help="Gộp các lượt nói liền nhau thành nhóm dài tối đa chừng này giây (ít cửa sổ hơn, nhanh hơn)")
     parser.add_argument("--khong-nghe-lai", action="store_true",

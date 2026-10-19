@@ -16,19 +16,18 @@ từ bộ kiểm tra giữ riêng 100 + 100 đoạn):
 
 | Loại âm thanh | Lúc bắt đầu (medium) | Medium sau chỉnh | Chế độ chính xác (PhoWhisper) |
 |---|---|---|---|
-| Họp, hội nghị, gọi điện (đoạn ngắn) | 28,2% | 25,4% | 19,1% (không gợi ý) |
-| Cuộc họp dài 5 phút (ghép nhân tạo) | 36,4% | 29,9% | 27,6% |
-| Giọng các miền | 8,3% | 8,2% | 4,5% (không gợi ý) |
-| Tốc độ trên máy 2 nhân (lần độ dài ghi âm) | — | 3,3–3,8x | 5,8–9,0x (đang tối ưu) |
+| Họp, hội nghị, gọi điện (đoạn ngắn) | 28,2% | 25,4% | 18,5% (bộ giữ riêng: **18,1%**) |
+| Cuộc họp dài 5 phút (ghép nhân tạo) | 36,4% | 29,9% | 26,7% |
+| Giọng các miền | 8,3% | 8,2% | 4,5% (bộ giữ riêng: **6,8%**) |
+| Tốc độ trên máy 2 nhân (lần độ dài ghi âm) | — | 3,3–3,8x | 3,5–5,3x (chế độ nhanh PhoWhisper-small: 1,4–1,9x, lỗi 22,5% / 8,5%) |
 | Model bị kẹt | có | 0 | 0 |
 
-**Cấu hình đang dùng:** chế độ chính xác = PhoWhisper-medium + đệm im lặng, không gợi ý (chế độ nhanh = Whisper
-`medium` + câu gợi ý mở đầu), CPU, số luồng = số nhân thật · nhận dạng từng lượt nói · lượt nào ra quá ít chữ thì nhận dạng lại · lọc câu bịa (kể cả câu có tốc độ nói bất khả thi).
+**Cấu hình đang dùng:** chế độ chính xác = PhoWhisper-medium + đệm im lặng, không gợi ý (chế độ nhanh =
+PhoWhisper-small, cùng cách chạy), CPU, số luồng = số nhân thật · nhận dạng từng lượt nói · lượt nào ra quá ít chữ thì nhận dạng lại · lọc câu bịa (kể cả câu có tốc độ nói bất khả thi).
 
-**Đang làm:** chọn model tốt nhất. PhoWhisper (bản Whisper được huấn luyện thêm cho tiếng Việt) hứa hẹn
-giảm lỗi họp còn ~21% và giọng miền còn ~5% (đã xác nhận bằng chạy thật, chưa chắc về thống kê), nhưng chạy qua
-faster-whisper thì không biết dừng, nối câu bịa sau lời thật. Đã cắt được câu bịa bằng mốc thời gian (đệm im lặng +
-bỏ chữ sau cuối lượt): họp 20,4% — tốt hơn medium thật sự. Còn chậm khoảng 2,7 lần medium, đang tăng tốc.
+**Đã xong:** chọn model (PhoWhisper-medium, đã chạm giới hạn model chạy được trên máy này), tốc độ ngang Whisper
+medium, kết quả chính thức trên bộ giữ riêng. **Còn lại:** chốt gộp lượt, chẩn đoán phần chênh của file dài, bỏ chữ
+rác, cài mới từ đầu (C4), ghi âm một cuộc họp thật 15–20 phút để kiểm lần cuối, báo cáo tiến độ.
 
 **Cách đo dùng xuyên suốt:**
 - Không tự thu âm mà dùng bộ dữ liệu công khai có sẵn lời gốc: 30–100 đoạn họp/hội nghị/gọi điện, 30–100 đoạn giọng
@@ -347,6 +346,32 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
     8 từ / 7.500). **Sửa (bundle 36):** xét theo mốc BẮT ĐẦU của từ; đo thêm lề 1,0 giây. Bộ giữ riêng sẽ chạy lại
     với bản sửa — ghi rõ: lần chạy thứ hai là để kiểm một lỗi tìm thấy, không phải chỉnh tham số theo bộ giữ riêng.
 
+- **Bundle 36 (19/10) — kết quả và quyết định:**
+
+  | Phép đo | Kết quả | Quyết định |
+  |---|---|---|
+  | Bộ giữ riêng chạy lại với bản sửa B2 (cắt theo mốc bắt đầu) | họp 18,1% (thiếu 238 → 234 từ), giọng miền 6,8% (thiếu 26 → 24) | **B2 đạt**: từ thật cuối lượt không còn bị cắt, không lỗi nào tăng. Đây là lần chạy thứ hai trên bộ giữ riêng, để kiểm một lỗi, đã ghi rõ |
+  | Lề cuối lượt 0,5 → 1,0 giây | đoạn ngắn y hệt (18,5% / 4,5%), file dài 26,7% → 26,6% | không khác → **giữ 0,5** |
+  | Gộp lượt ≤ 20 giây | đoạn ngắn 18,5% → 17,9%, 4,05x → **3,63x**; giọng miền bằng; file dài 26,7% → 26,2%, 3,56x → **2,98x** | tốt hơn hoặc bằng ở cả 3 bộ, nhanh hơn 10–16% → đo trên bộ giữ riêng ở bundle 37 rồi mới đổi mặc định (không đổi mặc định khi chưa đo, rút kinh nghiệm lần trước) |
+  | **PhoWhisper-small trên bộ giữ riêng** | họp **22,5%**, giọng miền **8,5%**, **1,40x / 1,88x** | so với Whisper medium (chế độ nhanh cũ, 23,3% / 10,1%, 3,45x / 5,1x): lỗi bằng (−0,7 [−2,9; +1,2]; −1,6 [−3,4; +0,3], chưa chắc là tốt hơn) mà **nhanh gấp ~2,5 lần** → **chế độ `nhanh` = PhoWhisper-small**, Whisper medium bị loại khỏi các chế độ. Gộp lượt 20 giây cho small: 27,1% → 26,5%, 1,49x → 1,40x (bộ chỉnh) |
+  | 100 đoạn họp (bộ chỉnh, 70 đoạn mới) | 20,6%, 3,81x | khớp với bộ giữ riêng (18,1%), không có dấu hiệu "khớp riêng" 30 đoạn |
+  | File dài so với chính các đoạn đó nghe riêng (B1) | file dài 26,7% / nghe riêng 22,0% (gộp 20 giây: 26,2%) | còn chênh 4,7 điểm, chủ yếu là **thiếu chữ** (461 từ) → bundle 37 chia lỗi theo vị trí (biên / giữa mỗi đoạn ghép) và thử VAD tách lượt ở khoảng ngừng 0,5 giây |
+
+  - **Phân loại 15 đoạn sai nhiều nhất trên bộ giữ riêng (B5):** nói tiếng Anh 3 đoạn (0173, 0174, 0035: model
+    phiên âm sang tiếng Việt); gọi điện chất lượng thấp 5 đoạn (0007 ra trống, 0008 ra "unk" lặp, 0011, 0022, 0199) —
+    nhóm gọi điện 43,7% lỗi, 109/364 từ bị thiếu; câu cảm thán lặp ngắn 2 (0051, 0070); câu xã giao ngắn bị thêm chữ 2
+    (0081, 0134); thuật ngữ chuyên ngành 1 (0119); phỏng vấn đường phố ồn 1 (0086); đọc số 1 (0062). Gần như tất cả là
+    giới hạn của model (giọng điện thoại băng hẹp, tiếng Anh, ồn), không phải lỗi luồng xử lý — trừ 2 loại chữ rác dưới.
+  - **Chữ rác lọt bộ lọc (B3), sửa ở bundle 37:** PhoWhisper đôi khi in "unk" (tên ký hiệu "không biết" của bộ tách từ)
+    lẫn trong câu thật, và kẹt vòng bên trong một từ ("nguyên vụ sợi đờn âm phòng hậu cơm vnvnvnvn..."), luật "lặp
+    chữ" xét cả đoạn nên không bắt. Thêm luật bỏ từng từ rác (`la_tu_rac`): "unk", và mẩu 1–4 chữ cái lặp ≥ 4 lần
+    không có khoảng trắng (từ ≥ 8 chữ cái); gọn "........" thành "...". Luật chung, không theo từ cụ thể, nhưng có
+    thấy trên bộ giữ riêng → ghi rõ ở đây; con số bộ giữ riêng sau sửa chỉ là ước tính chấm lại (`--loc-lai`).
+  - **Cặp nghe nhầm (B6):** nhiều nhất là từ tiếng Anh bị phiên âm (mic → mích, zoom → giun, link → linh, learning →
+    ninh, fanpage → pết) và trợ từ vùng miền (nhá → nhé). **Không thêm luật sửa:** cặp lấy từ bộ giữ riêng, thêm luật
+    theo chúng là chỉnh theo bộ kiểm tra; mà "linh", "giun" là từ tiếng Việt thật, sửa máy móc sẽ sai ở chỗ khác.
+    Để dành cho bản ghi họp thật (nếu một cặp lặp lại nhiều ở đó thì mới thêm vào bảng sửa của bước làm sạch văn bản).
+
 ---
 
 ## 4. Phạm vi đã thu hẹp
@@ -392,7 +417,9 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 | 17/10 | Đo thời gian từng bước: PhoWhisper nghe thêm cửa sổ trong phần đệm (15 so với 6) → sửa; file dài xác nhận chế độ chính xác |
 | 17/10 | Bản sửa tốc độ: −17–26%, chữ giống hệt; file 2 giờ dùng 2 GB RAM; thêm chế độ nhanh nhất, bộ giữ riêng, đo bật/tắt |
 | 17–18/10 | Đo bật/tắt từng thành phần: bỏ câu gợi ý cho PhoWhisper; tốc độ −31–37% không mất chữ; tải bộ kiểm tra giữ riêng |
+| 18/10 | Kết quả chính thức trên bộ giữ riêng: 18,1% / 6,8% (TỐT HƠN THẬT); hai vòng phản biện độc lập; kết luận chạm giới hạn model |
+| 19/10 | Sửa cắt oan từ cuối lượt (xác nhận trên bộ giữ riêng); chế độ nhanh = PhoWhisper-small (nhanh gấp 2,5 lần); phân loại lỗi; bỏ chữ rác "unk" |
 
 **Về điểm số trong các báo cáo tiến độ:** thang 10 điểm và 16 điều kiện "hoàn thiện" do nhóm tự đặt
 (không phải thang của học phần). Mức hoàn thiện = tổng điểm 16 điều kiện ÷ 16 (Đạt = 1, Một phần = 0,5, Chưa = 0),
-hiện là 10,5/16 ≈ 66% (điều kiện còn thiếu: B1, B2, B3, B5, B6, C4, D1, D2, E2 chưa đạt trọn). Điểm chất lượng hiện là 9,0/10.
+hiện là 12,5/16 ≈ 78% (còn thiếu: B1, B3, B6, D1, E2 một phần; C4 chưa có kết quả). Điểm chất lượng hiện là 9,2/10.

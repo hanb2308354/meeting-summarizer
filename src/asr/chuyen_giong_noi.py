@@ -60,10 +60,13 @@ TUNG_LUOT_MAC_DINH = True
 # Hai chế độ của chuyen_giong_noi.py (--che-do). Đo 16/10 trên 30 + 30 đoạn, khoảng tin cậy 95% so với medium:
 #   chinh_xac: PhoWhisper-medium (VinAI, tinh chỉnh cho tiếng Việt) + đệm im lặng thật + cắt chữ ngoài âm thanh:
 #              họp 25,4% -> 20,4% (TỐT HƠN THẬT [-8,6; -1,0]), giọng miền 8,2% -> 5,6%; chậm hơn ~2,7 lần
-#   nhanh    : Whisper medium (đệm im lặng không giúp gì cho medium nên tắt)
-#   nhanh_nhat: Whisper small, cho máy yếu: 1,3-1,5x độ dài ghi âm trên máy 2 nhân (medium ~3,3x) nhưng
-#              lỗi nhiều hơn thật (họp 31,0%, giọng miền 13,7%)
-# Model chính xác phải tự chuyển đổi một lần (src/asr/chuyen_doi_model.py); chưa có thì tự dùng chế độ nhanh.
+#   nhanh    : PhoWhisper-small, cùng cách chạy. Đo 19/10 trên bộ kiểm tra GIỮ RIÊNG (100 + 100 đoạn):
+#              họp 22,5% / giọng miền 8,5%, 1,4-1,9x độ dài ghi âm; so với chinh_xac (18,1% / 6,8%, 3,5-5,3x)
+#              thì lỗi nhiều hơn nhưng nhanh gấp ~2,5 lần; so với Whisper medium (chế độ nhanh cũ: 23,3% / 10,1%,
+#              3,5-5,1x) thì lỗi bằng hoặc ít hơn mà nhanh gấp ~2,5 lần, nên thay hẳn medium.
+#   nhanh_nhat: tên cũ, giờ giống "nhanh" (Whisper small cũ lỗi nhiều hơn rõ: họp 31,0%, giọng miền 13,7%)
+# Model PhoWhisper phải tự chuyển đổi một lần (src/asr/chuyen_doi_model.py); chưa có thì lùi về Whisper
+# (medium cho chinh_xac, small cho nhanh) và báo cách tạo.
 CHE_DO_MAC_DINH = "chinh_xac"
 # Kiểu tính của model trên CPU. int8: nhanh, đủ chính xác. Đã đo: PhoWhisper bản float32 cũng không biết
 # dừng y như int8 (lỗi nằm ở cách faster-whisper đệm cửa sổ, đã xử lý bằng đệm im lặng + cắt ngoài âm thanh)
@@ -99,7 +102,8 @@ LE_CUOI_LUOT = 0.5
 THU_MUC_GOC = Path(__file__).resolve().parents[2]
 THU_MUC_KET_QUA = THU_MUC_GOC / "data" / "transcripts"
 MODEL_CHINH_XAC = THU_MUC_GOC / "models" / "phowhisper-medium-ct2"
-MODEL_NHANH_NHAT = "small"
+MODEL_NHANH = THU_MUC_GOC / "models" / "phowhisper-small-ct2"
+MODEL_DU_PHONG_NHANH = "small"   # Whisper small: chế độ nhanh khi chưa chuyển đổi PhoWhisper-small
 GOI_Y_CHINH_XAC = "khong"
 
 
@@ -115,11 +119,19 @@ def chon_che_do(che_do, model=None):
         if (Path(MODEL_CHINH_XAC) / "model.bin").exists():
             return str(MODEL_CHINH_XAC), True, GOI_Y_CHINH_XAC, None
         return TEN_MODEL, False, GOI_Y_MAC_DINH, (
-            f"Chưa có model chính xác ({hien_thi(Path(MODEL_CHINH_XAC))}), tạm dùng chế độ nhanh ({TEN_MODEL}). "
+            f"Chưa có model chính xác ({hien_thi(Path(MODEL_CHINH_XAC))}), tạm dùng Whisper {TEN_MODEL} (lỗi nhiều hơn). "
             "Tạo model một lần: python src/asr/chuyen_doi_model.py")
-    if che_do == "nhanh_nhat":
-        return model or MODEL_NHANH_NHAT, False, GOI_Y_MAC_DINH, None
-    return model or TEN_MODEL, False, GOI_Y_MAC_DINH, None
+    # "nhanh" (và tên cũ "nhanh_nhat")
+    if model:
+        # Họ PhoWhisper cần đệm im lặng và không gợi ý; Whisper gốc thì ngược lại (xem GOI_Y_CHINH_XAC)
+        if "phowhisper" in str(model).lower():
+            return model, True, GOI_Y_CHINH_XAC, None
+        return model, False, GOI_Y_MAC_DINH, None
+    if (Path(MODEL_NHANH) / "model.bin").exists():
+        return str(MODEL_NHANH), True, GOI_Y_CHINH_XAC, None
+    return MODEL_DU_PHONG_NHANH, False, GOI_Y_MAC_DINH, (
+        f"Chưa có model nhanh ({hien_thi(Path(MODEL_NHANH))}), tạm dùng Whisper {MODEL_DU_PHONG_NHANH} (lỗi nhiều hơn rõ). "
+        "Tạo model một lần: python src/asr/chuyen_doi_model.py vinai/PhoWhisper-small")
 DUOI_HO_TRO = {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac", ".wma", ".webm", ".mp4"}
 
 # Câu mở đầu (initial_prompt): chỉ có tác dụng ở ~30 giây đầu, giúp model vào đúng
@@ -447,6 +459,45 @@ def chuan_hoa_so_sanh(van_ban):
     return re.sub(r"\W+", " ", van_ban.lower()).strip()
 
 
+# Chữ rác model sinh ra trong một đoạn nghe được (không phải cả đoạn bịa nên bộ lọc đoạn không bắt):
+#   "unk": PhoWhisper in thẳng tên ký hiệu "không biết" của bộ tách từ ("phạm tội unk có..."), tiếng Việt
+#          không có từ này; gặp ở đoạn điện thoại khó nghe và file dài
+#   một "từ" là một mẩu 1-4 chữ cái lặp >= 4 lần liền nhau, không có khoảng trắng ("vnvnvnvn...", ở đoạn
+#          0000119): model kẹt vòng bên trong một từ nên luật "lặp chữ" (tính trên cả đoạn) không bắt được.
+#          Âm tiết tiếng Việt không có dạng này; từ tiếng Anh dài thật (orthomyxoviridae) không bị bắt.
+# Luật chung, không theo từng từ cụ thể. Thấy trên bộ giữ riêng nên đã ghi rõ trong nhật ký.
+MAU_TU_LAP_VONG = re.compile(r"(\w{1,4}?)\1{3,}\w{0,3}")
+SO_CHU_TOI_THIEU_TU_LAP_VONG = 8
+
+
+def la_tu_rac(chu):
+    loi = re.sub(r"[\W_]+", "", chu.lower())
+    if loi == "unk":
+        return True
+    return len(loi) >= SO_CHU_TOI_THIEU_TU_LAP_VONG and bool(MAU_TU_LAP_VONG.fullmatch(loi))
+
+
+def gon_dau_cham(chu):
+    """"lại........" -> "lại..." (model kẹt sinh dấu chấm vòng; WER bỏ dấu câu nhưng bên tóm tắt đọc text)."""
+    return re.sub(r"\.{4,}", "...", chu)
+
+
+def lam_sach_van_ban(van_ban):
+    """Bỏ chữ rác, gọn dấu chấm lặp. Dùng khi chỉ có chữ của đoạn (chấm lại kết quả cũ, đoạn không có mốc từ)."""
+    return " ".join(gon_dau_cham(c) for c in van_ban.split() if not la_tu_rac(c))
+
+
+def lam_sach_tu(cac_tu):
+    """Như lam_sach_van_ban nhưng trên danh sách từ có mốc thời gian (giữ mốc của các từ còn lại)."""
+    ket_qua = []
+    for t in cac_tu:
+        if la_tu_rac(t.word):
+            continue
+        moi = gon_dau_cham(t.word)
+        ket_qua.append(t if moi == t.word else dataclasses.replace(t, word=moi))
+    return ket_qua
+
+
 def ly_do_loai(doan, goi_y="day_du"):
     """Trả về lý do nếu đoạn có dấu hiệu Whisper "bịa chữ", ngược lại trả về None.
 
@@ -456,6 +507,8 @@ def ly_do_loai(doan, goi_y="day_du"):
     van_ban = doan.text.strip()
     if not van_ban:
         return "rỗng"
+    if not lam_sach_van_ban(van_ban):
+        return "chữ rác"
     so_tu = len(van_ban.split())
     if so_tu >= SO_TU_XET_TOC_DO and so_tu > TOC_DO_NOI_TOI_DA * max(doan.end - doan.start, 0.0):
         return "tốc độ nói bất khả thi"
@@ -509,12 +562,14 @@ def loi_thu_muc_model(ten_model):
     return None
 
 
-def cat_luot_noi(song_am):
+def cat_luot_noi(song_am, ngung_ms=None):
     """VAD cắt file thành các lượt nói (ngừng >= 1 giây là sang lượt mới), mỗi lượt <= 25 giây.
 
+    ngung_ms: đổi độ dài khoảng ngừng tối thiểu (chỉ để đo, danh_gia_bo.py --vad-ngung).
     Trả về [(mẫu bắt đầu, mẫu kết thúc)].
     """
-    vad = VadOptions(**THONG_SO_VAD, max_speech_duration_s=DO_DAI_LUOT_TOI_DA)
+    thong_so = dict(THONG_SO_VAD, **({"min_silence_duration_ms": ngung_ms} if ngung_ms else {}))
+    vad = VadOptions(**thong_so, max_speech_duration_s=DO_DAI_LUOT_TOI_DA)
     return [(d["start"], d["end"]) for d in get_speech_timestamps(song_am, vad, sampling_rate=TAN_SO_MAU)]
 
 
@@ -546,7 +601,7 @@ def doi_moc_thoi_gian(doan, lech):
 def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, theo_khuc=False,
               tung_luot=False, nhat_ky=None, khong_moc_thoi_gian=False, dem_im_lang=None, beam=None,
               token_moi_giay=None, token_cong_them=None, nghe_lai=True, cat_ngoai=True, gop=0,
-              le_cuoi=None):
+              le_cuoi=None, ngung_ms=None):
     """Nhận dạng giọng nói, trả về danh sách từ (có mốc thời gian) và số đoạn bị loại.
 
     Các tham số dưới chỉ đổi khi đánh giá so sánh (src/asr/danh_gia_bo.py):
@@ -567,6 +622,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
                (= token_moi_giay x số giây + token_cong_them, tối đa TOKEN_TOI_DA); None = mặc định.
                PhoWhisper không biết dừng nên luôn sinh tới giới hạn: giới hạn càng sát càng nhanh
     le_cuoi : lề sau cuối lượt (giây) khi cắt chữ ngoài âm thanh thật; None = LE_CUOI_LUOT
+    ngung_ms: khoảng ngừng tối thiểu để VAD tách lượt (ms); None = THONG_SO_VAD (1000)
     gop     : gộp các lượt liền nhau thành nhóm dài tối đa chừng này giây (gop_luot); 0 = không gộp
     nghe_lai, cat_ngoai: chỉ để đo bật/tắt từng thành phần (False = tắt nhận dạng lại lượt hỏng /
                tắt cắt chữ sau cuối âm thanh thật của lượt)
@@ -589,7 +645,7 @@ def nhan_dang(model, song_am, goi_y=GOI_Y_MAC_DINH, nhiet_do=NHIET_DO_THU_LAI, t
                          hotwords=TU_KHOA_GOI_Y if dung_tu_khoa else None,
                          word_timestamps=True, without_timestamps=khong_moc_thoi_gian)
     if tung_luot:
-        cac_luot = gop_luot(cat_luot_noi(song_am), gop)
+        cac_luot = gop_luot(cat_luot_noi(song_am, ngung_ms) if ngung_ms else cat_luot_noi(song_am), gop)
 
         def nghe_doan(tu, den, **doi):
             # Không chạy VAD lần nữa trong lượt: đã đo bật VAD ở đây thì TỆ HƠN cả hai bộ
@@ -790,12 +846,12 @@ def loc_doan(cac_doan, nhat_ky=None, goi_y="day_du"):
             continue
         hai_doan_truoc = (hai_doan_truoc + [van_ban])[-2:]
         if doan.words:
-            cac_tu.extend(doan.words)
+            cac_tu.extend(lam_sach_tu(doan.words))
         else:
             # Đoạn có chữ nhưng không có mốc thời gian theo từ (hiếm, vd đoạn quá ngắn):
             # coi cả đoạn là một "từ", để câu không bị mất khỏi JSON
             cac_tu.append(Word(start=doan.start, end=doan.end,
-                               word=" " + doan.text.strip(), probability=1.0))
+                               word=" " + lam_sach_van_ban(doan.text.strip()), probability=1.0))
         print(f"  [{doan.start:7.2f} --> {doan.end:7.2f}] {doan.text.strip()}")
     return cac_tu, so_doan_bi_loai
 
@@ -962,9 +1018,9 @@ def main():
     )
     parser.add_argument("duong_dan", nargs="+", help="File ghi âm hoặc thư mục chứa file ghi âm")
     parser.add_argument("--che-do", choices=["chinh_xac", "nhanh", "nhanh_nhat"], default=CHE_DO_MAC_DINH,
-                        help="chinh_xac (mặc định): PhoWhisper, lỗi ít nhất; "
-                             f"nhanh: Whisper {TEN_MODEL}; nhanh_nhat: Whisper {MODEL_NHANH_NHAT} cho máy yếu, "
-                             "lỗi nhiều hơn rõ")
+                        help="chinh_xac (mặc định): PhoWhisper-medium, lỗi ít nhất (~3,5x độ dài ghi âm trên máy "
+                             "2 nhân); nhanh: PhoWhisper-small, nhanh gấp ~2,5 lần, lỗi nhiều hơn (họp 22,5%% so với "
+                             "18,1%%); nhanh_nhat: tên cũ của nhanh")
     parser.add_argument("--model", default=None,
                         help="Đổi model (tên model của faster-whisper hoặc thư mục model CTranslate2)")
     parser.add_argument("--kieu-tinh", default=KIEU_TINH, choices=["int8", "int8_float32", "float32"],
