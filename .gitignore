@@ -20,3 +20,7 @@ models/
 
 # Báo cáo đánh giá chứa lời gốc của bộ dữ liệu (giấy phép không cho phát tán lại)
 outputs/danh_gia_asr/
+
+# Nhật ký chạy đánh giá và file chuyển code trên máy cá nhân
+ket_qua_*.txt
+*.bundle

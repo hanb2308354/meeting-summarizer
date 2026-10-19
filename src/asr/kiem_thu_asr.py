@@ -1503,7 +1503,7 @@ def che_do_chinh_xac_dung_phowhisper_dem_im_lang_va_lui_ve_medium():
             ghi_wav(Path(tm) / "hop.wav", tieng_noi_gia(2))
             asr.THU_MUC_KET_QUA = Path(tm) / "transcripts"
             asr.WhisperModel = lambda ten, **k: (da_tao.append(ten), ModelGia([]))[1]
-            asr.nhan_dang = lambda *a, **k: (da_nghe.append((k.get("dem_im_lang"), k.get("goi_y"))), ([], 0))[1]
+            asr.nhan_dang = lambda *a, **k: (da_nghe.append((k.get("dem_im_lang"), k.get("goi_y"), k.get("gop"))), ([], 0))[1]
             sys.argv = ["chuyen_giong_noi.py", str(Path(tm) / "hop.wav")]
             try:
                 with contextlib.redirect_stdout(io.StringIO()):
@@ -1523,7 +1523,7 @@ def che_do_chinh_xac_dung_phowhisper_dem_im_lang_va_lui_ve_medium():
         return f"thiếu PhoWhisper-small phải lùi về Whisper small và báo cách tạo: {nhanh}"
     if tu_chon != ("models/khac-ct2", True, "khong", None):
         return f"tự chọn model sai: {tu_chon}"
-    if len(da_tao) != 1 or not da_tao[0].endswith("phowhisper-medium-ct2") or da_nghe != [(True, "khong")]:
+    if len(da_tao) != 1 or not da_tao[0].endswith("phowhisper-medium-ct2") or da_nghe != [(True, "khong", 20)]:
         return f"main không dùng model chính xác + đệm im lặng: {da_tao}, {da_nghe}"
 
 

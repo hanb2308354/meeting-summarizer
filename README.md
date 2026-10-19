@@ -148,11 +148,11 @@ python src/nlp/kiem_cau.py
 
 | Chế độ | Model | Họp / gọi điện | Giọng các miền | Tốc độ |
 |---|---|---|---|---|
-| `chinh_xac` (mặc định) | PhoWhisper-medium (VinAI) | **18,1%** | **6,8%** | 3,5x / 5,3x |
-| `nhanh` | PhoWhisper-small | 22,5% | 8,5% | **1,4x / 1,9x** |
+| `chinh_xac` (mặc định) | PhoWhisper-medium (VinAI) | **17,8%** | **6,7%** | 3,3x / 5,1x |
+| `nhanh` | PhoWhisper-small | 22,0% | 8,3% | **1,3x / 1,8x** |
 | (để so) Whisper medium, mặc định cũ | | 23,3% | 10,1% | 3,5x / 5,1x |
 
-Cả hai chế độ đệm im lặng mỗi lượt nói và không dùng câu gợi ý. `nhanh_nhat` là tên cũ, giờ chạy như `nhanh`. Model PhoWhisper phải chuyển đổi một lần (`pip install torch transformers`, rồi `python src/asr/chuyen_doi_model.py` cho chế độ chính xác và `python src/asr/chuyen_doi_model.py vinai/PhoWhisper-small` cho chế độ nhanh); chưa có thì chương trình tự dùng Whisper (medium / small, lỗi nhiều hơn) và báo cách tạo. Chi tiết và cách đo: `docs/nhat_ky_asr.md`.
+Cả hai chế độ đệm im lặng mỗi lượt nói, gộp các lượt nói liền nhau thành nhóm tối đa 20 giây và không dùng câu gợi ý. `nhanh_nhat` là tên cũ, giờ chạy như `nhanh`. Model PhoWhisper phải chuyển đổi một lần (`pip install torch transformers`, rồi `python src/asr/chuyen_doi_model.py` cho chế độ chính xác và `python src/asr/chuyen_doi_model.py vinai/PhoWhisper-small` cho chế độ nhanh); chưa có thì chương trình tự dùng Whisper (medium / small, lỗi nhiều hơn) và báo cách tạo. Chi tiết và cách đo: `docs/nhat_ky_asr.md`.
 
 Lần đầu chạy cần **internet** để tải model `medium` (khoảng 1,5 GB); các lần sau dùng bản đã lưu trên máy.
 

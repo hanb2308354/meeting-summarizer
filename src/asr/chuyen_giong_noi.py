@@ -77,6 +77,15 @@ KIEU_TINH = "int8"
 # cách đệm im lặng thật của thư viện gốc) nghe "tiếng ồn" đó rồi nói tiếp, nối câu bịa sau lời thật.
 # Đo: bản gốc transformers dừng đúng chỗ (43 token), faster-whisper sinh 132 token, kể cả khi tính float32.
 DEM_IM_LANG = False             # mặc định của nhan_dang(); chế độ "chinh_xac" bật (xem CHE_DO)
+# Gộp các lượt nói liền nhau thành nhóm <= 20 giây (gop_luot) ở hai chế độ PhoWhisper. Đo 19/10 trên bộ GIỮ RIÊNG:
+#   chinh_xac: họp 18,1% -> 17,8% (-0,3 [-0,7; -0,0] TỐT HƠN THẬT), 3,55x -> 3,32x; giọng miền 6,8% -> 6,7%, 5,3x -> 5,1x;
+#              file dài 26,7% -> 26,2%, 3,56x -> 2,98x
+#   nhanh    : họp 22,5% -> 22,0% (-0,5 [-1,0; -0,0] TỐT HƠN THẬT), 1,40x -> 1,26x; giọng miền 8,4% -> 8,3%
+# Chưa đo với Whisper gốc (medium/small lùi về khi thiếu PhoWhisper) nên ở đó không gộp.
+# Đã thử thêm tách lượt ở khoảng ngừng 0,5 giây: một mình thì TỆ HƠN THẬT (họp 19,4%, chậm hơn); kèm gộp 20 giây
+# thì bằng (họp 18,1%, giọng miền 6,6%) nhưng file dài tốt hơn (24,8% so với 26,2%, chỉ 4 file) -> chưa đổi,
+# để bản ghi họp thật quyết định.
+GOP_LUOT_MAC_DINH = 20
 BEAM = 5                        # số nhánh dò chữ cùng lúc (beam search); 1 = dò tham lam, nhanh hơn
 
 
@@ -579,7 +588,8 @@ def gop_luot(cac_luot, toi_da_giay):
 
     Vì sao: mỗi lần nghe tốn trọn một cửa sổ 30 giây (~21 giây trên máy 2 nhân) dù lượt chỉ dài 1 giây
     ("dạ", "ừ"); họp thật có rất nhiều lượt ngắn như vậy. Gộp lại thì ít cửa sổ hơn (góp ý phản biện 18/10).
-    Đang đo: có giữ được độ chính xác không."""
+    Đo 19/10 trên bộ GIỮ RIÊNG (PhoWhisper, đệm im lặng): gộp 20 giây chính xác hơn thật mà nhanh hơn, nên là
+    mặc định của hai chế độ PhoWhisper (GOP_LUOT_MAC_DINH)."""
     if toi_da_giay <= 0:
         return list(cac_luot)
     nhom = []
@@ -971,7 +981,8 @@ def xu_ly_mot_file(model, duong_dan, loc_nhieu, tien_xu_ly_bat, dem_im_lang=Fals
 
     print("Đang nhận dạng giọng nói, vui lòng chờ...")
     cac_tu, so_bi_loai = nhan_dang(model, song_am, goi_y=goi_y or GOI_Y_MAC_DINH,
-                                   tung_luot=TUNG_LUOT_MAC_DINH, dem_im_lang=dem_im_lang)
+                                   tung_luot=TUNG_LUOT_MAC_DINH, dem_im_lang=dem_im_lang,
+                                   gop=GOP_LUOT_MAC_DINH if dem_im_lang else 0)
     ket_qua = tach_cau(cac_tu)
     if not ket_qua:
         # Không ghi file rỗng: src/tien_xu_ly/doc_transcript.py coi danh sách rỗng là lỗi
