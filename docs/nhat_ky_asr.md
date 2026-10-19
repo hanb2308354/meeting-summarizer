@@ -27,7 +27,7 @@ PhoWhisper-small, cùng cách chạy), CPU, số luồng = số nhân thật · 
 
 **Đã xong:** chọn model (PhoWhisper-medium, đã chạm giới hạn model chạy được trên máy này), tốc độ ngang Whisper
 medium, kết quả chính thức trên bộ giữ riêng. **Còn lại:** chốt gộp lượt, chẩn đoán phần chênh của file dài, bỏ chữ
-rác, cài mới từ đầu (C4), ghi âm một cuộc họp thật 15–20 phút để kiểm lần cuối, báo cáo tiến độ.
+rác, ghi âm một cuộc họp thật 15–20 phút để kiểm lần cuối, báo cáo tiến độ.
 
 **Cách đo dùng xuyên suốt:**
 - Không tự thu âm mà dùng bộ dữ liệu công khai có sẵn lời gốc: 30–100 đoạn họp/hội nghị/gọi điện, 30–100 đoạn giọng
@@ -371,6 +371,12 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
     ninh, fanpage → pết) và trợ từ vùng miền (nhá → nhé). **Không thêm luật sửa:** cặp lấy từ bộ giữ riêng, thêm luật
     theo chúng là chỉnh theo bộ kiểm tra; mà "linh", "giun" là từ tiếng Việt thật, sửa máy móc sẽ sai ở chỗ khác.
     Để dành cho bản ghi họp thật (nếu một cặp lặp lại nhiều ở đó thì mới thêm vào bảng sửa của bước làm sạch văn bản).
+  - **Cài mới từ đầu (C4) — đạt:** trên máy Windows của Hân, thư mục trống `D:\thu_cai_moi`: `git clone` nhánh
+    han-danh-gia-asr → tạo venv Python 3.11 → `pip install -r requirements.txt` (faster-whisper 1.2.1, ctranslate2 4.8.3)
+    → cài torch 2.14 (CPU) + transformers 5.20 → `chuyen_doi_model.py` tạo `models/phowhisper-medium-ct2` → kiểm thử
+    76/76 ĐẠT → nhận dạng một đoạn thật bằng chế độ mặc định, ra JSON đúng định dạng (3,0x độ dài ghi âm). Không cần
+    bước nào ngoài README. Các dòng "NativeCommandError" trong nhật ký chạy chỉ là PowerShell bọc chữ in ra stderr
+    (thanh tiến trình, thông báo pip), không phải lỗi.
 
 ---
 
@@ -422,4 +428,4 @@ nghe nhầm theo kiểu khác nhau, và chỉ thêm luật cho lỗi lặp lại
 
 **Về điểm số trong các báo cáo tiến độ:** thang 10 điểm và 16 điều kiện "hoàn thiện" do nhóm tự đặt
 (không phải thang của học phần). Mức hoàn thiện = tổng điểm 16 điều kiện ÷ 16 (Đạt = 1, Một phần = 0,5, Chưa = 0),
-hiện là 12,5/16 ≈ 78% (còn thiếu: B1, B3, B6, D1, E2 một phần; C4 chưa có kết quả). Điểm chất lượng hiện là 9,2/10.
+hiện là 13,5/16 ≈ 84% (còn thiếu: B1, B3, B6, D1, E2 một phần). Điểm chất lượng hiện là 9,3/10.
